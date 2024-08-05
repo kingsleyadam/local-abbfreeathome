@@ -1,37 +1,42 @@
-from typing import Dict
+"""Free@Home Switch Class."""
 
-from .base import Base
-from ..bin.pairing_id import PairingId
 from ..api import FreeAtHomeApi
+from ..bin.pairing_id import PairingId
+from .base import Base
 
 
 class Switch(Base):
+    """Free@Home Switch Class."""
+
     _state = None
 
     def __init__(
-            self,
-            device_id: str,
-            channel_id: str,
-            name: str,
-            inputs: Dict[str, Dict[str, any]],
-            outputs: Dict[str, Dict[str, any]],
-            parameters: Dict[str, Dict[str, any]],
-            api: FreeAtHomeApi
-    ):
+        self,
+        device_id: str,
+        channel_id: str,
+        name: str,
+        inputs: dict[str, dict[str, any]],
+        outputs: dict[str, dict[str, any]],
+        parameters: dict[str, dict[str, any]],
+        api: FreeAtHomeApi,
+    ) -> None:
+        """Initialize the Free@Home Switch class."""
         super().__init__(device_id, channel_id, name, inputs, outputs, parameters, api)
 
     @property
     def state(self):
+        """Get the state of the switch."""
         if self._state is None:
             _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
                 pairing_id=PairingId.AL_INFO_ON_OFF.value
             )
-            self._state = '1' == _switch_output_value
+            self._state = _switch_output_value == "1"
 
         return self._state
 
     @state.setter
     def state(self, value: bool):
+        """Set the state of the switch."""
         _switch_input_id, _switch_input_value = self.get_input_by_pairing_id(
             pairing_id=PairingId.AL_SWITCH_ON_OFF.value
         )
@@ -39,11 +44,12 @@ class Switch(Base):
             device_id=self.device_id,
             channel_id=self.channel_id,
             datapoint=_switch_input_id,
-            value='1' if value else '0'
+            value="1" if value else "0",
         )
         self._state = value
 
     def refresh_state(self):
+        """Refresh the state of the switch from the api."""
         _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
             pairing_id=PairingId.AL_INFO_ON_OFF.value
         )
@@ -51,12 +57,11 @@ class Switch(Base):
         _datapoint = self._api.get_datapoint(
             device_id=self.device_id,
             channel_id=self.channel_id,
-            datapoint=_switch_output_id
+            datapoint=_switch_output_id,
         )[0]
 
-        self._state = '1' == _datapoint
+        self._state = _datapoint == "1"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass
-
