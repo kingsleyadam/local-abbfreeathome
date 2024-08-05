@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from .api import FreeAtHomeApi
-from .lib.function_id import FunctionID
+from .bin.function_id import FunctionID
 from .devices.switch import Switch
 
 

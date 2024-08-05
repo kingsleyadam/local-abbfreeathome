@@ -1,7 +1,7 @@
 from typing import Dict
 
 from .base import Base
-from ..lib.pairing_id import PairingId
+from ..bin.pairing_id import PairingId
 from ..api import FreeAtHomeApi
 
 

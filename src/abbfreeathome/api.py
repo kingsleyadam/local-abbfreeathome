@@ -2,7 +2,7 @@ import requests
 
 from typing import List, Dict
 
-from .lib.exceptions import UserNotFoundException, SetDatapointFailureException, InvalidCredentialsException
+from .bin.exceptions import UserNotFoundException, SetDatapointFailureException, InvalidCredentialsException
 
 API_VERSION = 'v1'
 
