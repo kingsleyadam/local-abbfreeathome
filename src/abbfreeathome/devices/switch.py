@@ -1,5 +1,7 @@
 """Free@Home Switch Class."""
 
+from typing import Any
+
 from ..api import FreeAtHomeApi
 from ..bin.pairing_id import PairingId
 from .base import Base
@@ -15,9 +17,9 @@ class Switch(Base):
         device_id: str,
         channel_id: str,
         name: str,
-        inputs: dict[str, dict[str, any]],
-        outputs: dict[str, dict[str, any]],
-        parameters: dict[str, dict[str, any]],
+        inputs: dict[str, dict[str, Any]],
+        outputs: dict[str, dict[str, Any]],
+        parameters: dict[str, dict[str, Any]],
         api: FreeAtHomeApi,
     ) -> None:
         """Initialize the Free@Home Switch class."""

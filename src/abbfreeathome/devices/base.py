@@ -1,5 +1,7 @@
 """Free@Home Base Class."""
 
+from typing import Any
+
 from ..api import FreeAtHomeApi
 
 
@@ -11,9 +13,9 @@ class Base:
         device_id: str,
         channel_id: str,
         name: str,
-        inputs: dict[str, dict[str, any]],
-        outputs: dict[str, dict[str, any]],
-        parameters: dict[str, dict[str, any]],
+        inputs: dict[str, dict[str, Any]],
+        outputs: dict[str, dict[str, Any]],
+        parameters: dict[str, dict[str, Any]],
         api: FreeAtHomeApi,
     ) -> None:
         """Initialize the Free@Home Base class."""
@@ -40,7 +42,7 @@ class Base:
         """Get the name of the device."""
         return self._name
 
-    def get_input_by_pairing_id(self, pairing_id: int) -> tuple[str, any]:
+    def get_input_by_pairing_id(self, pairing_id: int) -> tuple[str, Any]:
         """Get the channel input by pairing id."""
         for _input_id, _input in self._inputs.items():
             if _input.get("pairingID") == pairing_id:
@@ -50,7 +52,7 @@ class Base:
             f"Could not find input for device: {self.device_id}; channel: {self.channel_id}; pairing id: {pairing_id}"
         )
 
-    def get_output_by_pairing_id(self, pairing_id: int) -> tuple[str, any]:
+    def get_output_by_pairing_id(self, pairing_id: int) -> tuple[str, Any]:
         """Get the channel output by pairing id."""
         for _output_id, _output in self._outputs.items():
             if _output.get("pairingID") == pairing_id:

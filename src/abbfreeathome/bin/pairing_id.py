@@ -342,7 +342,7 @@ def load_pairings_from_json_file(file_path: str):
     """
     import json
 
-    with open(file_path, 'r') as functions_file:
+    with open(file_path, "r") as functions_file:
         _functions = json.load(functions_file)
 
     for function in _functions:
@@ -350,7 +350,5 @@ def load_pairings_from_json_file(file_path: str):
             print(f'    {function.get("Name")} = \'{function.get("Pairing ID__1")}\'')
 
 
-if __name__ == '__main__':
-    load_pairings_from_json_file(
-        '/Users/akingsley/Desktop/fah_pairings.json'
-    )
+if __name__ == "__main__":
+    load_pairings_from_json_file("/Users/akingsley/Desktop/fah_pairings.json")
