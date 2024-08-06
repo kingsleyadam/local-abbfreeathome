@@ -2,11 +2,13 @@
 
 from typing import Any
 
-import requests
+import aiohttp
 
 from .exceptions import (
+    ConnectionTimeoutException,
+    ForbiddenAuthException,
     InvalidCredentialsException,
-    InvalidURLSchemaException,
+    InvalidHostException,
     SetDatapointFailureException,
     UserNotFoundException,
 )
@@ -30,49 +32,55 @@ class FreeAtHomeApi:
         self._username = username
         self._password = password
 
-    def get_configuration(self) -> dict:
+    async def get_configuration(self) -> dict:
         """Get the Free@Home Configuration."""
-        return self._request(path="/api/rest/configuration").get(self._sysap_uuid)
+        _response = await self._request(path="/api/rest/configuration")
 
-    def get_datapoint(
+        return _response.get(self._sysap_uuid)
+
+    async def get_datapoint(
         self, device_id: str, channel_id: str, datapoint: str
     ) -> list[str]:
         """Get a specific datapoint from the api."""
-        _response = self._request(
+        _response = await self._request(
             path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_id}.{channel_id}.{datapoint}",
             method="get",
         )
 
         return _response.get(self._sysap_uuid).get("values")
 
-    def get_device_list(self) -> list:
+    async def get_device_list(self) -> list:
         """Get the list of devices."""
-        return self._request(path="/api/rest/devicelist").get(self._sysap_uuid)
+        _response = await self._request(path="/api/rest/devicelist")
 
-    def get_device(self, device_serial: str):
+        return _response.get(self._sysap_uuid)
+
+    async def get_device(self, device_serial: str):
         """Get a specific device from the api."""
-        return (
-            self._request(path=f"/api/rest/device/{self._sysap_uuid}/{device_serial}")
-            .get(self._sysap_uuid)
-            .get("devices")
-            .get(device_serial)
+        _response = await self._request(
+            path=f"/api/rest/device/{self._sysap_uuid}/{device_serial}"
         )
+
+        return _response.get(self._sysap_uuid).get("devices").get(device_serial)
 
     async def get_settings(self):
         """Get the settings from the api."""
         try:
-            _response = requests.request(
-                method="get", url=f"{self._host}/settings.json", timeout=10
-            )
-        except requests.exceptions.MissingSchema as ex:
-            raise InvalidURLSchemaException(self._host) from ex
+            async with aiohttp.ClientSession() as session:  # noqa: SIM117
+                async with session.get(f"{self._host}/settings.json") as resp:
+                    _response_status = resp.status
+                    _response_json = await resp.json()
+        except ValueError as e:
+            if str(e) == "URL should be absolute":
+                raise InvalidHostException(self._host) from e
+            raise
 
-        _response.raise_for_status()
-        return _response.json()
+        assert _response_status == 200
+        return _response_json
 
     async def get_sysap(self):
         """Get the sysap from the api."""
-        return self._request(path="/api/rest/sysap")
+        return await self._request(path="/api/rest/sysap")
 
     async def get_user(self, name: str) -> str:
         """Get a specific user from the api."""
@@ -88,11 +96,11 @@ class FreeAtHomeApi:
 
         return _user
 
-    def set_datapoint(
+    async def set_datapoint(
         self, device_id: str, channel_id: str, datapoint: str, value: str
     ) -> bool:
         """Set a specific datapoint in the api. This is used to control devices."""
-        _response = self._request(
+        _response = await self._request(
             path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_id}.{channel_id}.{datapoint}",
             method="put",
             data=value,
@@ -103,28 +111,46 @@ class FreeAtHomeApi:
 
         return True
 
-    def _request(self, path, method: str = "get", data: Any | None = None):
+    async def _request(self, path: str, method: str = "get", data: Any | None = None):
         """Make a request to the API."""
-        _root_path = f"/fhapi/{API_VERSION}"
-        try:
-            _response = requests.request(
-                method=method,
-                url=f"{self._host}{_root_path}{path}",
-                auth=(self._username, self._password),
-                data=data,
-                timeout=10,
-            )
-        except requests.exceptions.MissingSchema as ex:
-            raise InvalidURLSchemaException(self._host) from ex
+
+        # Set the full path to be used.
+        if path[0] != "/":
+            path = f"/{path}"
+        _full_path = f"/fhapi/{API_VERSION}{path}"
 
         try:
-            _response.raise_for_status()
-        except requests.exceptions.HTTPError as http_exception:
-            _unauthozied_code = 401
-            if http_exception.response.status_code == _unauthozied_code:
-                raise InvalidCredentialsException(self._username) from http_exception
+            async with aiohttp.ClientSession(  # noqa: SIM117
+                base_url=self._host,
+                auth=aiohttp.BasicAuth(self._username, self._password),
+            ) as client:
+                async with client.request(
+                    method=method, url=_full_path, data=data
+                ) as resp:
+                    _response_status = resp.status
+                    _response = None
+                    if resp.content_type == "application/json":
+                        _response = await resp.json()
+                    elif resp.content_type == "text/plain":
+                        _response = await resp.text()
+        except ValueError as e:
+            if str(e) == "URL should be absolute":
+                raise InvalidHostException(self._host) from e
             raise
-        return _response.json()
+
+        # Check the status code and raise exception accordingly.
+        _unauthozied_code = 401
+        _forbidden_code = 403
+        _connect_timeout_code = 502
+        if _response_status == _unauthozied_code:
+            raise InvalidCredentialsException(self._username)
+        if _response_status == _forbidden_code:
+            raise ForbiddenAuthException(path)
+        if _response_status == _connect_timeout_code:
+            raise ConnectionTimeoutException(self._host)
+        assert _response_status == 200
+
+        return _response
 
 
 if __name__ == "__main__":

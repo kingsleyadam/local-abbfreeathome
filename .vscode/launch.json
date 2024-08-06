@@ -10,5 +10,11 @@
             "request": "launch",
             "module": "src.abbfreeathome.api"
         }
+        {
+            "name": "Module: abbfreeathome.freeathome",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.abbfreeathome.freeathome"
+        }
     ]
 }

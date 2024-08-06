@@ -25,44 +25,53 @@ class Switch(Base):
         """Initialize the Free@Home Switch class."""
         super().__init__(device_id, channel_id, name, inputs, outputs, parameters, api)
 
+        # Set the initial state of the switch based on output
+        _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
+            pairing_id=PairingId.AL_INFO_ON_OFF.value
+        )
+        self._state = _switch_output_value == "1"
+
     @property
     def state(self):
         """Get the state of the switch."""
-        if self._state is None:
-            _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
-                pairing_id=PairingId.AL_INFO_ON_OFF.value
-            )
-            self._state = _switch_output_value == "1"
-
         return self._state
 
-    @state.setter
-    def state(self, value: bool):
-        """Set the state of the switch."""
-        _switch_input_id, _switch_input_value = self.get_input_by_pairing_id(
-            pairing_id=PairingId.AL_SWITCH_ON_OFF.value
-        )
-        self._api.set_datapoint(
-            device_id=self.device_id,
-            channel_id=self.channel_id,
-            datapoint=_switch_input_id,
-            value="1" if value else "0",
-        )
-        self._state = value
+    async def turn_on(self):
+        """Turn on the switch."""
+        await self._set_switching_datapoint("1")
+        self._state = True
 
-    def refresh_state(self):
+    async def turn_off(self):
+        """Turn on the switch."""
+        await self._set_switching_datapoint("0")
+        self._state = False
+
+    async def refresh_state(self):
         """Refresh the state of the switch from the api."""
         _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
             pairing_id=PairingId.AL_INFO_ON_OFF.value
         )
 
-        _datapoint = self._api.get_datapoint(
-            device_id=self.device_id,
-            channel_id=self.channel_id,
-            datapoint=_switch_output_id,
+        _datapoint = (
+            await self._api.get_datapoint(
+                device_id=self.device_id,
+                channel_id=self.channel_id,
+                datapoint=_switch_output_id,
+            )
         )[0]
 
         self._state = _datapoint == "1"
+
+    async def _set_switching_datapoint(self, value: str):
+        _switch_input_id, _switch_input_value = self.get_input_by_pairing_id(
+            pairing_id=PairingId.AL_SWITCH_ON_OFF.value
+        )
+        return await self._api.set_datapoint(
+            device_id=self.device_id,
+            channel_id=self.channel_id,
+            datapoint=_switch_input_id,
+            value=value,
+        )
 
 
 if __name__ == "__main__":

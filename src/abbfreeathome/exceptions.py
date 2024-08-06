@@ -5,6 +5,24 @@ class FreeAtHomeException(Exception):
     """A base class for Free@Home exceptions."""
 
 
+class ConnectionTimeoutException(FreeAtHomeException):
+    """Raise an exception if the connection times out."""
+
+    def __init__(self, host) -> None:
+        """Initialze the ConnectionTimeoutException class."""
+        self.message = f"Connection timeout to host: {host}"
+        super().__init__(self.message)
+
+
+class ForbiddenAuthException(FreeAtHomeException):
+    """Raise an exception if the connection returns a forbidden code."""
+
+    def __init__(self, path) -> None:
+        """Initialze the ForbiddenAuthException class."""
+        self.message = f"Request returned a forbidden (401) error message: {path}"
+        super().__init__(self.message)
+
+
 class InvalidCredentialsException(FreeAtHomeException):
     """Raise an exception for invalid credentials."""
 
@@ -14,12 +32,14 @@ class InvalidCredentialsException(FreeAtHomeException):
         super().__init__(self.message)
 
 
-class InvalidURLSchemaException(FreeAtHomeException):
+class InvalidHostException(FreeAtHomeException):
     """Raise an excpetion for an invalid URL format."""
 
     def __init__(self, url: str) -> None:
-        """Initialze the InvalidCredentialsException class."""
-        self.message = f"Invalid URL, ensure url includes schema (e.g. http://): {url}"
+        """Initialze the InvalidHostException class."""
+        self.message = (
+            f"Invalid Host endpoint, ensure url includes schema (e.g. http://): {url}"
+        )
         super().__init__(self.message)
 
 

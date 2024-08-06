@@ -15,14 +15,14 @@ class FreeAtHome:
         self._api = api
 
     @property
-    def floors(self) -> dict:
+    async def floors(self) -> dict:
         """Get the floors from the configuration."""
-        return self.get_config().get("floorplan").get("floors")
+        return (await self.get_config()).get("floorplan").get("floors")
 
     @property
-    def switches(self) -> list[Switch]:
-        """Get the list of switche devices."""
-        _switch_devices = self.get_devices_by_function(
+    async def switches(self) -> list[Switch]:
+        """Get the list of switch devices."""
+        _switch_devices = await self.get_devices_by_function(
             function_id=FunctionID.FID_SWITCH_ACTUATOR.value
         )
         return [
@@ -38,17 +38,17 @@ class FreeAtHome:
             for _device in _switch_devices
         ]
 
-    def get_config(self, refresh: bool = False) -> dict:
+    async def get_config(self, refresh: bool = False) -> dict:
         """Get the Free@Home Configuration."""
         if self._config is None or refresh:
-            self._config = self._api.get_configuration()
+            self._config = await self._api.get_configuration()
 
         return self._config
 
-    def get_devices_by_function(self, function_id: str) -> list[dict]:
+    async def get_devices_by_function(self, function_id: str) -> list[dict]:
         """Get the list of devices by function."""
         _devices = []
-        for _device_key, _device in self.get_config().get("devices").items():
+        for _device_key, _device in (await self.get_config()).get("devices").items():
             for _channel_key, _channel in _device.get("channels", {}).items():
                 if _channel.get("functionID") == function_id:
                     _name = _channel.get("displayName")
@@ -61,12 +61,12 @@ class FreeAtHome:
                             "channel_id": _channel_key,
                             "name": _name,
                             "function_id": _channel.get("functionID"),
-                            "floor_name": self.get_floor_name(
+                            "floor_name": await self.get_floor_name(
                                 floor_serial_id=_channel.get(
                                     "floor", _device.get("floor")
                                 )
                             ),
-                            "room_name": self.get_room_name(
+                            "room_name": await self.get_room_name(
                                 floor_serial_id=_channel.get(
                                     "floor", _device.get("floor")
                                 ),
@@ -82,16 +82,17 @@ class FreeAtHome:
 
         return _devices
 
-    def get_floor_name(self, floor_serial_id: str) -> str:
+    async def get_floor_name(self, floor_serial_id: str) -> str:
         """Get the floor name from the configuration."""
         _default_room = {"name": "unknown", "rooms": {}}
-        return self.floors.get(floor_serial_id, _default_room).get("name")
+        return (await self.floors).get(floor_serial_id, _default_room).get("name")
 
-    def get_room_name(self, floor_serial_id: str, room_serial_id: str) -> str:
+    async def get_room_name(self, floor_serial_id: str, room_serial_id: str) -> str:
         """Get the room name from the configuration."""
         _default_room = {"name": "unknown", "rooms": {}}
         return (
-            self.floors.get(floor_serial_id, _default_room)
+            (await self.floors)
+            .get(floor_serial_id, _default_room)
             .get("rooms")
             .get(room_serial_id)
             .get("name", "unknown")
