@@ -1,6 +1,7 @@
 """Provides a class for interacting with the ABB-free@home API."""
 
 from typing import Any
+from urllib.parse import urlparse
 
 import aiohttp
 
@@ -19,6 +20,9 @@ API_VERSION = "v1"
 
 class FreeAtHomeApi:
     """Provides a class for interacting with the ABB-free@home API."""
+
+    _ws_session: aiohttp.ClientSession = None
+    _ws_response: aiohttp.ClientWebSocketResponse = None
 
     def __init__(
         self,
@@ -140,14 +144,11 @@ class FreeAtHomeApi:
             raise
 
         # Check the status code and raise exception accordingly.
-        _unauthozied_code = 401
-        _forbidden_code = 403
-        _connect_timeout_code = 502
-        if _response_status == _unauthozied_code:
+        if _response_status == 401:
             raise InvalidCredentialsException(self._username)
-        if _response_status == _forbidden_code:
+        if _response_status == 403:
             raise ForbiddenAuthException(path)
-        if _response_status == _connect_timeout_code:
+        if _response_status == 502:
             raise ConnectionTimeoutException(self._host)
 
         try:
@@ -156,6 +157,51 @@ class FreeAtHomeApi:
             raise InvalidApiResponseException(_response_status) from None
 
         return _response
+
+    @property
+    def ws_connected(self) -> bool:
+        """Returns whether the websocket is connected."""
+        return self._ws_response is not None and not self._ws_response.closed
+
+    async def ws_close(self):
+        """Close the websocket session."""
+        await self.ws_disconnect()
+
+        if self._ws_session:
+            await self._ws_session.close()
+
+    async def ws_connect(self):
+        """Connect to the host websocket."""
+
+        _parsed_host = urlparse(self._host)
+        _full_path = f"{_parsed_host.hostname}/fhapi/{API_VERSION}/api/ws"
+
+        if self.ws_connected:
+            return
+
+        if self._ws_session is None:
+            self._ws_session = aiohttp.ClientSession(
+                auth=aiohttp.BasicAuth(self._username, self._password)
+            )
+
+        self._ws_response = await self._ws_session.ws_connect(url=f"ws://{_full_path}")
+
+    async def ws_disconnect(self):
+        """Close the websockets connection."""
+        if not self._ws_response or not self.ws_connected:
+            return
+
+        await self._ws_response.close()
+
+    async def ws_listen(self):
+        """Listen for evens on the websocket."""
+        if not self._ws_response or not self.ws_connected:
+            await self.ws_connect()
+
+        while not self._ws_response.closed:
+            data = await self._ws_response.receive()
+            if data.type == aiohttp.WSMsgType.TEXT:
+                print(data.json())
 
 
 if __name__ == "__main__":
