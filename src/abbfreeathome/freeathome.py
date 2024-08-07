@@ -2,13 +2,14 @@
 
 from .api import FreeAtHomeApi
 from .bin.function_id import FunctionID
-from .devices.switch import Switch
+from .devices.switch import Base, Switch
 
 
 class FreeAtHome:
     """Provides a class for interacting with the ABB-free@home API."""
 
     _config = None
+    _devices = {}
 
     def __init__(self, api: FreeAtHomeApi) -> None:
         """Initialize the FreeAtHome class."""
@@ -80,24 +81,49 @@ class FreeAtHome:
             .get("name", "unknown")
         )
 
-    async def get_switches(self) -> list[Switch]:
-        """Get the list of switch devices."""
+    def get_device_by_class(self, device_class: Base) -> list[Base]:
+        """Get the list of devices by class."""
+        return [
+            _device_value
+            for _device_key, _device_value in self._devices.items()
+            if isinstance(_device_value, device_class)
+        ]
+
+    async def load_devices(self):
+        """Load all of the devices into the device list."""
+        await self._load_switches()
+
+    async def _load_switches(self):
         _switch_devices = await self.get_devices_by_function(
             function_id=FunctionID.FID_SWITCH_ACTUATOR.value
         )
-        return [
-            Switch(
-                device_id=_device.get("device_id"),
-                device_name=_device.get("device_name"),
-                channel_id=_device.get("channel_id"),
-                channel_name=_device.get("channel_name"),
-                inputs=_device.get("inputs"),
-                outputs=_device.get("outputs"),
-                parameters=_device.get("parameters"),
-                api=self._api,
+        for _device in _switch_devices:
+            self._devices[f"{_device.get("device_id")}/{_device.get("channel_id")}"] = (
+                Switch(
+                    device_id=_device.get("device_id"),
+                    device_name=_device.get("device_name"),
+                    channel_id=_device.get("channel_id"),
+                    channel_name=_device.get("channel_name"),
+                    inputs=_device.get("inputs"),
+                    outputs=_device.get("outputs"),
+                    parameters=_device.get("parameters"),
+                    api=self._api,
+                )
             )
-            for _device in _switch_devices
-        ]
+
+    async def ws_listen(self):
+        """Listen on the websocket for updates to devices."""
+        await self._api.ws_listen(callback=self.update_device)
+
+    async def update_device(self, data: dict):
+        """Update device based on websocket data."""
+        for _datapoint_key, _datapoint_value in data.get("datapoints").items():
+            _unique_id = "/".join(_datapoint_key.split("/")[:-1])
+            try:
+                _device = self._devices[_unique_id]
+                _device.update_device(_datapoint_key, _datapoint_value)
+            except KeyError:
+                continue
 
 
 if __name__ == "__main__":

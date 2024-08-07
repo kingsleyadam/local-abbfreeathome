@@ -1,5 +1,7 @@
 """Provides a class for interacting with the ABB-free@home API."""
 
+from collections.abc import Callable
+import inspect
 from typing import Any
 from urllib.parse import urlparse
 
@@ -36,6 +38,10 @@ class FreeAtHomeApi:
         self._host = host.rstrip("/")
         self._username = username
         self._password = password
+
+    async def __exit__(self, **args):
+        """Close websocket connection."""
+        await self.ws_close()
 
     async def get_configuration(self) -> dict:
         """Get the Free@Home Configuration."""
@@ -193,7 +199,7 @@ class FreeAtHomeApi:
 
         await self._ws_response.close()
 
-    async def ws_listen(self):
+    async def ws_listen(self, callback: Callable[[list], None]):
         """Listen for evens on the websocket."""
         if not self._ws_response or not self.ws_connected:
             await self.ws_connect()
@@ -201,7 +207,11 @@ class FreeAtHomeApi:
         while not self._ws_response.closed:
             data = await self._ws_response.receive()
             if data.type == aiohttp.WSMsgType.TEXT:
-                print(data.json())
+                _ws_data = data.json().get(self._sysap_uuid)
+                if inspect.iscoroutinefunction(callback):
+                    await callback(_ws_data)
+                else:
+                    callback(_ws_data)
 
 
 if __name__ == "__main__":

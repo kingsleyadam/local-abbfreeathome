@@ -36,10 +36,7 @@ class Switch(Base):
         )
 
         # Set the initial state of the switch based on output
-        _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
-            pairing_id=PairingId.AL_INFO_ON_OFF.value
-        )
-        self._state = _switch_output_value == "1"
+        self._refresh_state_from_outputs()
 
     @property
     def state(self):
@@ -72,6 +69,16 @@ class Switch(Base):
 
         self._state = _datapoint == "1"
 
+    def _refresh_state_from_inputs(self):
+        """Refresh the state of the switch from the _inputs."""
+
+    def _refresh_state_from_outputs(self):
+        """Refresh the state of the switch from the _outputs."""
+        _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
+            pairing_id=PairingId.AL_INFO_ON_OFF.value
+        )
+        self._state = _switch_output_value == "1"
+
     async def _set_switching_datapoint(self, value: str):
         _switch_input_id, _switch_input_value = self.get_input_by_pairing_id(
             pairing_id=PairingId.AL_SWITCH_ON_OFF.value
@@ -82,6 +89,16 @@ class Switch(Base):
             datapoint=_switch_input_id,
             value=value,
         )
+
+    def update_device(self, datapoint_key: str, datapoint_value: str):
+        """Update the switch state."""
+        _io_key = datapoint_key.split("/")[-1]
+        if _io_key in self._inputs:
+            self._inputs[_io_key]["value"] = datapoint_value
+            self._refresh_state_from_inputs()
+        if _io_key in self._outputs:
+            self._outputs[_io_key]["value"] = datapoint_value
+            self._refresh_state_from_outputs()
 
 
 if __name__ == "__main__":

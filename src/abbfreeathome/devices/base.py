@@ -68,3 +68,6 @@ class Base:
         raise ValueError(
             f"Could not find output for device: {self.device_id}; channel: {self.channel_id}; pairing id: {pairing_id}"
         )
+
+    def update_device():
+        """Update a devices state."""

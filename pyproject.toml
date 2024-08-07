@@ -7,7 +7,7 @@ packages = ["src/abbfreeathome"]
 
 [project]
 name = "local-abbfreeathome"
-version = "0.0.12"
+version = "0.0.12a1"
 authors = [
   { name="Adam Kingsley", email="adam@kingsley.io" },
 ]
