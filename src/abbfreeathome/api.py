@@ -7,6 +7,7 @@ import aiohttp
 from .exceptions import (
     ConnectionTimeoutException,
     ForbiddenAuthException,
+    InvalidApiResponseException,
     InvalidCredentialsException,
     InvalidHostException,
     SetDatapointFailureException,
@@ -148,7 +149,11 @@ class FreeAtHomeApi:
             raise ForbiddenAuthException(path)
         if _response_status == _connect_timeout_code:
             raise ConnectionTimeoutException(self._host)
-        assert _response_status == 200
+
+        try:
+            assert _response_status == 200
+        except AssertionError:
+            raise InvalidApiResponseException(_response_status) from None
 
         return _response
 

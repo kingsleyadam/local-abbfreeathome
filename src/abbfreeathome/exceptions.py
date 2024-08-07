@@ -33,13 +33,22 @@ class InvalidCredentialsException(FreeAtHomeException):
 
 
 class InvalidHostException(FreeAtHomeException):
-    """Raise an excpetion for an invalid URL format."""
+    """Raise an exception for an invalid URL format."""
 
     def __init__(self, url: str) -> None:
         """Initialze the InvalidHostException class."""
         self.message = (
             f"Invalid Host endpoint, ensure url includes schema (e.g. http://): {url}"
         )
+        super().__init__(self.message)
+
+
+class InvalidApiResponseException(FreeAtHomeException):
+    """Raise an exception for an invalid api response code."""
+
+    def __init__(self, status_code: int) -> None:
+        """Initialze the InvalidApiResponseException class."""
+        self.message = f"Invalid api response, status code: {status_code}"
         super().__init__(self.message)
 
 
