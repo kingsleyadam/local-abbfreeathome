@@ -11,8 +11,9 @@ class Base:
     def __init__(
         self,
         device_id: str,
+        device_name: str,
         channel_id: str,
-        name: str,
+        channel_name: str,
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
@@ -20,8 +21,9 @@ class Base:
     ) -> None:
         """Initialize the Free@Home Base class."""
         self._device_id = device_id
+        self._device_name = device_name
         self._channel_id = channel_id
-        self._name = name
+        self._channel_name = channel_name
         self._api = api
         self._inputs = inputs
         self._outputs = outputs
@@ -33,14 +35,19 @@ class Base:
         return self._device_id
 
     @property
+    def device_name(self) -> str:
+        """Get the device name."""
+        return self._device_name
+
+    @property
     def channel_id(self) -> str:
         """Get the channel id."""
         return self._channel_id
 
     @property
-    def name(self) -> str:
-        """Get the name of the device."""
-        return self._name
+    def channel_name(self) -> str:
+        """Get the name of the channel."""
+        return self._channel_name
 
     def get_input_by_pairing_id(self, pairing_id: int) -> tuple[str, Any]:
         """Get the channel input by pairing id."""

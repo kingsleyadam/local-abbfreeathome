@@ -15,15 +15,25 @@ class Switch(Base):
     def __init__(
         self,
         device_id: str,
+        device_name: str,
         channel_id: str,
-        name: str,
+        channel_name: str,
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
         api: FreeAtHomeApi,
     ) -> None:
         """Initialize the Free@Home Switch class."""
-        super().__init__(device_id, channel_id, name, inputs, outputs, parameters, api)
+        super().__init__(
+            device_id,
+            device_name,
+            channel_id,
+            channel_name,
+            inputs,
+            outputs,
+            parameters,
+            api,
+        )
 
         # Set the initial state of the switch based on output
         _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
