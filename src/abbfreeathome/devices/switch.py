@@ -100,6 +100,9 @@ class Switch(Base):
             self._outputs[_io_key]["value"] = datapoint_value
             self._refresh_state_from_outputs()
 
+        for callback in self._callbacks:
+            callback()
+
 
 if __name__ == "__main__":
     pass

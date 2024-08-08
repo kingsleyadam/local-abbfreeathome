@@ -1,5 +1,6 @@
 """Free@Home Base Class."""
 
+from collections.abc import Callable
 from typing import Any
 
 from ..api import FreeAtHomeApi
@@ -7,6 +8,8 @@ from ..api import FreeAtHomeApi
 
 class Base:
     """Free@Home Base Class."""
+
+    _callbacks = set()
 
     def __init__(
         self,
@@ -71,3 +74,11 @@ class Base:
 
     def update_device():
         """Update a devices state."""
+
+    def register_callback(self, callback: Callable[[], None]) -> None:
+        """Register callback, called when switch changes state."""
+        self._callbacks.add(callback)
+
+    def remove_callback(self, callback: Callable[[], None]) -> None:
+        """Remove previously registered callback."""
+        self._callbacks.discard(callback)
