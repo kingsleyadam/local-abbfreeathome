@@ -1,7 +1,9 @@
 """Provides a class for interacting with the ABB-free@home API."""
 
+import asyncio
 from collections.abc import Callable
 import inspect
+import logging
 from typing import Any
 from urllib.parse import urlparse
 
@@ -18,6 +20,8 @@ from .exceptions import (
 )
 
 API_VERSION = "v1"
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class FreeAtHomeApi:
@@ -39,7 +43,7 @@ class FreeAtHomeApi:
         self._username = username
         self._password = password
 
-    async def __exit__(self, **args):
+    async def __aexit__(self, *_exc_info: object):
         """Close websocket connection."""
         await self.ws_close()
 
@@ -181,16 +185,20 @@ class FreeAtHomeApi:
 
         _parsed_host = urlparse(self._host)
         _full_path = f"{_parsed_host.hostname}/fhapi/{API_VERSION}/api/ws"
+        _url = f"ws://{_full_path}"
 
         if self.ws_connected:
             return
 
+        _timeout = aiohttp.ClientTimeout(total=10)
         if self._ws_session is None:
             self._ws_session = aiohttp.ClientSession(
-                auth=aiohttp.BasicAuth(self._username, self._password)
+                auth=aiohttp.BasicAuth(self._username, self._password), timeout=_timeout
             )
 
-        self._ws_response = await self._ws_session.ws_connect(url=f"ws://{_full_path}")
+        _LOGGER.info("Websocket attempting to connect %s", _url)
+        self._ws_response = await self._ws_session.ws_connect(url=_url)
+        _LOGGER.info("Websocket connected %s", _url)
 
     async def ws_disconnect(self):
         """Close the websockets connection."""
@@ -199,12 +207,29 @@ class FreeAtHomeApi:
 
         await self._ws_response.close()
 
-    async def ws_listen(self, callback: Callable[[list], None]):
-        """Listen for evens on the websocket."""
-        if not self._ws_response or not self.ws_connected:
-            await self.ws_connect()
+    async def ws_listen(
+        self, callback: Callable[[list], None], retry_interval: int = 5
+    ):
+        """Listen for evens on the websocket. For known errors sleep for an interval and attempt again."""
+        while True:
+            if not self._ws_response or not self.ws_connected:
+                try:
+                    await self.ws_connect()
+                except aiohttp.WSServerHandshakeError as ex:
+                    _LOGGER.error(
+                        "Websocket Handshake Connection Error. %s", ex.message
+                    )
+                    await asyncio.sleep(retry_interval)
+                    continue
+                except aiohttp.ClientConnectionError as ex:
+                    _LOGGER.error("Websocket Client Connection Error. %s", ex)
+                    await asyncio.sleep(retry_interval)
+                    continue
+                except TimeoutError as ex:
+                    _LOGGER.error("Timeout waiting for host. %s", ex)
+                    await asyncio.sleep(retry_interval)
+                    continue
 
-        while not self._ws_response.closed:
             data = await self._ws_response.receive()
             if data.type == aiohttp.WSMsgType.TEXT:
                 _ws_data = data.json().get(self._sysap_uuid)
@@ -212,6 +237,16 @@ class FreeAtHomeApi:
                     await callback(_ws_data)
                 else:
                     callback(_ws_data)
+            elif data.type == aiohttp.WSMsgType.ERROR:
+                _LOGGER.error("Websocket Response Error. Data: %s", data)
+                await asyncio.sleep(retry_interval)
+            elif data.type in (
+                aiohttp.WSMsgType.CLOSE,
+                aiohttp.WSMsgType.CLOSED,
+                aiohttp.WSMsgType.CLOSING,
+            ):
+                _LOGGER.warning("Websocket Connection Closed.")
+                await asyncio.sleep(retry_interval)
 
 
 if __name__ == "__main__":

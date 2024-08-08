@@ -1,10 +1,13 @@
 """Free@Home Switch Class."""
 
+import logging
 from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing_id import PairingId
 from .base import Base
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Switch(Base):
@@ -92,6 +95,12 @@ class Switch(Base):
 
     def update_device(self, datapoint_key: str, datapoint_value: str):
         """Update the switch state."""
+        _LOGGER.info(
+            "%s received updata data: %s: %s",
+            self.channel_name,
+            datapoint_key,
+            datapoint_value,
+        )
         _io_key = datapoint_key.split("/")[-1]
         if _io_key in self._inputs:
             self._inputs[_io_key]["value"] = datapoint_value
