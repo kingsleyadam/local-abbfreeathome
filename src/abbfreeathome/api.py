@@ -36,12 +36,16 @@ class FreeAtHomeApi:
         username: str,
         password: str,
         sysap_uuid: str = "00000000-0000-0000-0000-000000000000",
+        ws_timeout: float = 60,
+        ws_heartbeat: float = 30,
     ) -> None:
         """Initialize the FreeAtHomeApi class."""
         self._sysap_uuid = sysap_uuid
         self._host = host.rstrip("/")
         self._username = username
         self._password = password
+        self._ws_timeout = ws_timeout
+        self._ws_heartbeat = ws_heartbeat
 
     async def __aexit__(self, *_exc_info: object):
         """Close websocket connection."""
@@ -190,14 +194,16 @@ class FreeAtHomeApi:
         if self.ws_connected:
             return
 
-        _timeout = aiohttp.ClientTimeout(total=10)
+        _timeout = aiohttp.ClientTimeout(total=self._ws_timeout)
         if self._ws_session is None:
             self._ws_session = aiohttp.ClientSession(
                 auth=aiohttp.BasicAuth(self._username, self._password), timeout=_timeout
             )
 
         _LOGGER.info("Websocket attempting to connect %s", _url)
-        self._ws_response = await self._ws_session.ws_connect(url=_url)
+        self._ws_response = await self._ws_session.ws_connect(
+            url=_url, heartbeat=self._ws_heartbeat
+        )
         _LOGGER.info("Websocket connected %s", _url)
 
     async def ws_disconnect(self):
