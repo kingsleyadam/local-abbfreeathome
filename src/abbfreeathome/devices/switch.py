@@ -96,7 +96,7 @@ class Switch(Base):
     def update_device(self, datapoint_key: str, datapoint_value: str):
         """Update the switch state."""
         _LOGGER.info(
-            "%s received updata data: %s: %s",
+            "%s received updated data: %s: %s",
             self.channel_name,
             datapoint_key,
             datapoint_value,
