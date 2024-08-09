@@ -216,23 +216,25 @@ class FreeAtHomeApi:
     async def ws_listen(
         self, callback: Callable[[list], None], retry_interval: int = 5
     ):
-        """Listen for evens on the websocket. For known errors sleep for an interval and attempt again."""
+        """
+        Listen for evens on the websocket.
+
+        For any known usecases, apply a sleep interval and attempt to reconnect.
+        """
         while True:
             if not self._ws_response or not self.ws_connected:
                 try:
                     await self.ws_connect()
-                except aiohttp.WSServerHandshakeError as ex:
-                    _LOGGER.error(
-                        "Websocket Handshake Connection Error. %s", ex.message
-                    )
+                except aiohttp.WSServerHandshakeError:
+                    _LOGGER.exception("Websocket Handshake Connection Error.")
                     await asyncio.sleep(retry_interval)
                     continue
-                except aiohttp.ClientConnectionError as ex:
-                    _LOGGER.error("Websocket Client Connection Error. %s", ex)
+                except aiohttp.ClientConnectionError:
+                    _LOGGER.exception("Websocket Client Connection Error.")
                     await asyncio.sleep(retry_interval)
                     continue
-                except TimeoutError as ex:
-                    _LOGGER.error("Timeout waiting for host. %s", ex)
+                except TimeoutError:
+                    _LOGGER.exception("Timeout waiting for host.")
                     await asyncio.sleep(retry_interval)
                     continue
 
@@ -252,7 +254,6 @@ class FreeAtHomeApi:
                 aiohttp.WSMsgType.CLOSING,
             ):
                 _LOGGER.warning("Websocket Connection Closed.")
-                await asyncio.sleep(retry_interval)
 
 
 if __name__ == "__main__":

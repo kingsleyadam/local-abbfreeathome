@@ -1,7 +1,15 @@
+"""
+Defines the avaliable functions in the Free@Home System.
+
+See: https://developer.eu.mybuildings.abb.com/fah_local/reference/functionids
+"""
+
 import enum
 
 
 class FunctionID(enum.Enum):
+    """An Enum class for all Free@Home Functions."""
+
     FID_SWITCH_SENSOR = "0"
     FID_DIMMING_SENSOR = "1"
     FID_SHUTTER_SENSOR = "2"
@@ -443,6 +451,8 @@ class FunctionID(enum.Enum):
 
 def load_functions_from_json_file(file_path: str):
     """
+    Load functions from a json file.
+
     This will print the functions enum for easier ingestion into the FunctionId class
     It expects an array json file in the format of  Function ID (dec) and Name.
     Use this output to populate the function ids
@@ -451,12 +461,12 @@ def load_functions_from_json_file(file_path: str):
     """
     import json
 
-    with open(file_path, "r") as functions_file:
+    with open(file_path) as functions_file:
         _functions = json.load(functions_file)
 
     for function in _functions:
-        print(f'    {function.get("Name")} = \'{function.get("Function ID (dec)")}\'')
+        print(f'    {function.get("Name")} = \'{function.get("Function ID (dec)")}\'')  # noqa: T201
 
 
 if __name__ == "__main__":
-    pass
+    load_functions_from_json_file("<file_path>")

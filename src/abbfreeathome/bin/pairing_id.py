@@ -1,7 +1,15 @@
+"""
+Defines the avaliable paiarings in the Free@Home System.
+
+See: https://developer.eu.mybuildings.abb.com/fah_local/reference/pairingids
+"""
+
 import enum
 
 
 class PairingId(enum.Enum):
+    """An Enum class for all Free@Home Parings."""
+
     AL_INVALID = 0
     AL_SWITCH_ON_OFF = 1
     AL_TIMED_START_STOP = 2
@@ -334,6 +342,8 @@ class PairingId(enum.Enum):
 
 def load_pairings_from_json_file(file_path: str):
     """
+    Load parings from a json file.
+
     This will print the pairing id enum for easier ingestion into the PairingId class
     It expects an array json file in the format of  Pairing ID (dec) and Name.
     Use this output to populate the function ids
@@ -342,13 +352,13 @@ def load_pairings_from_json_file(file_path: str):
     """
     import json
 
-    with open(file_path, "r") as functions_file:
+    with open(file_path) as functions_file:
         _functions = json.load(functions_file)
 
     for function in _functions:
         if function.get("Name"):
-            print(f'    {function.get("Name")} = \'{function.get("Pairing ID__1")}\'')
+            print(f'    {function.get("Name")} = \'{function.get("Pairing ID__1")}\'')  # noqa: T201
 
 
 if __name__ == "__main__":
-    load_pairings_from_json_file("/Users/akingsley/Desktop/fah_pairings.json")
+    load_pairings_from_json_file("<file_path>")

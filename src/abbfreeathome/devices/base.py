@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Any
 
 from ..api import FreeAtHomeApi
+from ..exceptions import InvalidDeviceChannelPairingId
 
 
 class Base:
@@ -58,9 +59,7 @@ class Base:
             if _input.get("pairingID") == pairing_id:
                 return _input_id, _input.get("value")
 
-        raise ValueError(
-            f"Could not find input for device: {self.device_id}; channel: {self.channel_id}; pairing id: {pairing_id}"
-        )
+        raise InvalidDeviceChannelPairingId(self.device_id, self.channel_id, pairing_id)
 
     def get_output_by_pairing_id(self, pairing_id: int) -> tuple[str, Any]:
         """Get the channel output by pairing id."""
@@ -68,9 +67,7 @@ class Base:
             if _output.get("pairingID") == pairing_id:
                 return _output_id, _output.get("value")
 
-        raise ValueError(
-            f"Could not find output for device: {self.device_id}; channel: {self.channel_id}; pairing id: {pairing_id}"
-        )
+        raise InvalidDeviceChannelPairingId(self.device_id, self.channel_id, pairing_id)
 
     def update_device():
         """Update a devices state."""
