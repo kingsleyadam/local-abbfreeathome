@@ -22,7 +22,7 @@ Copy the username listed within that window (usually `installer`) to be used whe
 
 ## Device Implementation
 
-The current devices implement within the library are listed below.
+The current devices implemented within the library.
 
 | Name | Primary Functions |
 |--|--|
