@@ -32,7 +32,7 @@ class FreeAtHome:
         _devices = []
         for _device_key, _device in (await self.get_config()).get("devices").items():
             for _channel_key, _channel in _device.get("channels", {}).items():
-                if _channel.get("functionID") == function_id:
+                if _channel.get("functionID").lower() == function_id.lower():
                     _channel_name = _channel.get("displayName")
                     if _channel_name == "Ⓐ" or _channel_name is None:
                         _channel_name = _device.get("displayName")
