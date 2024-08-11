@@ -6,7 +6,6 @@ import inspect
 import logging
 from typing import Any
 from urllib.parse import urlparse
-
 import aiohttp
 
 from .exceptions import (
@@ -253,7 +252,7 @@ class FreeAtHomeApi:
                 aiohttp.WSMsgType.CLOSED,
                 aiohttp.WSMsgType.CLOSING,
             ):
-                _LOGGER.warning("Websocket Connection Closed.")
+                _LOGGER.warning('Websocket Connection Closed.')
 
 
 if __name__ == "__main__":
