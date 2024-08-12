@@ -167,7 +167,7 @@ There are a number of items that still need to be done.
 
 - ~~Implement format and linting checking in a GitHub actions pipeline using Ruff.~~
   - ~~https://docs.astral.sh/ruff/integrations/~~
-- Add GitHub actions for cutting a release and pushing to PyPi automatically.
+- ~~Add GitHub actions for cutting a release and pushing to PyPi automatically.~~
 - Implement additional devices as requested.
 - Create a issue creation template for easier triaging of any issues or new features.
 - Implement SSL on both HTTPS and WSS requests.
