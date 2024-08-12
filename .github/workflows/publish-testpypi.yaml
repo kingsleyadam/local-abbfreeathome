@@ -42,7 +42,7 @@ jobs:
 
     environment:
       name: testpypi
-      url: https://pypi.org/p/local-abbfreeathome
+      url: https://test.pypi.org/p/local-abbfreeathome
 
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
