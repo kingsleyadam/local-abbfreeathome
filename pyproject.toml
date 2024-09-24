@@ -134,6 +134,7 @@ ignore = [
   "COM812",
   "COM819",
   "ISC001",
+  "PT" # Use Python built-in unittest vs pytest
 ]
 
 [tool.ruff.lint.flake8-pytest-style]
