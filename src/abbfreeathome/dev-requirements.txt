@@ -1,1 +1,3 @@
 aiohttp
+pytest
+pytest-cov
