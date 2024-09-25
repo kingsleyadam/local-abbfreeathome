@@ -111,7 +111,3 @@ class Switch(Base):
 
         for callback in self._callbacks:
             callback()
-
-
-if __name__ == "__main__":
-    pass
