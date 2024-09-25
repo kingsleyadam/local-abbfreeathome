@@ -25,11 +25,11 @@ jobs:
           pip install -r src/abbfreeathome/dev-requirements.txt
 
       - name: Install abbfreeathome Python Package
-        run: <-
+        run: >-
           pip install .
           
       - name: Test with pytest
-        run: <-
+        run: >-
           pytest
             --doctest-modules
             --junitxml=junit/test-results.xml
