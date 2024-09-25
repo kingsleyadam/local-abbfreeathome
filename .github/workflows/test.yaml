@@ -25,9 +25,22 @@ jobs:
           pip install -r src/abbfreeathome/dev-requirements.txt
 
       - name: Install abbfreeathome Python Package
-        run: |
+        run: <-
           pip install .
           
       - name: Test with pytest
-        run: |
-          pytest --doctest-modules --junitxml=junit/test-results.xml --cov=abbfreeathome --cov-report=xml --cov-report=html   
+        run: <-
+          pytest
+            --doctest-modules
+            --junitxml=junit/test-results.xml
+            --cov=abbfreeathome
+            --cov-report=xml
+            --cov-report=html
+
+      - name: Upload pytest test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results
+          path: junit/test-results.xml
+        # Use always() to always run this step to publish test results when there are test failures
+        if: ${{ always() }}
