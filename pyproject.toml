@@ -135,9 +135,6 @@ ignore = [
   "ISC001"
 ]
 
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["SLF001"]
-
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false
 mark-parentheses = false
@@ -156,6 +153,7 @@ split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["D104"]
+"tests/*" = ["SLF001"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 25
