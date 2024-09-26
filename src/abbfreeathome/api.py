@@ -8,6 +8,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import aiohttp
+import aiohttp.client_exceptions
 
 from .exceptions import (
     ConnectionTimeoutException,
@@ -85,14 +86,14 @@ class FreeAtHomeApi:
     async def get_settings(self):
         """Get the settings from the api."""
         try:
-            async with aiohttp.ClientSession() as session:  # noqa: SIM117
-                async with session.get(f"{self._host}/settings.json") as resp:
-                    _response_status = resp.status
-                    _response_json = await resp.json()
-        except ValueError as e:
-            if str(e) == "URL should be absolute":
-                raise InvalidHostException(self._host) from e
-            raise
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(f"{self._host}/settings.json") as resp,
+            ):
+                _response_status = resp.status
+                _response_json = await resp.json()
+        except aiohttp.client_exceptions.InvalidUrlClientError as e:
+            raise InvalidHostException(self._host) from e
 
         assert _response_status == 200
         return _response_json
@@ -139,23 +140,22 @@ class FreeAtHomeApi:
         _full_path = f"/fhapi/{API_VERSION}{path}"
 
         try:
-            async with aiohttp.ClientSession(  # noqa: SIM117
-                base_url=self._host,
-                auth=aiohttp.BasicAuth(self._username, self._password),
-            ) as client:
-                async with client.request(
-                    method=method, url=_full_path, data=data
-                ) as resp:
-                    _response_status = resp.status
-                    _response = None
-                    if resp.content_type == "application/json":
-                        _response = await resp.json()
-                    elif resp.content_type == "text/plain":
-                        _response = await resp.text()
-        except ValueError as e:
-            if str(e) == "URL should be absolute":
-                raise InvalidHostException(self._host) from e
-            raise
+            async with (
+                aiohttp.ClientSession(
+                    auth=aiohttp.BasicAuth(self._username, self._password),
+                ) as client,
+                client.request(
+                    method=method, url=f"{self._host}{_full_path}", data=data
+                ) as resp,
+            ):
+                _response_status = resp.status
+                _response = None
+                if resp.content_type == "application/json":
+                    _response = await resp.json()
+                elif resp.content_type == "text/plain":
+                    _response = await resp.text()
+        except aiohttp.client_exceptions.InvalidUrlClientError as e:
+            raise InvalidHostException(self._host) from e
 
         # Check the status code and raise exception accordingly.
         if _response_status == 401:
@@ -215,46 +215,44 @@ class FreeAtHomeApi:
 
     async def ws_listen(
         self, callback: Callable[[list], None], retry_interval: int = 5
-    ):
-        """
-        Listen for evens on the websocket.
-
-        For any known usecases, apply a sleep interval and attempt to reconnect.
-        """
+    ):  # pragma: no cover
+        """Listen for events on the websocket."""
         while True:
-            if not self._ws_response or not self.ws_connected:
-                try:
-                    await self.ws_connect()
-                except aiohttp.WSServerHandshakeError:
-                    _LOGGER.exception("Websocket Handshake Connection Error.")
-                    await asyncio.sleep(retry_interval)
-                    continue
-                except aiohttp.ClientConnectionError:
-                    _LOGGER.exception("Websocket Client Connection Error.")
-                    await asyncio.sleep(retry_interval)
-                    continue
-                except TimeoutError:
-                    _LOGGER.exception("Timeout waiting for host.")
-                    await asyncio.sleep(retry_interval)
-                    continue
+            await self.ws_receive(callback, retry_interval)
 
-            data = await self._ws_response.receive()
-            if data.type == aiohttp.WSMsgType.TEXT:
-                _ws_data = data.json().get(self._sysap_uuid)
-                if inspect.iscoroutinefunction(callback):
-                    await callback(_ws_data)
-                else:
-                    callback(_ws_data)
-            elif data.type == aiohttp.WSMsgType.ERROR:
-                _LOGGER.error("Websocket Response Error. Data: %s", data)
+    async def ws_receive(
+        self, callback: Callable[[list], None], retry_interval: int = 5
+    ):
+        """Receive an event on the websocket."""
+        if not self._ws_response or not self.ws_connected:
+            try:
+                await self.ws_connect()
+            except aiohttp.WSServerHandshakeError:
+                _LOGGER.exception("Websocket Handshake Connection Error.")
                 await asyncio.sleep(retry_interval)
-            elif data.type in (
-                aiohttp.WSMsgType.CLOSE,
-                aiohttp.WSMsgType.CLOSED,
-                aiohttp.WSMsgType.CLOSING,
-            ):
-                _LOGGER.warning("Websocket Connection Closed.")
+                return
+            except aiohttp.ClientConnectionError:
+                _LOGGER.exception("Websocket Client Connection Error.")
+                await asyncio.sleep(retry_interval)
+                return
+            except TimeoutError:
+                _LOGGER.exception("Timeout waiting for host.")
+                await asyncio.sleep(retry_interval)
+                return
 
-
-if __name__ == "__main__":
-    pass
+        data = await self._ws_response.receive()
+        if data.type == aiohttp.WSMsgType.TEXT:
+            _ws_data = data.json().get(self._sysap_uuid)
+            if inspect.iscoroutinefunction(callback):
+                await callback(_ws_data)
+            else:
+                callback(_ws_data)
+        elif data.type == aiohttp.WSMsgType.ERROR:
+            _LOGGER.error("Websocket Response Error. Data: %s", data)
+            await asyncio.sleep(retry_interval)
+        elif data.type in (
+            aiohttp.WSMsgType.CLOSE,
+            aiohttp.WSMsgType.CLOSED,
+            aiohttp.WSMsgType.CLOSING,
+        ):
+            _LOGGER.warning("Websocket Connection Closed.")
