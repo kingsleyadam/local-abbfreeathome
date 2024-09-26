@@ -30,7 +30,6 @@ Issues = "https://github.com/kingsleyadam/local-abbfreeathome/issues"
 [tool.ruff]
 required-version = ">=0.5.0"
 
-
 [tool.ruff.lint]
 select = [
   "A001", # Variable {name} is shadowing a Python builtin
@@ -135,6 +134,9 @@ ignore = [
   "COM819",
   "ISC001"
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["SLF001"]
 
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false

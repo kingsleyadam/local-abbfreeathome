@@ -124,7 +124,3 @@ class FreeAtHome:
                 _device.update_device(_datapoint_key, _datapoint_value)
             except KeyError:
                 continue
-
-
-if __name__ == "__main__":
-    pass
