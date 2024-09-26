@@ -352,13 +352,11 @@ def load_pairings_from_json_file(file_path: str):
     """
     import json
 
-    with open(file_path) as functions_file:
-        _functions = json.load(functions_file)
+    with open(file_path) as pairings_file:
+        _pairings = json.load(pairings_file)
 
-    for function in _functions:
-        if function.get("Name"):
-            print(f'    {function.get("Name")} = \'{function.get("Pairing ID__1")}\'')  # noqa: T201
-
-
-if __name__ == "__main__":
-    load_pairings_from_json_file("<file_path>")
+    for pairing in _pairings:
+        if pairing.get("Name"):
+            print(  # noqa: T201
+                f'    {pairing.get("Name")} = {pairing.get("Pairing ID (dec)")}'
+            )
