@@ -30,7 +30,6 @@ Issues = "https://github.com/kingsleyadam/local-abbfreeathome/issues"
 [tool.ruff]
 required-version = ">=0.5.0"
 
-
 [tool.ruff.lint]
 select = [
   "A001", # Variable {name} is shadowing a Python builtin
@@ -154,6 +153,7 @@ split-on-trailing-comma = false
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["D104"]
+"tests/*" = ["SLF001"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 25

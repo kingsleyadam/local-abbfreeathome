@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock
 import pytest
 
 from abbfreeathome.api import FreeAtHomeApi
-from abbfreeathome.bin.pairing_id import PairingId
 from abbfreeathome.devices.switch import Switch
 
 
@@ -19,21 +18,22 @@ def mock_api():
 def switch(mock_api):
     """Set up the switch instance for testing the Switch device."""
     inputs = {
-        "input1": {"pairingID": 1, "value": "0"},
-        "input2": {"pairingID": 2, "value": "0"},
+        "idp0000": {"pairingID": 1, "value": "0"},
+        "idp0001": {"pairingID": 2, "value": "0"},
+        "idp0002": {"pairingID": 3, "value": "0"},
+        "idp0003": {"pairingID": 4, "value": "1"},
+        "idp0004": {"pairingID": 6, "value": "0"},
     }
     outputs = {
-        "output1": {
-            "pairingID": PairingId.AL_INFO_ON_OFF.value,
-            "value": "0",
-        }
+        "odp0000": {"pairingID": 256, "value": "0"},
+        "odp0001": {"pairingID": 257, "value": "0"},
     }
     parameters = {}
 
     return Switch(
-        device_id="device123",
+        device_id="ABB7F500E17A",
         device_name="Device Name",
-        channel_id="channel123",
+        channel_id="ch0003",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
@@ -53,10 +53,10 @@ async def test_turn_on(switch):
     """Test to turning on of the switch."""
     await switch.turn_on()
     assert switch.state is True
-    switch._api.set_datapoint.assert_called_with(  # noqa: SLF001
-        device_id="device123",
-        channel_id="channel123",
-        datapoint="input1",
+    switch._api.set_datapoint.assert_called_with(
+        device_id="ABB7F500E17A",
+        channel_id="ch0003",
+        datapoint="idp0000",
         value="1",
     )
 
@@ -66,10 +66,10 @@ async def test_turn_off(switch):
     """Test to turning off of the switch."""
     await switch.turn_off()
     assert switch.state is False
-    switch._api.set_datapoint.assert_called_with(  # noqa: SLF001
-        device_id="device123",
-        channel_id="channel123",
-        datapoint="input1",
+    switch._api.set_datapoint.assert_called_with(
+        device_id="ABB7F500E17A",
+        channel_id="ch0003",
+        datapoint="idp0000",
         value="0",
     )
 
@@ -77,22 +77,22 @@ async def test_turn_off(switch):
 @pytest.mark.asyncio
 async def test_refresh_state(switch):
     """Test refreshing the state of the switch."""
-    switch._api.get_datapoint.return_value = ["1"]  # noqa: SLF001
+    switch._api.get_datapoint.return_value = ["1"]
     await switch.refresh_state()
     assert switch.state is True
-    switch._api.get_datapoint.assert_called_with(  # noqa: SLF001
-        device_id="device123",
-        channel_id="channel123",
-        datapoint="output1",
+    switch._api.get_datapoint.assert_called_with(
+        device_id="ABB7F500E17A",
+        channel_id="ch0003",
+        datapoint="odp0000",
     )
 
 
 def test_update_device(switch):
     """Test updating the device state."""
-    switch.update_device("AL_INFO_ON_OFF/output1", "1")
+    switch.update_device("AL_INFO_ON_OFF/odp0000", "1")
     assert switch.state is True
 
-    switch.update_device("AL_INFO_ON_OFF/output1", "0")
+    switch.update_device("AL_INFO_ON_OFF/odp0000", "0")
     assert switch.state is False
 
-    switch.update_device("AL_INFO_ON_OFF/input1", "1")
+    switch.update_device("AL_INFO_ON_OFF/idp0000", "1")

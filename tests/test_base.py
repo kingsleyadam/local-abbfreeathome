@@ -19,19 +19,22 @@ def mock_api():
 def base_instance(mock_api):
     """Set up the base instance for testing the Base device."""
     inputs = {
-        "input1": {"pairingID": 1, "value": "input_value1"},
-        "input2": {"pairingID": 2, "value": "input_value2"},
+        "idp0000": {"pairingID": 1, "value": "0"},
+        "idp0001": {"pairingID": 2, "value": "0"},
+        "idp0002": {"pairingID": 3, "value": "0"},
+        "idp0003": {"pairingID": 4, "value": "1"},
+        "idp0004": {"pairingID": 6, "value": "0"},
     }
     outputs = {
-        "output1": {"pairingID": 1, "value": "output_value1"},
-        "output2": {"pairingID": 2, "value": "output_value2"},
+        "odp0000": {"pairingID": 256, "value": "0"},
+        "odp0001": {"pairingID": 257, "value": "0"},
     }
     parameters = {}
 
     return Base(
-        device_id="device123",
+        device_id="ABB7F500E17A",
         device_name="Device Name",
-        channel_id="channel123",
+        channel_id="ch0003",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
@@ -42,17 +45,17 @@ def base_instance(mock_api):
 
 def test_initialization(base_instance):
     """Test the initialization of the base class."""
-    assert base_instance.device_id == "device123"
+    assert base_instance.device_id == "ABB7F500E17A"
     assert base_instance.device_name == "Device Name"
-    assert base_instance.channel_id == "channel123"
+    assert base_instance.channel_id == "ch0003"
     assert base_instance.channel_name == "Channel Name"
 
 
 def test_get_input_by_pairing_id(base_instance):
     """Test the get_input_pairing_id function."""
     input_id, value = base_instance.get_input_by_pairing_id(1)
-    assert input_id == "input1"
-    assert value == "input_value1"
+    assert input_id == "idp0000"
+    assert value == "0"
 
     with pytest.raises(InvalidDeviceChannelPairingId):
         base_instance.get_input_by_pairing_id(99)
@@ -60,9 +63,9 @@ def test_get_input_by_pairing_id(base_instance):
 
 def test_get_output_by_pairing_id(base_instance):
     """Test the get_output_pairing_id function."""
-    output_id, value = base_instance.get_output_by_pairing_id(1)
-    assert output_id == "output1"
-    assert value == "output_value1"
+    output_id, value = base_instance.get_output_by_pairing_id(256)
+    assert output_id == "odp0000"
+    assert value == "0"
 
     with pytest.raises(InvalidDeviceChannelPairingId):
         base_instance.get_output_by_pairing_id(99)
@@ -72,7 +75,7 @@ def test_register_callback(base_instance):
     """Test register a callback."""
     callback = MagicMock()
     base_instance.register_callback(callback)
-    assert callback in base_instance._callbacks  # noqa: SLF001
+    assert callback in base_instance._callbacks
 
 
 def test_remove_callback(base_instance):
@@ -80,4 +83,4 @@ def test_remove_callback(base_instance):
     callback = MagicMock()
     base_instance.register_callback(callback)
     base_instance.remove_callback(callback)
-    assert callback not in base_instance._callbacks  # noqa: SLF001
+    assert callback not in base_instance._callbacks
