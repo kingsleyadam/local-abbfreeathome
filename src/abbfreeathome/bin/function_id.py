@@ -475,7 +475,3 @@ def load_functions_from_json_file(file_path: str):
         if _id == "":
             _id = "0"
         print(f'    {function.get("Name")} = \'{_id}\'')  # noqa: T201
-
-
-if __name__ == "__main__":
-    load_functions_from_json_file("<file_path>")
