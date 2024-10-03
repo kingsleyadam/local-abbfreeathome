@@ -6,7 +6,7 @@ import aiohttp
 from aioresponses import aioresponses
 import pytest
 
-from abbfreeathome.api import FreeAtHomeApi
+from abbfreeathome.api import FreeAtHomeApi, FreeAtHomeSettings
 from abbfreeathome.exceptions import (
     ConnectionTimeoutException,
     ForbiddenAuthException,
@@ -22,6 +22,81 @@ from abbfreeathome.exceptions import (
 def api():
     """Create FreeAtHome Api Fixture."""
     return FreeAtHomeApi(host="http://192.168.1.1", username="user", password="pass")
+
+
+@pytest.fixture
+def settings():
+    """Create FreeAtHome Api Fixture."""
+    return FreeAtHomeSettings(host="http://192.168.1.1")
+
+
+@pytest.mark.asyncio
+async def test_load_success(settings):
+    """Test loading settings into class."""
+    with aioresponses() as m:
+        m.get(
+            "http://192.168.1.1/settings.json",
+            payload={
+                "users": [{"name": "test_user"}],
+                "flags": {
+                    "version": "1.0",
+                    "serialNumber": "12345",
+                    "name": "SysAP",
+                },
+            },
+        )
+
+        await settings.load()
+        assert settings._settings == {
+            "users": [{"name": "test_user"}],
+            "flags": {"version": "1.0", "serialNumber": "12345", "name": "SysAP"},
+        }
+
+
+@pytest.mark.asyncio
+async def test_get_settings_invalid_host(settings):
+    """Test the get_settings function for invalid host."""
+    settings._host = "192.168.1.1"
+
+    with pytest.raises(InvalidHostException):
+        await settings.load()
+
+
+def test_get_user(settings):
+    """Test getting a user."""
+    settings._settings = {"users": [{"name": "test_user"}]}
+    assert settings.get_user("test_user") == {"name": "test_user"}
+
+
+def test_get_user_not_found(settings):
+    """Test getting a user not found."""
+    settings._settings = {"users": [{"name": "test_user"}]}
+    with pytest.raises(UserNotFoundException):
+        settings.get_user("non_existent_user")
+
+
+def test_get_flag(settings):
+    """Test getting a single flag."""
+    settings._settings = {"flags": {"version": "1.0"}}
+    assert settings.get_flag("version") == "1.0"
+
+
+def test_version_property(settings):
+    """Test getting verison."""
+    settings._settings = {"flags": {"version": "1.0"}}
+    assert settings.version == "1.0"
+
+
+def test_serial_number_property(settings):
+    """Test getting serial number."""
+    settings._settings = {"flags": {"serialNumber": "12345"}}
+    assert settings.serial_number == "12345"
+
+
+def test_name_property(settings):
+    """Test getting name."""
+    settings._settings = {"flags": {"name": "SysAP"}}
+    assert settings.name == "SysAP"
 
 
 @pytest.mark.asyncio
@@ -68,18 +143,6 @@ async def test_get_device(api):
         }
         device = await api.get_device("device_serial")
         assert device == "device_info"
-
-
-@pytest.mark.asyncio
-async def test_get_user(api):
-    """Test the get_user function."""
-    with patch.object(api, "get_settings", return_value=Mock()) as mock_get_settings:
-        mock_get_settings.return_value = {"users": [{"name": "test_user"}]}
-        user = await api.get_user("test_user")
-        assert user == {"name": "test_user"}
-
-        with pytest.raises(UserNotFoundException):
-            await api.get_user("not_a_real_user")
 
 
 @pytest.mark.asyncio
@@ -306,26 +369,6 @@ async def test_ws_receive_error(api):
             with patch("asyncio.sleep", new_callable=AsyncMock):
                 await api.ws_receive(async_callback)
                 async_callback.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_get_settings_success(api):
-    """Test the get_settings function."""
-    with aioresponses() as m:
-        m.get(f"{api._host}/settings.json", payload={"key": "value"}, status=200)
-
-        response = await api.get_settings()
-
-        assert response == {"key": "value"}
-
-
-@pytest.mark.asyncio
-async def test_get_settings_invalid_host(api):
-    """Test the get_settings function for invalid host."""
-    api._host = "192.168.1.1"
-
-    with pytest.raises(InvalidHostException):
-        await api.get_settings()
 
 
 @pytest.mark.asyncio
