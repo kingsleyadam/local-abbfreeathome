@@ -41,7 +41,7 @@ async def test_load_success(settings):
                 "flags": {
                     "version": "1.0",
                     "serialNumber": "12345",
-                    "name": "Test Device",
+                    "name": "SysAP",
                 },
             },
         )
@@ -49,7 +49,7 @@ async def test_load_success(settings):
         await settings.load()
         assert settings._settings == {
             "users": [{"name": "test_user"}],
-            "flags": {"version": "1.0", "serialNumber": "12345", "name": "Test Device"},
+            "flags": {"version": "1.0", "serialNumber": "12345", "name": "SysAP"},
         }
 
 
