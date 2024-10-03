@@ -25,6 +25,65 @@ API_VERSION = "v1"
 _LOGGER = logging.getLogger(__name__)
 
 
+class FreeAtHomeSettings:
+    """Provides a class for fetching the settings from a ABB free@home SysAP."""
+
+    _settings = None
+
+    def __init__(self, host: str) -> None:
+        """Initialize the FreeAtHomeSettings class."""
+        self._host = host
+
+    async def load(self):
+        """Load settings into the class object."""
+        try:
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(f"{self._host}/settings.json") as resp,
+            ):
+                _response_status = resp.status
+                _response_json = await resp.json()
+        except aiohttp.client_exceptions.InvalidUrlClientError as e:
+            raise InvalidHostException(self._host) from e
+
+        assert _response_status == 200
+
+        self._settings = _response_json
+
+    def get_user(self, name: str) -> str:
+        """Get a specific user from the api."""
+        _user = next(
+            iter(
+                user for user in self._settings.get("users") if user.get("name") == name
+            ),
+            None,
+        )
+
+        if _user is None:
+            raise UserNotFoundException(name)
+
+        return _user
+
+    def get_flag(self, name: str) -> Any:
+        """Get a flag from the settings response."""
+        return self._settings.get("flags").get(name)
+
+    @property
+    def version(self):
+        """Get the vesion running on SysAP."""
+        return self.get_flag("version")
+
+    @property
+    def serial_number(self):
+        """Get the vesion running on SysAP."""
+        return self.get_flag("serialNumber")
+
+    @property
+    def name(self):
+        """Get the vesion running on SysAP."""
+        return self.get_flag("name")
+
+
 class FreeAtHomeApi:
     """Provides a class for interacting with the ABB-free@home API."""
 
@@ -83,38 +142,9 @@ class FreeAtHomeApi:
 
         return _response.get(self._sysap_uuid).get("devices").get(device_serial)
 
-    async def get_settings(self):
-        """Get the settings from the api."""
-        try:
-            async with (
-                aiohttp.ClientSession() as session,
-                session.get(f"{self._host}/settings.json") as resp,
-            ):
-                _response_status = resp.status
-                _response_json = await resp.json()
-        except aiohttp.client_exceptions.InvalidUrlClientError as e:
-            raise InvalidHostException(self._host) from e
-
-        assert _response_status == 200
-        return _response_json
-
     async def get_sysap(self):
         """Get the sysap from the api."""
         return await self._request(path="/api/rest/sysap")
-
-    async def get_user(self, name: str) -> str:
-        """Get a specific user from the api."""
-        _settings = await self.get_settings()
-
-        _user = next(
-            iter(user for user in _settings.get("users") if user.get("name") == name),
-            None,
-        )
-
-        if _user is None:
-            raise UserNotFoundException(name)
-
-        return _user
 
     async def set_datapoint(
         self, device_id: str, channel_id: str, datapoint: str, value: str
