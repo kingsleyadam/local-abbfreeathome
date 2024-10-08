@@ -25,6 +25,8 @@ class Switch(Base):
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
         api: FreeAtHomeApi,
+        floor_name: str | None = None,
+        room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home Switch class."""
         super().__init__(
@@ -36,6 +38,8 @@ class Switch(Base):
             outputs,
             parameters,
             api,
+            floor_name,
+            room_name,
         )
 
         # Set the initial state of the switch based on output
