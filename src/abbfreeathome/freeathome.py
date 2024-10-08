@@ -113,6 +113,10 @@ class FreeAtHome:
                 )
             )
 
+    async def ws_close(self):
+        """Close the websocker connection."""
+        await self._api.ws_close()
+
     async def ws_listen(self):
         """Listen on the websocket for updates to devices."""
         await self._api.ws_listen(callback=self.update_device)
