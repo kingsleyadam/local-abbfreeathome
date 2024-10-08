@@ -244,14 +244,14 @@ class FreeAtHomeApi:
         await self._ws_response.close()
 
     async def ws_listen(
-        self, callback: Callable[[list], None], retry_interval: int = 5
+        self, callback: Callable[[list], None] | None = None, retry_interval: int = 5
     ):  # pragma: no cover
         """Listen for events on the websocket."""
         while True:
             await self.ws_receive(callback, retry_interval)
 
     async def ws_receive(
-        self, callback: Callable[[list], None], retry_interval: int = 5
+        self, callback: Callable[[list], None] | None = None, retry_interval: int = 5
     ):
         """Receive an event on the websocket."""
         if not self._ws_response or not self.ws_connected:
@@ -273,9 +273,9 @@ class FreeAtHomeApi:
         data = await self._ws_response.receive()
         if data.type == aiohttp.WSMsgType.TEXT:
             _ws_data = data.json().get(self._sysap_uuid)
-            if inspect.iscoroutinefunction(callback):
+            if callback and inspect.iscoroutinefunction(callback):
                 await callback(_ws_data)
-            else:
+            elif callback:
                 callback(_ws_data)
         elif data.type == aiohttp.WSMsgType.ERROR:
             _LOGGER.error("Websocket Response Error. Data: %s", data)

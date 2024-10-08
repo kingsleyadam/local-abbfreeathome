@@ -216,6 +216,14 @@ async def test_load_devices(freeathome):
 
 
 @pytest.mark.asyncio
+async def test_ws_close(freeathome, api_mock):
+    "Test the ws_close function."
+    api_mock.ws_close = AsyncMock()
+    await freeathome.ws_close()
+    api_mock.ws_close.assert_called_once_with()
+
+
+@pytest.mark.asyncio
 async def test_ws_listen(freeathome, api_mock):
     "Test the ws_listen function."
     api_mock.ws_listen = AsyncMock()
