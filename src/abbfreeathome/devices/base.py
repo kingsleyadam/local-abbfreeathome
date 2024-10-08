@@ -58,12 +58,12 @@ class Base:
         return self._channel_name
 
     @property
-    def floor_name(self) -> str:
+    def floor_name(self) -> str | None:
         """Get the floor name of the device."""
         return self._floor_name
 
     @property
-    def room_name(self) -> str:
+    def room_name(self) -> str | None:
         """Get the room name of the device."""
         return self._room_name
 

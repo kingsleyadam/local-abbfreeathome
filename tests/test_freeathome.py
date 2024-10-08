@@ -183,12 +183,30 @@ async def test_get_floor_name(freeathome):
     floor_name = await freeathome.get_floor_name("01")
     assert floor_name == "Ground Floor"
 
+    floor_name = await freeathome.get_floor_name(floor_serial_id=None)
+    assert floor_name is None
+
 
 @pytest.mark.asyncio
 async def test_get_room_name(freeathome):
     """Test the get_room_name function."""
     room_name = await freeathome.get_room_name("01", "01")
     assert room_name == "Living Room"
+
+    room_name = await freeathome.get_room_name(
+        floor_serial_id="01", room_serial_id=None
+    )
+    assert room_name is None
+
+    room_name = await freeathome.get_room_name(
+        floor_serial_id=None, room_serial_id=None
+    )
+    assert room_name is None
+
+    room_name = await freeathome.get_room_name(
+        floor_serial_id=None, room_serial_id="01"
+    )
+    assert room_name is None
 
 
 def test_get_device_by_class(freeathome):

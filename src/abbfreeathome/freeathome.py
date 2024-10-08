@@ -65,20 +65,25 @@ class FreeAtHome:
 
         return _devices
 
-    async def get_floor_name(self, floor_serial_id: str) -> str:
+    async def get_floor_name(self, floor_serial_id: str) -> str | None:
         """Get the floor name from the configuration."""
-        _default_room = {"name": "unknown", "rooms": {}}
-        return (await self.floors).get(floor_serial_id, _default_room).get("name")
+        _default_floor = {"name": None}
 
-    async def get_room_name(self, floor_serial_id: str, room_serial_id: str) -> str:
+        return (await self.floors).get(floor_serial_id, _default_floor).get("name")
+
+    async def get_room_name(
+        self, floor_serial_id: str, room_serial_id: str
+    ) -> str | None:
         """Get the room name from the configuration."""
-        _default_room = {"name": "unknown", "rooms": {}}
+        _default_floor = {"name": None, "rooms": {}}
+        _default_room = {"name": None}
+
         return (
             (await self.floors)
-            .get(floor_serial_id, _default_room)
+            .get(floor_serial_id, _default_floor)
             .get("rooms")
-            .get(room_serial_id)
-            .get("name", "unknown")
+            .get(room_serial_id, _default_room)
+            .get("name")
         )
 
     def get_device_by_class(self, device_class: Base) -> list[Base]:
