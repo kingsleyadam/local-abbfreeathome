@@ -22,6 +22,8 @@ class Base:
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
         api: FreeAtHomeApi,
+        floor_name: str | None = None,
+        room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home Base class."""
         self._device_id = device_id
@@ -32,6 +34,8 @@ class Base:
         self._inputs = inputs
         self._outputs = outputs
         self._parameters = parameters
+        self._floor_name = floor_name
+        self._room_name = room_name
 
     @property
     def device_id(self) -> str:
@@ -52,6 +56,16 @@ class Base:
     def channel_name(self) -> str:
         """Get the name of the channel."""
         return self._channel_name
+
+    @property
+    def floor_name(self) -> str:
+        """Get the floor name of the device."""
+        return self._floor_name
+
+    @property
+    def room_name(self) -> str:
+        """Get the room name of the device."""
+        return self._room_name
 
     def get_input_by_pairing_id(self, pairing_id: int) -> tuple[str, Any]:
         """Get the channel input by pairing id."""

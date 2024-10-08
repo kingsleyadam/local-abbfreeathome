@@ -108,6 +108,8 @@ class FreeAtHome:
                     outputs=_device.get("outputs"),
                     parameters=_device.get("parameters"),
                     api=self._api,
+                    floor_name=_device.get("floor_name"),
+                    room_name=_device.get("room_name"),
                 )
             )
 

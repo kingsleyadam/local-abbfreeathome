@@ -211,6 +211,8 @@ async def test_load_devices(freeathome):
     assert isinstance(freeathome._devices[device_key], Switch)
     assert freeathome._devices[device_key].device_name == "Study Area Rocker"
     assert freeathome._devices[device_key].channel_name == "Study Area Light"
+    assert freeathome._devices[device_key].floor_name == "Ground Floor"
+    assert freeathome._devices[device_key].room_name == "Living Room"
 
 
 @pytest.mark.asyncio

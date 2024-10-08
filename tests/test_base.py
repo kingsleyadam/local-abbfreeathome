@@ -40,6 +40,8 @@ def base_instance(mock_api):
         outputs=outputs,
         parameters=parameters,
         api=mock_api,
+        floor_name="Ground Floor",
+        room_name="Study",
     )
 
 
@@ -49,6 +51,8 @@ def test_initialization(base_instance):
     assert base_instance.device_name == "Device Name"
     assert base_instance.channel_id == "ch0003"
     assert base_instance.channel_name == "Channel Name"
+    assert base_instance.floor_name == "Ground Floor"
+    assert base_instance.room_name == "Study"
 
 
 def test_get_input_by_pairing_id(base_instance):
