@@ -42,6 +42,7 @@ async def test_load_success(settings):
                     "version": "1.0",
                     "serialNumber": "12345",
                     "name": "SysAP",
+                    "hardwareVersion": "54321",
                 },
             },
         )
@@ -49,7 +50,12 @@ async def test_load_success(settings):
         await settings.load()
         assert settings._settings == {
             "users": [{"name": "test_user"}],
-            "flags": {"version": "1.0", "serialNumber": "12345", "name": "SysAP"},
+            "flags": {
+                "version": "1.0",
+                "serialNumber": "12345",
+                "name": "SysAP",
+                "hardwareVersion": "54321",
+            },
         }
 
 
@@ -79,6 +85,12 @@ def test_get_flag(settings):
     """Test getting a single flag."""
     settings._settings = {"flags": {"version": "1.0"}}
     assert settings.get_flag("version") == "1.0"
+
+
+def test_hardware_version_property(settings):
+    """Test getting verison."""
+    settings._settings = {"flags": {"hardwareVersion": "54321"}}
+    assert settings.hardware_version == "54321"
 
 
 def test_version_property(settings):

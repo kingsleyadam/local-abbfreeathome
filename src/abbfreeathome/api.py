@@ -69,6 +69,11 @@ class FreeAtHomeSettings:
         return self._settings.get("flags").get(name)
 
     @property
+    def hardware_version(self):
+        """Get the hardware vesion running on SysAP."""
+        return self.get_flag("hardwareVersion")
+
+    @property
     def version(self):
         """Get the vesion running on SysAP."""
         return self.get_flag("version")
