@@ -27,12 +27,12 @@ class FreeAtHome:
 
         return self._config
 
-    async def get_devices_by_function(self, function_id: str) -> list[dict]:
+    async def get_devices_by_function(self, function_id: int) -> list[dict]:
         """Get the list of devices by function."""
         _devices = []
         for _device_key, _device in (await self.get_config()).get("devices").items():
             for _channel_key, _channel in _device.get("channels", {}).items():
-                if _channel.get("functionID").lower() == function_id.lower():
+                if int(_channel.get("functionID"), 16) == function_id:
                     _channel_name = _channel.get("displayName")
                     if _channel_name == "Ⓐ" or _channel_name is None:
                         _channel_name = _device.get("displayName")
@@ -43,7 +43,7 @@ class FreeAtHome:
                             "device_name": _device.get("displayName"),
                             "channel_id": _channel_key,
                             "channel_name": _channel_name,
-                            "function_id": _channel.get("functionID"),
+                            "function_id": int(_channel.get("functionID"), 16),
                             "floor_name": await self.get_floor_name(
                                 floor_serial_id=_channel.get(
                                     "floor", _device.get("floor")

@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from abbfreeathome.api import FreeAtHomeApi
+from abbfreeathome.bin.function_id import FunctionID
 from abbfreeathome.devices.switch import Switch
 from abbfreeathome.freeathome import FreeAtHome
 
@@ -169,7 +170,9 @@ async def test_get_config(freeathome, api_mock):
 @pytest.mark.asyncio
 async def test_get_devices_by_function(freeathome):
     """Test the get_devices_by_fuction function."""
-    devices = await freeathome.get_devices_by_function("7")
+    devices = await freeathome.get_devices_by_function(
+        FunctionID.FID_SWITCH_ACTUATOR.value
+    )
     assert len(devices) == 2
     assert devices[0]["device_name"] == "Study Area Rocker"
     assert devices[0]["channel_name"] == "Study Area Light"
