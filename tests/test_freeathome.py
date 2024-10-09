@@ -148,7 +148,7 @@ def freeathome(api_mock):
 @pytest.mark.asyncio
 async def test_floors(freeathome):
     """Test the floors property."""
-    floors = await freeathome.floors
+    floors = await freeathome.get_floors()
     assert floors == {
         "01": {
             "name": "Ground Floor",

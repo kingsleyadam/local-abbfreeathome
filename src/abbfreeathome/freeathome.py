@@ -15,11 +15,6 @@ class FreeAtHome:
         """Initialize the FreeAtHome class."""
         self._api = api
 
-    @property
-    async def floors(self) -> dict:
-        """Get the floors from the configuration."""
-        return (await self.get_config()).get("floorplan").get("floors")
-
     async def get_config(self, refresh: bool = False) -> dict:
         """Get the Free@Home Configuration."""
         if self._config is None or refresh:
@@ -65,11 +60,17 @@ class FreeAtHome:
 
         return _devices
 
+    async def get_floors(self) -> dict:
+        """Get the floors from the configuration."""
+        return (await self.get_config()).get("floorplan").get("floors")
+
     async def get_floor_name(self, floor_serial_id: str) -> str | None:
         """Get the floor name from the configuration."""
         _default_floor = {"name": None}
 
-        return (await self.floors).get(floor_serial_id, _default_floor).get("name")
+        return (
+            (await self.get_floors()).get(floor_serial_id, _default_floor).get("name")
+        )
 
     async def get_room_name(
         self, floor_serial_id: str, room_serial_id: str
@@ -79,7 +80,7 @@ class FreeAtHome:
         _default_room = {"name": None}
 
         return (
-            (await self.floors)
+            (await self.get_floors())
             .get(floor_serial_id, _default_floor)
             .get("rooms")
             .get(room_serial_id, _default_room)
