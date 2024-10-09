@@ -9,7 +9,7 @@ import enum
 
 
 class FunctionID(enum.Enum):
-    """An Enum class for all Free@Home Functions."""
+    """An Enum class for all Free@Home functions."""
 
     FID_SWITCH_SENSOR = 0
     FID_DIMMING_SENSOR = 1

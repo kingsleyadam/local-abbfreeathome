@@ -9,7 +9,7 @@ import enum  # pragma: no cover
 
 
 class ParameterId(enum.Enum):  # pragma: no cover
-    """An Enum class for all Free@Home Parings."""
+    """An Enum class for all Free@Home parameters."""
 
     PID_LED_DAY_BRIGHTNESS = 1
     PID_LED_NIGHT_BRIGHTNESS = 2

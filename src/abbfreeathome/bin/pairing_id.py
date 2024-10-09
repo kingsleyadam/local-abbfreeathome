@@ -9,7 +9,7 @@ import enum
 
 
 class PairingId(enum.Enum):
-    """An Enum class for all Free@Home Parings."""
+    """An Enum class for all Free@Home pairings."""
 
     AL_SWITCH_ON_OFF = 1
     AL_TIMED_START_STOP = 2
