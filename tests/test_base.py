@@ -7,6 +7,7 @@ import pytest
 from abbfreeathome.api import FreeAtHomeApi
 from abbfreeathome.devices.base import Base
 from abbfreeathome.exceptions import InvalidDeviceChannelPairingId
+from abbfreeathome.bin.parameter_id import ParameterId
 
 
 @pytest.fixture

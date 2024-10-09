@@ -5,10 +5,10 @@ See: https://github.com/Busch-Jaeger/node-free-at-home/blob/master/src/parameter
 Converted With: https://github.com/nitzano/enum-converter?tab=readme-ov-file
 """
 
-import enum
+import enum  # pragma: no cover
 
 
-class ParameterId(enum.Enum):
+class ParameterId(enum.Enum):  # pragma: no cover
     """An Enum class for all Free@Home Parings."""
 
     PID_LED_DAY_BRIGHTNESS = 1
