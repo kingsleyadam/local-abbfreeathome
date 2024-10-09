@@ -2,7 +2,7 @@
 
 from .api import FreeAtHomeApi
 from .bin.function_id import FunctionID
-from .devices.switch import Base, Switch
+from .devices.switch_actuator import Base, SwitchActuator
 
 
 class FreeAtHome:
@@ -105,7 +105,7 @@ class FreeAtHome:
         )
         for _device in _switch_devices:
             self._devices[f"{_device.get("device_id")}/{_device.get("channel_id")}"] = (
-                Switch(
+                SwitchActuator(
                     device_id=_device.get("device_id"),
                     device_name=_device.get("device_name"),
                     channel_id=_device.get("channel_id"),
