@@ -1,4 +1,4 @@
-"""Free@Home Switch Class."""
+"""Free@Home SwitchActuator Class."""
 
 import logging
 from typing import Any
@@ -10,8 +10,8 @@ from .base import Base
 _LOGGER = logging.getLogger(__name__)
 
 
-class Switch(Base):
-    """Free@Home Switch Class."""
+class SwitchActuator(Base):
+    """Free@Home SwitchActuator Class."""
 
     _state = None
 
@@ -28,7 +28,7 @@ class Switch(Base):
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
-        """Initialize the Free@Home Switch class."""
+        """Initialize the Free@Home SwitchActuator class."""
         super().__init__(
             device_id,
             device_name,

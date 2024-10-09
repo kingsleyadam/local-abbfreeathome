@@ -26,7 +26,7 @@ The current devices implemented within the library.
 
 | Name | Primary Functions |
 |--|--|
-| Switch | `turn_on()`, `turn_off()` |
+| SwitchActuator | `turn_on()`, `turn_off()` |
 
 ## Installation
 
@@ -85,7 +85,7 @@ This example will load the `FreeAtHome` class with all potential devices from th
 ```python
 from abbfreeathome.api import FreeAtHomeApi
 from abbfreeathome.freeathome import FreeAtHome
-from abbfreeathome.devices.switch import Switch
+from abbfreeathome.devices.switch_actuator import SwitchActuator
 import logging
 import asyncio
 
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     asyncio.run(_free_at_home.load_devices())
 
     # Fetch just the list of switches
-    _switches = _free_at_home.get_device_by_class(device_class=Switch)
+    _switches = _free_at_home.get_device_by_class(device_class=SwitchActuator)
 
     # Loop through each switch showing the name and whether is On/Off
     for _switch in _switches:
@@ -119,7 +119,7 @@ In addition, the library "devices" can register and run any callbacks when the s
 ```python
 from abbfreeathome.api import FreeAtHomeApi
 from abbfreeathome.freeathome import FreeAtHome
-from abbfreeathome.devices.switch import Switch
+from abbfreeathome.devices.switch_actuator import SwitchActuator
 import logging
 import asyncio
 
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     asyncio.run(_free_at_home.load_devices())
 
     # Set the callback function on each switch.
-    for _switch in _free_at_home.get_device_by_class(device_class=Switch):
+    for _switch in _free_at_home.get_device_by_class(device_class=SwitchActuator):
         _switch.register_callback(my_very_own_callback)
 
     # Start listenting

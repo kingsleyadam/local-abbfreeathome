@@ -6,7 +6,7 @@ import pytest
 
 from abbfreeathome.api import FreeAtHomeApi
 from abbfreeathome.bin.function_id import FunctionID
-from abbfreeathome.devices.switch import Switch
+from abbfreeathome.devices.switch_actuator import SwitchActuator
 from abbfreeathome.freeathome import FreeAtHome
 
 
@@ -214,9 +214,9 @@ async def test_get_room_name(freeathome):
 
 def test_get_device_by_class(freeathome):
     """Test the get_device_class function."""
-    device = MagicMock(spec=Switch)
+    device = MagicMock(spec=SwitchActuator)
     freeathome._devices = {"device1": device}
-    devices = freeathome.get_device_by_class(Switch)
+    devices = freeathome.get_device_by_class(SwitchActuator)
     assert devices == [device]
 
 
@@ -229,7 +229,7 @@ async def test_load_devices(freeathome):
     assert len(freeathome._devices) == 2
     device_key = "ABB7F500E17A/ch0003"
     assert device_key in freeathome._devices
-    assert isinstance(freeathome._devices[device_key], Switch)
+    assert isinstance(freeathome._devices[device_key], SwitchActuator)
     assert freeathome._devices[device_key].device_name == "Study Area Rocker"
     assert freeathome._devices[device_key].channel_name == "Study Area Light"
     assert freeathome._devices[device_key].floor_name == "Ground Floor"
