@@ -2,6 +2,7 @@
 
 from .api import FreeAtHomeApi
 from .bin.function_id import FunctionID
+from .bin.interface import Interface
 from .devices.switch_actuator import Base, SwitchActuator
 
 
@@ -11,9 +12,12 @@ class FreeAtHome:
     _config = None
     _devices = {}
 
-    def __init__(self, api: FreeAtHomeApi) -> None:
+    def __init__(
+        self, api: FreeAtHomeApi, interfaces: list[Interface] | None = None
+    ) -> None:
         """Initialize the FreeAtHome class."""
         self._api = api
+        self._interfaces = interfaces
 
     async def get_config(self, refresh: bool = False) -> dict:
         """Get the Free@Home Configuration."""
@@ -22,12 +26,18 @@ class FreeAtHome:
 
         return self._config
 
-    async def get_devices_by_function(self, function_id: int) -> list[dict]:
+    async def get_devices_by_function(self, function_id: FunctionID) -> list[dict]:
         """Get the list of devices by function."""
         _devices = []
         for _device_key, _device in (await self.get_config()).get("devices").items():
+            # Filter by interface if provided
+            if self._interfaces and _device.get("interface") not in [
+                interface.value for interface in self._interfaces
+            ]:
+                continue
+
             for _channel_key, _channel in _device.get("channels", {}).items():
-                if int(_channel.get("functionID"), 16) == function_id:
+                if int(_channel.get("functionID"), 16) == function_id.value:
                     _channel_name = _channel.get("displayName")
                     if _channel_name == "Ⓐ" or _channel_name is None:
                         _channel_name = _device.get("displayName")
@@ -90,9 +100,9 @@ class FreeAtHome:
     def get_device_by_class(self, device_class: Base) -> list[Base]:
         """Get the list of devices by class."""
         return [
-            _device_value
-            for _device_key, _device_value in self._devices.items()
-            if isinstance(_device_value, device_class)
+            _device
+            for _device in self._devices.values()
+            if isinstance(_device, device_class)
         ]
 
     async def load_devices(self):
@@ -101,7 +111,7 @@ class FreeAtHome:
 
     async def _load_switches(self):
         _switch_devices = await self.get_devices_by_function(
-            function_id=FunctionID.FID_SWITCH_ACTUATOR.value
+            function_id=FunctionID.FID_SWITCH_ACTUATOR
         )
         for _device in _switch_devices:
             self._devices[f"{_device.get("device_id")}/{_device.get("channel_id")}"] = (

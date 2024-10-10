@@ -6,6 +6,7 @@ import pytest
 
 from abbfreeathome.api import FreeAtHomeApi
 from abbfreeathome.bin.function_id import FunctionID
+from abbfreeathome.bin.interface import Interface
 from abbfreeathome.devices.switch_actuator import SwitchActuator
 from abbfreeathome.freeathome import FreeAtHome
 
@@ -135,6 +136,29 @@ def api_mock():
                 },
                 "parameters": {"par00ed": "1"},
             },
+            "BEED509C0001": {
+                "floor": "01",
+                "room": "01",
+                "interface": "hue",
+                "deviceId": "10C0",
+                "displayName": "LED Strip",
+                "unresponsive": False,
+                "unresponsiveCounter": 0,
+                "defect": False,
+                "channels": {
+                    "ch0000": {
+                        "floor": "02",
+                        "room": "06",
+                        "displayName": "TV LED Strip Top",
+                        "selectedIcon": "6a",
+                        "functionID": "2e",
+                        "inputs": {},
+                        "outputs": {},
+                        "parameters": {},
+                    }
+                },
+                "parameters": {},
+            },
         },
     }
     return api
@@ -143,7 +167,7 @@ def api_mock():
 @pytest.fixture
 def freeathome(api_mock):
     """Create the FreeAtHome fixture."""
-    return FreeAtHome(api=api_mock)
+    return FreeAtHome(api=api_mock, interfaces=[Interface.WIRED_BUS])
 
 
 @pytest.mark.asyncio
@@ -170,9 +194,7 @@ async def test_get_config(freeathome, api_mock):
 @pytest.mark.asyncio
 async def test_get_devices_by_function(freeathome):
     """Test the get_devices_by_fuction function."""
-    devices = await freeathome.get_devices_by_function(
-        FunctionID.FID_SWITCH_ACTUATOR.value
-    )
+    devices = await freeathome.get_devices_by_function(FunctionID.FID_SWITCH_ACTUATOR)
     assert len(devices) == 2
     assert devices[0]["device_name"] == "Study Area Rocker"
     assert devices[0]["channel_name"] == "Study Area Light"
