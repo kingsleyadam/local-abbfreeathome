@@ -37,7 +37,10 @@ class FreeAtHome:
                 continue
 
             for _channel_key, _channel in _device.get("channels", {}).items():
-                if int(_channel.get("functionID"), 16) == function_id.value:
+                if (
+                    _channel.get("functionID")
+                    and int(_channel.get("functionID"), 16) == function_id.value
+                ):
                     _channel_name = _channel.get("displayName")
                     if _channel_name == "Ⓐ" or _channel_name is None:
                         _channel_name = _device.get("displayName")
