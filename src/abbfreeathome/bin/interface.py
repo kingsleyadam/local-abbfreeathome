@@ -13,6 +13,7 @@ class Interface(enum.Enum):
 
     UNDEFINED = None
     WIRED_BUS = "TP"
+    WIRELESS_RF = "RF"
     HUE = "hue"
     SONOS = "sonos"
     VIRTUAL_DEVICE = "vdev:installer@busch-jaeger.de"
