@@ -5,8 +5,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from abbfreeathome.api import FreeAtHomeApi
+from abbfreeathome.bin.pairing import Pairing
 from abbfreeathome.devices.base import Base
-from abbfreeathome.exceptions import InvalidDeviceChannelPairingId
+from abbfreeathome.exceptions import InvalidDeviceChannelPairing
 
 
 @pytest.fixture
@@ -55,24 +56,24 @@ def test_initialization(base_instance):
     assert base_instance.room_name == "Study"
 
 
-def test_get_input_by_pairing_id(base_instance):
-    """Test the get_input_pairing_id function."""
-    input_id, value = base_instance.get_input_by_pairing_id(1)
+def test_get_input_by_pairing(base_instance):
+    """Test the get_input_pairing function."""
+    input_id, value = base_instance.get_input_by_pairing(Pairing.AL_SWITCH_ON_OFF)
     assert input_id == "idp0000"
     assert value == "0"
 
-    with pytest.raises(InvalidDeviceChannelPairingId):
-        base_instance.get_input_by_pairing_id(99)
+    with pytest.raises(InvalidDeviceChannelPairing):
+        base_instance.get_input_by_pairing(Pairing.AL_HSV)
 
 
-def test_get_output_by_pairing_id(base_instance):
-    """Test the get_output_pairing_id function."""
-    output_id, value = base_instance.get_output_by_pairing_id(256)
+def test_get_output_by_pairing(base_instance):
+    """Test the get_output_pairing function."""
+    output_id, value = base_instance.get_output_by_pairing(Pairing.AL_INFO_ON_OFF)
     assert output_id == "odp0000"
     assert value == "0"
 
-    with pytest.raises(InvalidDeviceChannelPairingId):
-        base_instance.get_output_by_pairing_id(99)
+    with pytest.raises(InvalidDeviceChannelPairing):
+        base_instance.get_output_by_pairing(Pairing.AL_HSV)
 
 
 def test_register_callback(base_instance):

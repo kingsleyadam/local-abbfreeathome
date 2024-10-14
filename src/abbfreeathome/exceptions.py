@@ -52,14 +52,14 @@ class InvalidApiResponseException(FreeAtHomeException):
         super().__init__(self.message)
 
 
-class InvalidDeviceChannelPairingId(FreeAtHomeException):
+class InvalidDeviceChannelPairing(FreeAtHomeException):
     """Raise an exception for an invalid pairing id."""
 
-    def __init__(self, device_id: str, channel_id: str, pairing_id: int) -> None:
-        """Initialze the InvalidDeviceChannelPairingId class."""
+    def __init__(self, device_id: str, channel_id: str, pairing_value: int) -> None:
+        """Initialze the InvalidDeviceChannelPairing class."""
         self.message = (
             f"Could not find paring id for "
-            f"device: {device_id}; channel: {channel_id}; pairing id: {pairing_id}"
+            f"device: {device_id}; channel: {channel_id}; pairing id: {pairing_value}"
         )
         super().__init__(self.message)
 

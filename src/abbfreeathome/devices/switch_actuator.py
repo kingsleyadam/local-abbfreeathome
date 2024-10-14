@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from ..api import FreeAtHomeApi
-from ..bin.pairing_id import PairingId
+from ..bin.pairing import Pairing
 from .base import Base
 
 _LOGGER = logging.getLogger(__name__)
@@ -62,8 +62,8 @@ class SwitchActuator(Base):
 
     async def refresh_state(self):
         """Refresh the state of the switch from the api."""
-        _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
-            pairing_id=PairingId.AL_INFO_ON_OFF.value
+        _switch_output_id, _switch_output_value = self.get_output_by_pairing(
+            pairing=Pairing.AL_INFO_ON_OFF
         )
 
         _datapoint = (
@@ -81,14 +81,14 @@ class SwitchActuator(Base):
 
     def _refresh_state_from_outputs(self):
         """Refresh the state of the switch from the _outputs."""
-        _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
-            pairing_id=PairingId.AL_INFO_ON_OFF.value
+        _switch_output_id, _switch_output_value = self.get_output_by_pairing(
+            pairing=Pairing.AL_INFO_ON_OFF
         )
         self._state = _switch_output_value == "1"
 
     async def _set_switching_datapoint(self, value: str):
-        _switch_input_id, _switch_input_value = self.get_input_by_pairing_id(
-            pairing_id=PairingId.AL_SWITCH_ON_OFF.value
+        _switch_input_id, _switch_input_value = self.get_input_by_pairing(
+            pairing=Pairing.AL_SWITCH_ON_OFF
         )
         return await self._api.set_datapoint(
             device_id=self.device_id,

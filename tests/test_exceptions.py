@@ -7,7 +7,7 @@ from abbfreeathome.exceptions import (
     ForbiddenAuthException,
     InvalidApiResponseException,
     InvalidCredentialsException,
-    InvalidDeviceChannelPairingId,
+    InvalidDeviceChannelPairing,
     InvalidHostException,
     SetDatapointFailureException,
     UserNotFoundException,
@@ -54,10 +54,10 @@ def test_invalid_api_response_exception():
     assert str(excinfo.value) == "Invalid api response, status code: 404"
 
 
-def test_invalid_device_channel_pairing_id():
+def test_invalid_device_channel_pairing():
     """Test invalid device channel exception."""
-    with pytest.raises(InvalidDeviceChannelPairingId) as excinfo:
-        raise InvalidDeviceChannelPairingId("device1", "channel1", 123)
+    with pytest.raises(InvalidDeviceChannelPairing) as excinfo:
+        raise InvalidDeviceChannelPairing("device1", "channel1", 123)
     assert str(excinfo.value) == (
         "Could not find paring id for "
         "device: device1; channel: channel1; pairing id: 123"

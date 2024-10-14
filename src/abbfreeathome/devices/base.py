@@ -4,7 +4,8 @@ from collections.abc import Callable
 from typing import Any
 
 from ..api import FreeAtHomeApi
-from ..exceptions import InvalidDeviceChannelPairingId
+from ..bin.pairing import Pairing
+from ..exceptions import InvalidDeviceChannelPairing
 
 
 class Base:
@@ -67,21 +68,25 @@ class Base:
         """Get the room name of the device."""
         return self._room_name
 
-    def get_input_by_pairing_id(self, pairing_id: int) -> tuple[str, Any]:
+    def get_input_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
         """Get the channel input by pairing id."""
         for _input_id, _input in self._inputs.items():
-            if _input.get("pairingID") == pairing_id:
+            if _input.get("pairingID") == pairing.value:
                 return _input_id, _input.get("value")
 
-        raise InvalidDeviceChannelPairingId(self.device_id, self.channel_id, pairing_id)
+        raise InvalidDeviceChannelPairing(
+            self.device_id, self.channel_id, pairing.value
+        )
 
-    def get_output_by_pairing_id(self, pairing_id: int) -> tuple[str, Any]:
+    def get_output_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
         """Get the channel output by pairing id."""
         for _output_id, _output in self._outputs.items():
-            if _output.get("pairingID") == pairing_id:
+            if _output.get("pairingID") == pairing.value:
                 return _output_id, _output.get("value")
 
-        raise InvalidDeviceChannelPairingId(self.device_id, self.channel_id, pairing_id)
+        raise InvalidDeviceChannelPairing(
+            self.device_id, self.channel_id, pairing.value
+        )
 
     def update_device():
         """Update a devices state."""

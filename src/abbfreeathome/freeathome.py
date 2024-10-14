@@ -1,7 +1,7 @@
 """ABB-Free@Home wrapper for interacting with the ABB-free@home API."""
 
 from .api import FreeAtHomeApi
-from .bin.function_id import FunctionID
+from .bin.function import Function
 from .bin.interface import Interface
 from .devices.switch_actuator import Base, SwitchActuator
 
@@ -9,24 +9,24 @@ from .devices.switch_actuator import Base, SwitchActuator
 class FreeAtHome:
     """Provides a class for interacting with the ABB-free@home API."""
 
-    _config = None
-    _devices = {}
+    _config: dict | None = None
+    _devices: dict = {}
 
     def __init__(
         self, api: FreeAtHomeApi, interfaces: list[Interface] | None = None
     ) -> None:
         """Initialize the FreeAtHome class."""
-        self._api = api
-        self._interfaces = interfaces
+        self.api: FreeAtHomeApi = api
+        self._interfaces: list[Interface] = interfaces
 
     async def get_config(self, refresh: bool = False) -> dict:
         """Get the Free@Home Configuration."""
         if self._config is None or refresh:
-            self._config = await self._api.get_configuration()
+            self._config = await self.api.get_configuration()
 
         return self._config
 
-    async def get_devices_by_function(self, function_id: FunctionID) -> list[dict]:
+    async def get_devices_by_function(self, function: Function) -> list[dict]:
         """Get the list of devices by function."""
         _devices = []
         for _device_key, _device in (await self.get_config()).get("devices").items():
@@ -39,7 +39,7 @@ class FreeAtHome:
             for _channel_key, _channel in _device.get("channels", {}).items():
                 if (
                     _channel.get("functionID")
-                    and int(_channel.get("functionID"), 16) == function_id.value
+                    and int(_channel.get("functionID"), 16) == function.value
                 ):
                     _channel_name = _channel.get("displayName")
                     if _channel_name == "Ⓐ" or _channel_name is None:
@@ -113,13 +113,11 @@ class FreeAtHome:
 
         # SwitchActuator
         await self._load_devices_by_function(
-            FunctionID.FID_SWITCH_ACTUATOR, SwitchActuator
+            Function.FID_SWITCH_ACTUATOR, SwitchActuator
         )
 
-    async def _load_devices_by_function(
-        self, function_id: FunctionID, device_class: Base
-    ):
-        _devices = await self.get_devices_by_function(function_id=function_id)
+    async def _load_devices_by_function(self, function: Function, device_class: Base):
+        _devices = await self.get_devices_by_function(function)
         for _device in _devices:
             self._devices[f"{_device.get('device_id')}/{_device.get('channel_id')}"] = (
                 device_class(
@@ -130,7 +128,7 @@ class FreeAtHome:
                     inputs=_device.get("inputs"),
                     outputs=_device.get("outputs"),
                     parameters=_device.get("parameters"),
-                    api=self._api,
+                    api=self.api,
                     floor_name=_device.get("floor_name"),
                     room_name=_device.get("room_name"),
                 )
@@ -138,11 +136,11 @@ class FreeAtHome:
 
     async def ws_close(self):
         """Close the websocker connection."""
-        await self._api.ws_close()
+        await self.api.ws_close()
 
     async def ws_listen(self):
         """Listen on the websocket for updates to devices."""
-        await self._api.ws_listen(callback=self.update_device)
+        await self.api.ws_listen(callback=self.update_device)
 
     async def update_device(self, data: dict):
         """Update device based on websocket data."""
