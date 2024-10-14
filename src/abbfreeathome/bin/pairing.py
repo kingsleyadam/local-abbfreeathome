@@ -8,9 +8,10 @@ Converted With: https://github.com/nitzano/enum-converter?tab=readme-ov-file
 import enum
 
 
-class PairingId(enum.Enum):
+class Pairing(enum.Enum):
     """An Enum class for all Free@Home pairings."""
 
+    AL_INVALID = 0
     AL_SWITCH_ON_OFF = 1
     AL_TIMED_START_STOP = 2
     AL_FORCED = 3
@@ -21,6 +22,7 @@ class PairingId(enum.Enum):
     AL_ABSOLUTE_SET_VALUE_CONTROL = 17
     AL_NIGHT = 18
     AL_RESET_ERROR = 19
+    AL_NIGHT_ACTUATOR_FOR_SYSAP = 20
     AL_RGB = 21
     AL_COLOR_TEMPERATURE = 22
     AL_HSV = 23
@@ -330,4 +332,3 @@ class PairingId(enum.Enum):
     AL_MEASURED_TEMPERATURE_3 = 65283
     AL_MEASURED_TEMPERATURE_4 = 65284
     AL_IGNORE = 65534
-    AL_INVALID = 65535

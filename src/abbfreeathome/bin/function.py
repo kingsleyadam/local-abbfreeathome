@@ -8,7 +8,7 @@ Converted With: https://github.com/nitzano/enum-converter?tab=readme-ov-file
 import enum
 
 
-class FunctionID(enum.Enum):
+class Function(enum.Enum):
     """An Enum class for all Free@Home functions."""
 
     FID_SWITCH_SENSOR = 0

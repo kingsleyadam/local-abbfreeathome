@@ -8,7 +8,7 @@ Converted With: https://github.com/nitzano/enum-converter?tab=readme-ov-file
 import enum  # pragma: no cover
 
 
-class ParameterId(enum.Enum):  # pragma: no cover
+class Parameter(enum.Enum):  # pragma: no cover
     """An Enum class for all Free@Home parameters."""
 
     PID_LED_DAY_BRIGHTNESS = 1
