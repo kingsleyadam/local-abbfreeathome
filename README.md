@@ -28,6 +28,101 @@ The current devices implemented within the library.
 |--|--|
 | SwitchActuator | `turn_on()`, `turn_off()` |
 
+## FreeAtHome Class Structure and API Interaction
+
+The general structure of the Python libary looks similar to this:
+
+```
+FreeAtHomeApi
+│
+└───FreeAtHome
+     │
+     └────Devices
+          │  SwitchActuator (FID_SWITCH_ACTUATOR)
+```
+
+The `FreeAtHome` class (in general) would NOT update the state of any individual device (with the exception of the websocket callbacks). The device class would have access to the FreeAtHome api object to update or fetch it's own state if needed. The `FreeAtHome` class's only interaction with the `FreeAtHomeApi` would be to fetch the SysAP configuration, which it will use to "load" the list of Python `device` classes required for device interaction, and to listen for events on the websocket.
+
+To make things simple and easy to test each device should map to a single Free@Home [function](https://developer.eu.mybuildings.abb.com/fah_local/reference/functionids). This is because each function would likely have a unique set up inputs/outputs to interact with the Free@Home device, requiring unique methods within the class to properly expose and update the device. But, it is possible that a device could have multiple functions if the functions operated identically to each other. This mapping can be applied in the `FreeAtHome.load_devices` method.
+
+| Device Class | Function(s) |
+|---|---|
+| SwitchActuator | FID_SWITCH_ACTUATOR |
+
+If multiple functions share a number of the same properties but are slightly different we can create additional levels to the class inheritence hierachy as needed to avoid repeat code.
+
+### Device Api Interaction (Update Device)
+
+Within the device class any number of methods and functions can be implemented in order to both expose the information from the api as device properties (e.g. lux, state) or set the state of a device in Free@Home using the api object.
+
+#### Set Device Initial State
+
+All device states can be derived from the `inputs`, `outputs`, and `parameters` class attributes that will be available to all device classes and is set in the `Base` device. The state of a device is generally set using the device `outputs`. An example if getting the current state of the SwitchActuator
+
+```python
+def _refresh_state_from_outputs(self):
+    """Refresh the state of the switch from the _outputs."""
+    _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
+        pairing_id=PairingId.AL_INFO_ON_OFF
+    )
+    self._state = _switch_output_value == "1"
+```
+
+This is called when the device class is initiated to know the current state of the device. Because the `inputs`, `outputs`, and `parameters` are fed to the device class from the `FreeAtHome` class, it does not need to interact directly with the api server. This is important, this ensures we don't have to invoke the Api every time we create an instance of a new device class.
+
+#### Refresh Device State
+
+There may be instances where the state of the device would need to be refreshed directly from the api. In general, it's unlikely this will need to be called often, the updated state of a device should come from the websocket and directed by the FreeAtHome with callbacks. But it's good practice to implement an api refresh.
+
+To do this we can invoke the `FreeAtHomeApi.get_datapoint` function to fetch the state of the device. We can use the `get_output_by_pairing_id` function to fetch the correct output id based on what is needed from the api.
+
+```yaml
+async def refresh_state(self):
+    """Refresh the state of the switch from the api."""
+    _switch_output_id, _switch_output_value = self.get_output_by_pairing_id(
+        pairing_id=PairingId.AL_INFO_ON_OFF
+    )
+
+    _datapoint = (
+        await self._api.get_datapoint(
+            device_id=self.device_id,
+            channel_id=self.channel_id,
+            datapoint=_switch_output_id,
+        )
+    )[0]
+
+    self._state = _datapoint == "1"
+
+@property
+def state(self):
+    """Get the state of the switch."""
+    return self._state
+```
+
+#### Update Device State
+
+To update the state (e.g. switch on device) of a device in the Free@Home system the api will need to be invoked. This is also done directly within the device class.
+
+This will use the `FreeAtHomeApi.set_datapoint` function using similar methods as fetching the state of the device.
+
+```python
+async def _set_switching_datapoint(self, value: str):
+    _switch_input_id, _switch_input_value = self.get_input_by_pairing_id(
+        pairing_id=PairingId.AL_SWITCH_ON_OFF
+    )
+    return await self._api.set_datapoint(
+        device_id=self.device_id,
+        channel_id=self.channel_id,
+        datapoint=_switch_input_id,
+        value=value,
+    )
+
+async def turn_on(self):
+    """Turn on the switch."""
+    await self._set_switching_datapoint("1")
+    self._state = True
+```
+
 ## Installation
 
 Create a directory and virtual environment and install the Python library using pip.
