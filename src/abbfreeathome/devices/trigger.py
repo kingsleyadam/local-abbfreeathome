@@ -54,15 +54,3 @@ class Trigger(Base):
             datapoint=_trigger_input_id,
             value="1",
         )
-
-#    def update_device(self, datapoint_key: str, datapoint_value: str):
-#        """Received update for trigger."""
-#        _LOGGER.info(
-#            "%s received updated data: %s: %s",
-#            self.channel_name,
-#            datapoint_key,
-#            datapoint_value,
-#        )
-#
-#        for callback in self._callbacks:
-#            callback()

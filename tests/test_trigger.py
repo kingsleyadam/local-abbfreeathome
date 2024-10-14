@@ -46,14 +46,3 @@ async def test_press(trigger):
         datapoint="idp0001",
         value="1",
     )
-
-
-#def test_update_device(switch_actuator):
-#    """Test updating the device state."""
-#    switch_actuator.update_device("AL_INFO_ON_OFF/odp0000", "1")
-#    assert switch_actuator.state is True
-#
-#    switch_actuator.update_device("AL_INFO_ON_OFF/odp0000", "0")
-#    assert switch_actuator.state is False
-#
-#    switch_actuator.update_device("AL_INFO_ON_OFF/idp0000", "1")
