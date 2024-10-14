@@ -109,16 +109,20 @@ class FreeAtHome:
         ]
 
     async def load_devices(self):
-        """Load all of the devices into the device list."""
-        await self._load_switches()
+        """Load all of the devices into the devices object."""
 
-    async def _load_switches(self):
-        _switch_devices = await self.get_devices_by_function(
-            function_id=FunctionID.FID_SWITCH_ACTUATOR
+        # SwitchActuator
+        await self._load_devices_by_function(
+            FunctionID.FID_SWITCH_ACTUATOR, SwitchActuator
         )
-        for _device in _switch_devices:
-            self._devices[f"{_device.get("device_id")}/{_device.get("channel_id")}"] = (
-                SwitchActuator(
+
+    async def _load_devices_by_function(
+        self, function_id: FunctionID, device_class: Base
+    ):
+        _devices = await self.get_devices_by_function(function_id=function_id)
+        for _device in _devices:
+            self._devices[f"{_device.get('device_id')}/{_device.get('channel_id')}"] = (
+                device_class(
                     device_id=_device.get("device_id"),
                     device_name=_device.get("device_name"),
                     channel_id=_device.get("channel_id"),
