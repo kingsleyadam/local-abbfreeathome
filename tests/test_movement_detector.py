@@ -47,13 +47,14 @@ async def test_initial_state(movement_detector):
 @pytest.mark.asyncio
 async def test_refresh_state(movement_detector):
     """Test refreshing the state of the switch."""
-    movement_detector._api.get_datapoint.return_value = ["72.0"]
+    movement_detector._api.get_datapoint.return_value = ["1"]
     await movement_detector.refresh_state()
-    assert movement_detector.brightness == 72.0
+    assert movement_detector.state is True
+    assert movement_detector.brightness == 1.0
     movement_detector._api.get_datapoint.assert_called_with(
         device_id="ABB7F500E17A",
         channel_id="ch0003",
-        datapoint="odp0002",
+        datapoint="odp0000",
     )
 
 

@@ -54,19 +54,30 @@ class MovementDetector(Base):
 
     async def refresh_state(self):
         """Refresh the state of the device from the api."""
-        _switch_output_id, _switch_output_value = self.get_output_by_pairing(
-            pairing=Pairing.AL_BRIGHTNESS_LEVEL
-        )
+        _state_refresh_pairings = [
+            Pairing.AL_BRIGHTNESS_LEVEL,
+            Pairing.AL_TIMED_MOVEMENT,
+        ]
 
-        _datapoint = (
-            await self._api.get_datapoint(
-                device_id=self.device_id,
-                channel_id=self.channel_id,
-                datapoint=_switch_output_id,
+        for _pairing in _state_refresh_pairings:
+            _switch_output_id, _switch_output_value = self.get_output_by_pairing(
+                pairing=_pairing
             )
-        )[0]
 
-        self._brightness = _datapoint
+            _datapoint = (
+                await self._api.get_datapoint(
+                    device_id=self.device_id,
+                    channel_id=self.channel_id,
+                    datapoint=_switch_output_id,
+                )
+            )[0]
+
+            self._refresh_state_from_output(
+                output={
+                    "pairingID": _pairing.value,
+                    "value": _datapoint,
+                }
+            )
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
