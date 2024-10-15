@@ -118,9 +118,7 @@ class FreeAtHome:
         )
 
         # Trigger
-        await self._load_devices_by_function(
-            Function.FID_TRIGGER, Trigger
-        )
+        await self._load_devices_by_function(Function.FID_TRIGGER, Trigger)
 
     async def _load_devices_by_function(self, function: Function, device_class: Base):
         _devices = await self.get_devices_by_function(function)
