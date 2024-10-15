@@ -1,17 +1,18 @@
 """Free@Home Base Class."""
 
 from collections.abc import Callable
+import logging
 from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from ..exceptions import InvalidDeviceChannelPairing
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class Base:
     """Free@Home Base Class."""
-
-    _callbacks = set()
 
     def __init__(
         self,
@@ -37,6 +38,7 @@ class Base:
         self._parameters = parameters
         self._floor_name = floor_name
         self._room_name = room_name
+        self._callbacks = set()
 
     @property
     def device_id(self) -> str:
@@ -88,8 +90,25 @@ class Base:
             self.device_id, self.channel_id, pairing.value
         )
 
-    def update_device():
-        """Update a devices state."""
+    def update_device(self, datapoint_key: str, datapoint_value: str):
+        """Update the device state."""
+        _LOGGER.info(
+            "%s received updated data: %s: %s",
+            self.channel_name,
+            datapoint_key,
+            datapoint_value,
+        )
+        _io_key = datapoint_key.split("/")[-1]
+        if _io_key in self._inputs:
+            self._inputs[_io_key]["value"] = datapoint_value
+            _refreshed = self._refresh_state_from_input(input=self._inputs[_io_key])
+        if _io_key in self._outputs:
+            self._outputs[_io_key]["value"] = datapoint_value
+            _refreshed = self._refresh_state_from_output(output=self._outputs[_io_key])
+
+        if _refreshed and self._callbacks:
+            for callback in self._callbacks:
+                callback()
 
     def register_callback(self, callback: Callable[[], None]) -> None:
         """Register callback, called when switch changes state."""
@@ -98,3 +117,15 @@ class Base:
     def remove_callback(self, callback: Callable[[], None]) -> None:
         """Remove previously registered callback."""
         self._callbacks.discard(callback)
+
+    def _refresh_state_from_input(self, input: dict[str, Any]) -> bool:
+        """Refresh the state of the device a single input."""
+
+    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+        """Refresh the state of the device from a single output."""
+
+    def _refresh_state_from_inputs(self):
+        """Refresh the state of the device from the _inputs."""
+
+    def _refresh_state_from_outputs(self):
+        """Refresh the state of the device from the _outputs."""
