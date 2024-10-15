@@ -40,6 +40,7 @@ def movement_detector(mock_api):
 @pytest.mark.asyncio
 async def test_initial_state(movement_detector):
     """Test the intial state of the switch."""
+    assert movement_detector.state is False
     assert movement_detector.brightness == 1.6
 
 
@@ -58,6 +59,11 @@ async def test_refresh_state(movement_detector):
 
 def test_refresh_state_from_output(movement_detector):
     """Test the _refresh_state_from_output function."""
+    # Check output that affects the state.
+    movement_detector._refresh_state_from_output(
+        output={"pairingID": 6, "value": "1"},
+    )
+    assert movement_detector.state is True
 
     # Check output that affects the state.
     movement_detector._refresh_state_from_output(
