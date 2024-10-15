@@ -3,7 +3,9 @@
 from .api import FreeAtHomeApi
 from .bin.function import Function
 from .bin.interface import Interface
-from .devices.switch_actuator import Base, SwitchActuator
+from .devices.base import Base
+from .devices.movement_detector import MovementDetector
+from .devices.switch_actuator import SwitchActuator
 
 
 class FreeAtHome:
@@ -114,6 +116,11 @@ class FreeAtHome:
         # SwitchActuator
         await self._load_devices_by_function(
             Function.FID_SWITCH_ACTUATOR, SwitchActuator
+        )
+
+        # MovementDetector
+        await self._load_devices_by_function(
+            Function.FID_MOVEMENT_DETECTOR, MovementDetector
         )
 
     async def _load_devices_by_function(self, function: Function, device_class: Base):
