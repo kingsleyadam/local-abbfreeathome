@@ -129,3 +129,5 @@ class Base:
 
     def _refresh_state_from_outputs(self):
         """Refresh the state of the device from the _outputs."""
+        for _output in self._outputs.values():
+            self._refresh_state_from_output(_output)
