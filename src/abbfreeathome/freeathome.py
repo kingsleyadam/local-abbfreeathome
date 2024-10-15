@@ -6,8 +6,8 @@ from .bin.interface import Interface
 from .devices.base import Base
 from .devices.movement_detector import MovementDetector
 from .devices.switch_actuator import SwitchActuator
-from .devices.trigger import Trigger
 from .devices.switch_sensor import SwitchSensor
+from .devices.trigger import Trigger
 
 
 class FreeAtHome:
