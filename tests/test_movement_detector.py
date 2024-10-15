@@ -40,7 +40,7 @@ def movement_detector(mock_api):
 @pytest.mark.asyncio
 async def test_initial_state(movement_detector):
     """Test the intial state of the switch."""
-    assert movement_detector.brightness == "1.6"
+    assert movement_detector.brightness == 1.6
 
 
 @pytest.mark.asyncio
@@ -48,7 +48,7 @@ async def test_refresh_state(movement_detector):
     """Test refreshing the state of the switch."""
     movement_detector._api.get_datapoint.return_value = ["72.0"]
     await movement_detector.refresh_state()
-    assert movement_detector.brightness == "72.0"
+    assert movement_detector.brightness == 72.0
     movement_detector._api.get_datapoint.assert_called_with(
         device_id="ABB7F500E17A",
         channel_id="ch0003",
@@ -63,10 +63,10 @@ def test_refresh_state_from_output(movement_detector):
     movement_detector._refresh_state_from_output(
         output={"pairingID": 1027, "value": "52.3"},
     )
-    assert movement_detector.brightness == "52.3"
+    assert movement_detector.brightness == 52.3
 
     # Check output that does NOT affect the state.
     movement_detector._refresh_state_from_output(
         output={"pairingID": 6, "value": "0"},
     )
-    assert movement_detector.brightness == "52.3"
+    assert movement_detector.brightness == 52.3
