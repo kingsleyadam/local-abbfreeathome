@@ -1,4 +1,4 @@
-"""Free@Home SwitchActuator Class."""
+"""Free@Home MovementDetectorSensor Class."""
 
 from typing import Any
 
@@ -7,7 +7,7 @@ from ..bin.pairing import Pairing
 from .base import Base
 
 
-class SwitchActuator(Base):
+class MovementDetector(Base):
     """Free@Home SwitchActuator Class."""
 
     _state = None
@@ -43,24 +43,20 @@ class SwitchActuator(Base):
         self._refresh_state_from_outputs()
 
     @property
-    def state(self):
-        """Get the state of the switch."""
+    def state(self) -> float:
+        """Get the movement state."""
         return self._state
 
-    async def turn_on(self):
-        """Turn on the switch."""
-        await self._set_switching_datapoint("1")
-        self._state = True
-
-    async def turn_off(self):
-        """Turn on the switch."""
-        await self._set_switching_datapoint("0")
-        self._state = False
+    @property
+    def brightness(self) -> float:
+        """Get the brightness level of the sensor."""
+        return float(self._brightness)
 
     async def refresh_state(self):
         """Refresh the state of the device from the api."""
         _state_refresh_pairings = [
-            Pairing.AL_INFO_ON_OFF,
+            Pairing.AL_BRIGHTNESS_LEVEL,
+            Pairing.AL_TIMED_MOVEMENT,
         ]
 
         for _pairing in _state_refresh_pairings:
@@ -89,19 +85,10 @@ class SwitchActuator(Base):
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
+        if output.get("pairingID") == Pairing.AL_TIMED_MOVEMENT.value:
             self._state = output.get("value") == "1"
             return True
+        if output.get("pairingID") == Pairing.AL_BRIGHTNESS_LEVEL.value:
+            self._brightness = output.get("value")
+            return True
         return False
-
-    async def _set_switching_datapoint(self, value: str):
-        """Set the switching datapoint on the api."""
-        _switch_input_id, _switch_input_value = self.get_input_by_pairing(
-            pairing=Pairing.AL_SWITCH_ON_OFF
-        )
-        return await self._api.set_datapoint(
-            device_id=self.device_id,
-            channel_id=self.channel_id,
-            datapoint=_switch_input_id,
-            value=value,
-        )
