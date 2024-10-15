@@ -89,10 +89,21 @@ async def test_refresh_state(switch_actuator):
 
 def test_update_device(switch_actuator):
     """Test updating the device state."""
+
+    def test_callback():
+        pass
+
+    # Ensure callback is registered to test callback code.
+    switch_actuator.register_callback(test_callback)
+
     switch_actuator.update_device("AL_INFO_ON_OFF/odp0000", "1")
     assert switch_actuator.state is True
 
     switch_actuator.update_device("AL_INFO_ON_OFF/odp0000", "0")
+    assert switch_actuator.state is False
+
+    # Test scenario where websocket sends update not relevant to the state.
+    switch_actuator.update_device("AL_INFO_ON_OFF/odp0001", "1")
     assert switch_actuator.state is False
 
     switch_actuator.update_device("AL_INFO_ON_OFF/idp0000", "1")

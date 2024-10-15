@@ -1,13 +1,10 @@
 """Free@Home SwitchActuator Class."""
 
-import logging
 from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class SwitchActuator(Base):
@@ -76,8 +73,16 @@ class SwitchActuator(Base):
 
         self._state = _datapoint == "1"
 
-    def _refresh_state_from_inputs(self):
-        """Refresh the state of the switch from the _inputs."""
+    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+        """
+        Refresh the state of the device from a given output.
+
+        This will return whether the state was refreshed as a boolean value.
+        """
+        if output.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
+            self._state = output.get("value") == "1"
+            return True
+        return False
 
     def _refresh_state_from_outputs(self):
         """Refresh the state of the switch from the _outputs."""
@@ -96,22 +101,3 @@ class SwitchActuator(Base):
             datapoint=_switch_input_id,
             value=value,
         )
-
-    def update_device(self, datapoint_key: str, datapoint_value: str):
-        """Update the switch state."""
-        _LOGGER.info(
-            "%s received updated data: %s: %s",
-            self.channel_name,
-            datapoint_key,
-            datapoint_value,
-        )
-        _io_key = datapoint_key.split("/")[-1]
-        if _io_key in self._inputs:
-            self._inputs[_io_key]["value"] = datapoint_value
-            self._refresh_state_from_inputs()
-        if _io_key in self._outputs:
-            self._outputs[_io_key]["value"] = datapoint_value
-            self._refresh_state_from_outputs()
-
-        for callback in self._callbacks:
-            callback()
