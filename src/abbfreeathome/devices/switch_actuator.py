@@ -95,7 +95,7 @@ class SwitchActuator(Base):
         return False
 
     async def _set_switching_datapoint(self, value: str):
-        """Set the switching datapoing on the api."""
+        """Set the switching datapoint on the api."""
         _switch_input_id, _switch_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_SWITCH_ON_OFF
         )
