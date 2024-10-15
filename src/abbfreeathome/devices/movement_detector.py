@@ -43,9 +43,9 @@ class MovementDetector(Base):
         self._refresh_state_from_outputs()
 
     @property
-    def brightness(self):
+    def brightness(self) -> float:
         """Get the brightness level of the sensor."""
-        return self._brightness
+        return float(self._brightness)
 
     async def refresh_state(self):
         """Refresh the state of the device from the api."""
