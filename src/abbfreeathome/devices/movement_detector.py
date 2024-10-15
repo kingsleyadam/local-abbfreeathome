@@ -43,6 +43,11 @@ class MovementDetector(Base):
         self._refresh_state_from_outputs()
 
     @property
+    def state(self) -> float:
+        """Get the movement state."""
+        return self._state
+
+    @property
     def brightness(self) -> float:
         """Get the brightness level of the sensor."""
         return float(self._brightness)
@@ -69,14 +74,10 @@ class MovementDetector(Base):
 
         This will return whether the state was refreshed as a boolean value.
         """
+        if output.get("pairingID") == Pairing.AL_TIMED_MOVEMENT.value:
+            self._state = output.get("value") == "1"
+            return True
         if output.get("pairingID") == Pairing.AL_BRIGHTNESS_LEVEL.value:
             self._brightness = output.get("value")
             return True
         return False
-
-    def _refresh_state_from_outputs(self):
-        """Refresh the state of the switch from the _outputs."""
-        _switch_output_id, _switch_output_value = self.get_output_by_pairing(
-            pairing=Pairing.AL_BRIGHTNESS_LEVEL
-        )
-        self._brightness = _switch_output_value

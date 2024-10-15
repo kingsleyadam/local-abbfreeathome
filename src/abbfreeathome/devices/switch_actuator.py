@@ -84,14 +84,8 @@ class SwitchActuator(Base):
             return True
         return False
 
-    def _refresh_state_from_outputs(self):
-        """Refresh the state of the switch from the _outputs."""
-        _switch_output_id, _switch_output_value = self.get_output_by_pairing(
-            pairing=Pairing.AL_INFO_ON_OFF
-        )
-        self._state = _switch_output_value == "1"
-
     async def _set_switching_datapoint(self, value: str):
+        """Set the switching datapoing on the api."""
         _switch_input_id, _switch_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_SWITCH_ON_OFF
         )
