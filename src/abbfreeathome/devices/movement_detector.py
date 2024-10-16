@@ -43,7 +43,7 @@ class MovementDetector(Base):
         self._refresh_state_from_outputs()
 
     @property
-    def state(self) -> float:
+    def state(self) -> bool | None:
         """Get the movement state."""
         return self._state
 

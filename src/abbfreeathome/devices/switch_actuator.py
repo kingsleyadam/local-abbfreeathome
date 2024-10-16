@@ -43,7 +43,7 @@ class SwitchActuator(Base):
         self._refresh_state_from_outputs()
 
     @property
-    def state(self):
+    def state(self) -> bool | None:
         """Get the state of the switch."""
         return self._state
 
