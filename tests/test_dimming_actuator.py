@@ -79,11 +79,23 @@ async def test_set_brightness(dimming_actuator):
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
         channel_id="ch0000",
+        datapoint="idp0000",
+        value="1",
+    )
+    dimming_actuator._api.set_datapoint.assert_called_with(
+        device_id="ABB70139AF8A",
+        channel_id="ch0000",
         datapoint="idp0002",
         value="100",
     )
     await dimming_actuator.set_brightness(-1)
     assert dimming_actuator.brightness == 1
+    dimming_actuator._api.set_datapoint.assert_called_with(
+        device_id="ABB70139AF8A",
+        channel_id="ch0000",
+        datapoint="idp0000",
+        value="1",
+    )
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139Af8A",
         channel_id="ch0000",
