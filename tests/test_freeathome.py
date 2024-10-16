@@ -248,7 +248,7 @@ async def test_load_devices(freeathome):
     await freeathome.load_devices()
 
     # Verify that the devices are loaded correctly
-    assert len(freeathome._devices) == 2
+    assert len(freeathome._devices) == 4
     device_key = "ABB7F500E17A/ch0003"
     assert device_key in freeathome._devices
     assert isinstance(freeathome._devices[device_key], SwitchActuator)
