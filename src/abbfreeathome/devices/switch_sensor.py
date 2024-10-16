@@ -43,7 +43,7 @@ class SwitchSensor(Base):
         self._refresh_state_from_outputs()
 
     @property
-    def state(self) -> float:
+    def state(self) -> bool:
         """Get the switch state."""
         return self._state
 
