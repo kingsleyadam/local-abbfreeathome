@@ -80,7 +80,7 @@ async def test_refresh_state(dimming_actuator):
     dimming_actuator._api.get_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
         channel_id="ch0000",
-        datapoint="odp0000",
+        datapoint="odp0001",
     )
 
 
