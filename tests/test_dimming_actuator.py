@@ -75,7 +75,7 @@ async def test_turn_off(dimming_actuator):
 async def test_set_brightness(dimming_actuator):
     """Test to set brightness of the DimmingActuator."""
     await dimming_actuator.turn_on()
-    assert dimming_actuator.set is True
+    assert dimming_actuator.state is True
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
         channel_id="ch0000",
