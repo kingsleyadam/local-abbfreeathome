@@ -72,6 +72,18 @@ async def test_turn_off(dimming_actuator):
 
 
 @pytest.mark.asyncio
+async def test_set_brightness(dimming_actuator):
+    """Test to set brightness off the DimmingActuator."""
+    await dimming_actuator.set_brightness(100)
+    assert dimming_actuator.state is True
+    assert dimming_actuator.brightness == 50
+    await dimming_actuator.set_brightness(-1)
+    assert dimming_actuator.brightness == 1
+    await dimming_actuator.set_brightness(110)
+    assert dimming_actuator.brightness == 100
+
+
+@pytest.mark.asyncio
 async def test_refresh_state(dimming_actuator):
     """Test refreshing the state of the DimmingActuator."""
     dimming_actuator._api.get_datapoint.return_value = ["1"]
