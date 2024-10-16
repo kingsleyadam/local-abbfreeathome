@@ -6,6 +6,7 @@ from .bin.interface import Interface
 from .devices.base import Base
 from .devices.movement_detector import MovementDetector
 from .devices.switch_actuator import SwitchActuator
+from .devices.switch_sensor import SwitchSensor
 from .devices.trigger import Trigger
 
 
@@ -126,6 +127,9 @@ class FreeAtHome:
         await self._load_devices_by_function(
             Function.FID_MOVEMENT_DETECTOR, MovementDetector
         )
+
+        # SwitchSensor
+        await self._load_devices_by_function(Function.FID_SWITCH_SENSOR, SwitchSensor)
 
     async def _load_devices_by_function(self, function: Function, device_class: Base):
         _devices = await self.get_devices_by_function(function)
