@@ -74,14 +74,16 @@ async def test_turn_off(dimming_actuator):
 @pytest.mark.asyncio
 async def test_set_brightness(dimming_actuator):
     """Test to set brightness of the DimmingActuator."""
-    await dimming_actuator.set_brightness(100)
-    assert dimming_actuator.brightness == 100
+    await dimming_actuator.turn_on()
+    assert dimming_actuator.set is True
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="idp0000",
         value="1",
     )
+    await dimming_actuator.set_brightness(100)
+    assert dimming_actuator.brightness == 100
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
         channel_id="ch0000",
@@ -90,12 +92,6 @@ async def test_set_brightness(dimming_actuator):
     )
     await dimming_actuator.set_brightness(-1)
     assert dimming_actuator.brightness == 1
-    dimming_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB70139AF8A",
-        channel_id="ch0000",
-        datapoint="idp0000",
-        value="1",
-    )
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139Af8A",
         channel_id="ch0000",
