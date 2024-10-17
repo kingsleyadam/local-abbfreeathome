@@ -114,6 +114,7 @@ class DimmingActuator(Base):
             return True
         if output.get("pairingID") == Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value:
             self._brightness = output.get("value")
+            return True
         return False
 
     async def _set_switching_datapoint(self, value: str):
