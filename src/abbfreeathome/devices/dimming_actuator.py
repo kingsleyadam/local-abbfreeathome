@@ -76,9 +76,6 @@ class DimmingActuator(Base):
         await self._set_brightness_datapoint(str(value))
         self._brightness = value
 
-        if not self._state:
-            await self.turn_on()
-
     async def refresh_state(self):
         """Refresh the state of the device from the api."""
         _state_refresh_pairings = [
