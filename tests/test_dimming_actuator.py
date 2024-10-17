@@ -95,6 +95,27 @@ async def test_refresh_state(dimming_actuator):
     )
 
 
+def test_refresh_state_from_output(dimming_actuator):
+    """Test the _refresh_state_from_output function."""
+    # Check output that affects the state.
+    dimming_actuator._refresh_state_from_output(
+        output={"pairingID": 256, "value": "1"},
+    )
+    assert dimming_actuator.state is True
+
+    # Check output that affects the brightness
+    dimming_actuator._refresh_state_from_output(
+        output={"pairingID": 272, "value": 75},
+    )
+    assert dimming_actuator.brightness == 75
+
+    # Check output that does NOT affect the state.
+    dimming_actuator._refresh_state_from_output(
+        output={"pairingID": 256, "value": "0"},
+    )
+    assert dimming_actuator.state is False
+
+
 def test_update_device(dimming_actuator):
     """Test updating the device state."""
 
