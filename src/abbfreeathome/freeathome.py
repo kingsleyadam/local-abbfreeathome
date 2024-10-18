@@ -9,6 +9,7 @@ from .devices.movement_detector import MovementDetector
 from .devices.switch_actuator import SwitchActuator
 from .devices.switch_sensor import SwitchSensor
 from .devices.trigger import Trigger
+from .devices.window_door_sensor import WindowDoorSensor
 
 
 class FreeAtHome:
@@ -182,6 +183,10 @@ class FreeAtHome:
             {
                 "function": Function.FID_DIMMING_ACTUATOR,
                 "device_class": DimmingActuator,
+            },
+            {
+                "function": Function.FID_WINDOW_DOOR_SENSOR,
+                "device_class": WindowDoorSensor,
             },
         ]
 
