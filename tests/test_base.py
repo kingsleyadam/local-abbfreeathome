@@ -4,10 +4,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from abbfreeathome.api import FreeAtHomeApi
-from abbfreeathome.bin.pairing import Pairing
-from abbfreeathome.devices.base import Base
-from abbfreeathome.exceptions import InvalidDeviceChannelPairing
+from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.bin.pairing import Pairing
+from src.abbfreeathome.devices.base import Base
+from src.abbfreeathome.exceptions import InvalidDeviceChannelPairing
 
 
 @pytest.fixture

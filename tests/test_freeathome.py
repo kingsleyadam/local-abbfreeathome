@@ -4,11 +4,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from abbfreeathome.api import FreeAtHomeApi
-from abbfreeathome.bin.function import Function
-from abbfreeathome.bin.interface import Interface
-from abbfreeathome.devices.switch_actuator import SwitchActuator
-from abbfreeathome.freeathome import FreeAtHome
+from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.bin.function import Function
+from src.abbfreeathome.bin.interface import Interface
+from src.abbfreeathome.devices.switch_actuator import SwitchActuator
+from src.abbfreeathome.freeathome import FreeAtHome
 
 
 @pytest.fixture

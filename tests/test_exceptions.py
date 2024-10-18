@@ -2,7 +2,7 @@
 
 import pytest
 
-from abbfreeathome.exceptions import (
+from src.abbfreeathome.exceptions import (
     ConnectionTimeoutException,
     ForbiddenAuthException,
     InvalidApiResponseException,
