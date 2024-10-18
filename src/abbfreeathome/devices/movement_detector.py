@@ -10,7 +10,10 @@ from .base import Base
 class MovementDetector(Base):
     """Free@Home SwitchActuator Class."""
 
-    _state = None
+    _state_refresh_output_pairings: list[Pairing] = [
+        Pairing.AL_BRIGHTNESS_LEVEL,
+        Pairing.AL_TIMED_MOVEMENT,
+    ]
 
     def __init__(
         self,
@@ -26,6 +29,9 @@ class MovementDetector(Base):
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home SwitchActuator class."""
+        self._state: bool | None = None
+        self._brightness: float | None = None
+
         super().__init__(
             device_id,
             device_name,
@@ -39,45 +45,15 @@ class MovementDetector(Base):
             room_name,
         )
 
-        # Set the initial state of the switch based on output
-        self._refresh_state_from_outputs()
-
     @property
     def state(self) -> bool | None:
         """Get the movement state."""
         return self._state
 
     @property
-    def brightness(self) -> float:
+    def brightness(self) -> float | None:
         """Get the brightness level of the sensor."""
-        return float(self._brightness)
-
-    async def refresh_state(self):
-        """Refresh the state of the device from the api."""
-        _state_refresh_pairings = [
-            Pairing.AL_BRIGHTNESS_LEVEL,
-            Pairing.AL_TIMED_MOVEMENT,
-        ]
-
-        for _pairing in _state_refresh_pairings:
-            _switch_output_id, _switch_output_value = self.get_output_by_pairing(
-                pairing=_pairing
-            )
-
-            _datapoint = (
-                await self._api.get_datapoint(
-                    device_id=self.device_id,
-                    channel_id=self.channel_id,
-                    datapoint=_switch_output_id,
-                )
-            )[0]
-
-            self._refresh_state_from_output(
-                output={
-                    "pairingID": _pairing.value,
-                    "value": _datapoint,
-                }
-            )
+        return self._brightness
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
@@ -89,6 +65,6 @@ class MovementDetector(Base):
             self._state = output.get("value") == "1"
             return True
         if output.get("pairingID") == Pairing.AL_BRIGHTNESS_LEVEL.value:
-            self._brightness = output.get("value")
+            self._brightness = float(output.get("value"))
             return True
         return False

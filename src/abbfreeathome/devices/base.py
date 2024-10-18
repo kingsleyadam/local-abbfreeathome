@@ -14,6 +14,9 @@ _LOGGER = logging.getLogger(__name__)
 class Base:
     """Free@Home Base Class."""
 
+    _state_refresh_output_pairings: list[Pairing] = []
+    _state_refresh_input_pairings: list[Pairing] = []
+
     def __init__(
         self,
         device_id: str,
@@ -39,6 +42,9 @@ class Base:
         self._floor_name = floor_name
         self._room_name = room_name
         self._callbacks = set()
+
+        # Set the initial state of the device based on output
+        self._refresh_state_from_outputs()
 
     @property
     def device_id(self) -> str:
@@ -111,12 +117,32 @@ class Base:
                 callback()
 
     def register_callback(self, callback: Callable[[], None]) -> None:
-        """Register callback, called when switch changes state."""
+        """Register callback, called when device changes state."""
         self._callbacks.add(callback)
 
     def remove_callback(self, callback: Callable[[], None]) -> None:
         """Remove previously registered callback."""
         self._callbacks.discard(callback)
+
+    async def refresh_state(self):
+        """Refresh the state of the device from the api."""
+        for _pairing in self._state_refresh_output_pairings:
+            _output_id, _output_value = self.get_output_by_pairing(pairing=_pairing)
+
+            _datapoint = (
+                await self._api.get_datapoint(
+                    device_id=self.device_id,
+                    channel_id=self.channel_id,
+                    datapoint=_output_id,
+                )
+            )[0]
+
+            self._refresh_state_from_output(
+                output={
+                    "pairingID": _pairing.value,
+                    "value": _datapoint,
+                }
+            )
 
     def _refresh_state_from_input(self, input: dict[str, Any]) -> bool:
         """Refresh the state of the device a single input."""
