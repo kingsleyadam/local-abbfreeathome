@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from abbfreeathome.api import FreeAtHomeApi
-from abbfreeathome.devices.trigger import Trigger
+from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.devices.trigger import Trigger
 
 
 @pytest.fixture

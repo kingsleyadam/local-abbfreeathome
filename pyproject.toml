@@ -160,3 +160,9 @@ max-complexity = 25
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
+pythonpath = [
+  "."
+]
+
+[tool.coverage.run]
+omit = ["*/tests/*"]

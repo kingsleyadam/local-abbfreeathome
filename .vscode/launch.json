@@ -16,13 +16,26 @@
             "name": "Module: abbfreeathome.api",
             "type": "debugpy",
             "request": "launch",
-            "module": "src.abbfreeathome.api"
+            "module": "src.abbfreeathome.api",
+            "justMyCode": false
         },
         {
             "name": "Module: abbfreeathome.freeathome",
             "type": "debugpy",
             "request": "launch",
-            "module": "src.abbfreeathome.freeathome"
+            "module": "src.abbfreeathome.freeathome",
+            "justMyCode": false
+        },
+        {
+            "name": "Python: Debug Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "purpose": [
+                "debug-test"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }
