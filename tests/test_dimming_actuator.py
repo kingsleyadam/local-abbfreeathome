@@ -24,6 +24,7 @@ def dimming_actuator(mock_api):
     outputs = {
         "odp0000": {"pairingID": 256, "value": "0"},
         "odp0001": {"pairingID": 272, "value": "50"},
+        "odp0003": {"pairingID": 257, "value": "0"},
     }
     parameters = {}
 
