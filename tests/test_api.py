@@ -6,8 +6,8 @@ import aiohttp
 from aioresponses import aioresponses
 import pytest
 
-from abbfreeathome.api import FreeAtHomeApi, FreeAtHomeSettings
-from abbfreeathome.exceptions import (
+from src.abbfreeathome.api import FreeAtHomeApi, FreeAtHomeSettings
+from src.abbfreeathome.exceptions import (
     ConnectionTimeoutException,
     ForbiddenAuthException,
     InvalidApiResponseException,

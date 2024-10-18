@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from abbfreeathome.api import FreeAtHomeApi
-from abbfreeathome.devices.movement_detector import MovementDetector
+from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.devices.movement_detector import MovementDetector
 
 
 @pytest.fixture
