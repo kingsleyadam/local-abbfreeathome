@@ -165,4 +165,4 @@ pythonpath = [
 ]
 
 [tool.coverage.run]
-omit = ["*/test*"]
+omit = ["*/tests/*"]
