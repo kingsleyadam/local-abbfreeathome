@@ -21,9 +21,7 @@ def window_door_sensor(mock_api):
     outputs = {
         "odp0000": {"pairingID": 53, "value": "0"},
     }
-    parameters = {
-        "par0010": "2"
-    }
+    parameters = {"par0010": "2"}
 
     return WindowDoorSensor(
         device_id="ABB28CBC3651",
