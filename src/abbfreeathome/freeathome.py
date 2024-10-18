@@ -4,6 +4,7 @@ from .api import FreeAtHomeApi
 from .bin.function import Function
 from .bin.interface import Interface
 from .devices.base import Base
+from .devices.dimming_actuator import DimmingActuator
 from .devices.movement_detector import MovementDetector
 from .devices.switch_actuator import SwitchActuator
 from .devices.switch_sensor import SwitchSensor
@@ -177,6 +178,10 @@ class FreeAtHome:
             {
                 "function": Function.FID_MOVEMENT_DETECTOR,
                 "device_class": MovementDetector,
+            },
+            {
+                "function": Function.FID_DIMMING_ACTUATOR,
+                "device_class": DimmingActuator,
             },
         ]
 
