@@ -110,11 +110,13 @@ def test_refresh_state_from_output(dimming_actuator):
     )
     assert dimming_actuator.brightness == 75
 
-    # Check output that does NOT affect the state.
+    # Check output that does NOT affect the state,
+    # ensure state, brightness are unchanged.
     dimming_actuator._refresh_state_from_output(
-        output={"pairingID": 256, "value": "0"},
+        output={"pairingID": 257, "value": "0"},
     )
-    assert dimming_actuator.state is False
+    assert dimming_actuator.brightness == 75
+    assert dimming_actuator.state is True
 
 
 def test_update_device(dimming_actuator):
