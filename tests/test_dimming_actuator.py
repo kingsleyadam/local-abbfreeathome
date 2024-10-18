@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from abbfreeathome.api import FreeAtHomeApi
-from abbfreeathome.devices.dimming_actuator import DimmingActuator
+from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.devices.dimming_actuator import DimmingActuator
 
 
 @pytest.fixture
