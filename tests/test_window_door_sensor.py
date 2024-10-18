@@ -20,6 +20,7 @@ def window_door_sensor(mock_api):
     inputs = {}
     outputs = {
         "odp0000": {"pairingID": 53, "value": "0"},
+        "odp0001": {"pairingID": 0, "value": "0"},
     }
     parameters = {"par0010": "2"}
 
@@ -59,5 +60,11 @@ def test_refresh_state_from_output(window_door_sensor):
     # Check output that affects the state.
     window_door_sensor._refresh_state_from_output(
         output={"pairingID": 53, "value": "1"},
+    )
+    assert window_door_sensor.state is True
+
+    # Check output that NOT affects the state.
+    window_door_sensor._refresh_state_from_output(
+        output={"pairingID": 0, "value": "1"},
     )
     assert window_door_sensor.state is True
