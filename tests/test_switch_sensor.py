@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from abbfreeathome.api import FreeAtHomeApi
-from abbfreeathome.devices.switch_sensor import SwitchSensor
+from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.devices.switch_sensor import SwitchSensor
 
 
 @pytest.fixture
