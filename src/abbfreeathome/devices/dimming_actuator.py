@@ -10,8 +10,10 @@ from .base import Base
 class DimmingActuator(Base):
     """Free@Home DimmingActuator Class."""
 
-    _state = None
-    _brightness = None
+    _state_refresh_output_pairings: list[Pairing] = [
+        Pairing.AL_INFO_ON_OFF,
+        Pairing.AL_INFO_ACTUAL_DIMMING_VALUE,
+    ]
 
     def __init__(
         self,
@@ -27,6 +29,9 @@ class DimmingActuator(Base):
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home DimmingActuator class."""
+        self._state: bool | None = None
+        self._brightness: int | None = None
+
         super().__init__(
             device_id,
             device_name,
@@ -39,9 +44,6 @@ class DimmingActuator(Base):
             floor_name,
             room_name,
         )
-
-        # Set the initial state of the switch based on output
-        self._refresh_state_from_outputs()
 
     @property
     def state(self) -> bool:
@@ -75,33 +77,6 @@ class DimmingActuator(Base):
 
         await self._set_brightness_datapoint(str(value))
         self._brightness = value
-
-    async def refresh_state(self):
-        """Refresh the state of the device from the api."""
-        _state_refresh_pairings = [
-            Pairing.AL_INFO_ON_OFF,
-            Pairing.AL_INFO_ACTUAL_DIMMING_VALUE,
-        ]
-
-        for _pairing in _state_refresh_pairings:
-            _switch_output_id, _switch_output_value = self.get_output_by_pairing(
-                pairing=_pairing
-            )
-
-            _datapoint = (
-                await self._api.get_datapoint(
-                    device_id=self.device_id,
-                    channel_id=self.channel_id,
-                    datapoint=_switch_output_id,
-                )
-            )[0]
-
-            self._refresh_state_from_output(
-                output={
-                    "pairingID": _pairing.value,
-                    "value": _datapoint,
-                }
-            )
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """

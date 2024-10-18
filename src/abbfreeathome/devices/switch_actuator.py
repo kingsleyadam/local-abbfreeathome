@@ -10,7 +10,9 @@ from .base import Base
 class SwitchActuator(Base):
     """Free@Home SwitchActuator Class."""
 
-    _state = None
+    _state_refresh_output_pairings: list[Pairing] = [
+        Pairing.AL_INFO_ON_OFF,
+    ]
 
     def __init__(
         self,
@@ -26,6 +28,8 @@ class SwitchActuator(Base):
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home SwitchActuator class."""
+        self._state: bool | None = None
+
         super().__init__(
             device_id,
             device_name,
@@ -38,9 +42,6 @@ class SwitchActuator(Base):
             floor_name,
             room_name,
         )
-
-        # Set the initial state of the switch based on output
-        self._refresh_state_from_outputs()
 
     @property
     def state(self) -> bool | None:
@@ -56,32 +57,6 @@ class SwitchActuator(Base):
         """Turn on the switch."""
         await self._set_switching_datapoint("0")
         self._state = False
-
-    async def refresh_state(self):
-        """Refresh the state of the device from the api."""
-        _state_refresh_pairings = [
-            Pairing.AL_INFO_ON_OFF,
-        ]
-
-        for _pairing in _state_refresh_pairings:
-            _switch_output_id, _switch_output_value = self.get_output_by_pairing(
-                pairing=_pairing
-            )
-
-            _datapoint = (
-                await self._api.get_datapoint(
-                    device_id=self.device_id,
-                    channel_id=self.channel_id,
-                    datapoint=_switch_output_id,
-                )
-            )[0]
-
-            self._refresh_state_from_output(
-                output={
-                    "pairingID": _pairing.value,
-                    "value": _datapoint,
-                }
-            )
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
