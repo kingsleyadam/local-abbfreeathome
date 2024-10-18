@@ -43,7 +43,7 @@ class Base:
         self._room_name = room_name
         self._callbacks = set()
 
-        # Set the initial state of the switch based on output
+        # Set the initial state of the device based on output
         self._refresh_state_from_outputs()
 
     @property
@@ -117,7 +117,7 @@ class Base:
                 callback()
 
     def register_callback(self, callback: Callable[[], None]) -> None:
-        """Register callback, called when switch changes state."""
+        """Register callback, called when device changes state."""
         self._callbacks.add(callback)
 
     def remove_callback(self, callback: Callable[[], None]) -> None:
@@ -127,15 +127,13 @@ class Base:
     async def refresh_state(self):
         """Refresh the state of the device from the api."""
         for _pairing in self._state_refresh_output_pairings:
-            _switch_output_id, _switch_output_value = self.get_output_by_pairing(
-                pairing=_pairing
-            )
+            _output_id, _output_value = self.get_output_by_pairing(pairing=_pairing)
 
             _datapoint = (
                 await self._api.get_datapoint(
                     device_id=self.device_id,
                     channel_id=self.channel_id,
-                    datapoint=_switch_output_id,
+                    datapoint=_output_id,
                 )
             )[0]
 
