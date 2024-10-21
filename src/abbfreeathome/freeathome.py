@@ -4,6 +4,7 @@ from .api import FreeAtHomeApi
 from .bin.function import Function
 from .bin.interface import Interface
 from .devices.base import Base
+from .devices.des_door_ringing_sensor import DesDoorRingingSensor
 from .devices.dimming_actuator import DimmingActuator
 from .devices.movement_detector import MovementDetector
 from .devices.switch_actuator import SwitchActuator
@@ -187,6 +188,10 @@ class FreeAtHome:
             {
                 "function": Function.FID_WINDOW_DOOR_SENSOR,
                 "device_class": WindowDoorSensor,
+            },
+            {
+                "function": Function.FID_DES_DOOR_RINGING_SENSOR,
+                "device_class": DesDoorRingingSensor,
             },
         ]
 
