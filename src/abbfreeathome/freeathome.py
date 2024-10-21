@@ -4,6 +4,7 @@ from .api import FreeAtHomeApi
 from .bin.function import Function
 from .bin.interface import Interface
 from .devices.base import Base
+from .devices.carbon_monoxide_sensor import CarbonMonoxideSensor
 from .devices.des_door_ringing_sensor import DesDoorRingingSensor
 from .devices.dimming_actuator import DimmingActuator
 from .devices.movement_detector import MovementDetector
@@ -197,6 +198,10 @@ class FreeAtHome:
             {
                 "function": Function.FID_SMOKE_DETECTOR,
                 "device_class": SmokeDetector,
+            },
+            {
+                "function": Function.FID_CARBON_MONOXIDE_SENSOR,
+                "device_class": CarbonMonoxideSensor,
             },
         ]
 
