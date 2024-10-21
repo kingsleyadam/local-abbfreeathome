@@ -195,7 +195,10 @@ class FreeAtHome:
                 "function": Function.FID_DES_DOOR_RINGING_SENSOR,
                 "device_class": DesDoorRingingSensor,
             },
-            {"function": Function.FID_SMOKE_DETECTOR, "device_class": SmokeDetector},
+            {
+                "function": Function.FID_SMOKE_DETECTOR,
+                "device_class": SmokeDetector,
+            },
             {
                 "function": Function.FID_CARBON_MONOXIDE_SENSOR,
                 "device_class": CarbonMonoxideSensor,
