@@ -16,6 +16,7 @@ class FreeAtHome:
     """Provides a class for interacting with the ABB-free@home API."""
 
     _config: dict | None = None
+    _pairings: list[dict] | None = None
     _devices: dict = {}
 
     def __init__(
@@ -96,6 +97,13 @@ class FreeAtHome:
             (await self.get_floors()).get(floor_serial_id, _default_floor).get("name")
         )
 
+    async def get_pairings(self):
+        """Get an array of sensor to actuator pairings from the api."""
+        if self._pairings is None:
+            self._pairings = await self.api.get_pairings()
+
+        return self._pairings
+
     async def get_room_name(
         self, floor_serial_id: str, room_serial_id: str
     ) -> str | None:
@@ -125,6 +133,17 @@ class FreeAtHome:
             await self._load_devices_by_function(
                 _mapping.get("function"), _mapping.get("device_class")
             )
+
+        # Add the sensor to actuator pairings for actuator lookup
+        _pairings = await self.get_pairings()
+        for pairing in _pairings:
+            try:
+                _sensor_device: Base = self._devices[pairing.get("sensor")]
+                _sensor_device.actuator_pairings.add(
+                    self._devices[pairing.get("actuator")]
+                )
+            except KeyError:
+                continue
 
     async def _load_devices_by_function(self, function: Function, device_class: Base):
         _devices = await self.get_devices_by_function(function)

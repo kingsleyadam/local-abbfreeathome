@@ -158,6 +158,18 @@ async def test_get_device(api):
 
 
 @pytest.mark.asyncio
+async def test_get_pairings(api):
+    """Test the get_sysap function."""
+    with patch.object(api, "_request", return_value=Mock()) as mock_request:
+        mock_request.return_value = [
+            {"sensor": "ABB7F62EEE4D/ch0000", "actuator": "BEED509C0152/ch0000"},
+            {"sensor": "ABB7F62F6A46/ch0000", "actuator": "BEED509C0152/ch0000"},
+        ]
+        pairings = await api.get_pairings()
+        assert len(pairings) == 2
+
+
+@pytest.mark.asyncio
 async def test_get_sysap(api):
     """Test the get_sysap function."""
     with patch.object(api, "_request", return_value=Mock()) as mock_request:

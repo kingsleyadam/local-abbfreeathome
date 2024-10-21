@@ -31,6 +31,8 @@ class Base:
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home Base class."""
+        self.actuator_pairings = set()
+
         self._device_id = device_id
         self._device_name = device_name
         self._channel_id = channel_id

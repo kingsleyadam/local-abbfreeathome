@@ -8,6 +8,7 @@ from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.function import Function
 from src.abbfreeathome.bin.interface import Interface
 from src.abbfreeathome.devices.switch_actuator import SwitchActuator
+from src.abbfreeathome.devices.switch_sensor import SwitchSensor
 from src.abbfreeathome.freeathome import FreeAtHome
 
 
@@ -15,6 +16,10 @@ from src.abbfreeathome.freeathome import FreeAtHome
 def api_mock():
     """Mock-up the api class."""
     api = AsyncMock(spec=FreeAtHomeApi)
+    api.get_pairings.return_value = [
+        {"sensor": "ABB7F500E17A/ch0000", "actuator": "ABB7F500E17A/ch0003"},
+        {"sensor": "ABB7F62F6A46/ch0000", "actuator": "ABB7F500E17A/ch0003"},
+    ]
     api.get_configuration.return_value = {
         "floorplan": {
             "floors": {
@@ -249,11 +254,23 @@ async def test_load_devices(freeathome):
 
     # Verify that the devices are loaded correctly
     assert len(freeathome._devices) == 4
+
+    # Check Switch Actuator Device
     device_key = "ABB7F500E17A/ch0003"
     assert device_key in freeathome._devices
     assert isinstance(freeathome._devices[device_key], SwitchActuator)
     assert freeathome._devices[device_key].device_name == "Study Area Rocker"
     assert freeathome._devices[device_key].channel_name == "Study Area Light"
+    assert freeathome._devices[device_key].floor_name == "Ground Floor"
+    assert freeathome._devices[device_key].room_name == "Living Room"
+
+    # Check Switch Sensor Device
+    device_key = "ABB7F500E17A/ch0000"
+    assert device_key in freeathome._devices
+    assert isinstance(freeathome._devices[device_key], SwitchSensor)
+    assert len(freeathome._devices[device_key].actuator_pairings) == 1
+    assert freeathome._devices[device_key].device_name == "Study Area Rocker"
+    assert freeathome._devices[device_key].channel_name == "Study Area Rocker"
     assert freeathome._devices[device_key].floor_name == "Ground Floor"
     assert freeathome._devices[device_key].room_name == "Living Room"
 

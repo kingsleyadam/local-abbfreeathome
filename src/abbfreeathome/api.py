@@ -147,6 +147,10 @@ class FreeAtHomeApi:
 
         return _response.get(self._sysap_uuid).get("devices").get(device_serial)
 
+    async def get_pairings(self):
+        """Get sensor to actuator pairings from the api."""
+        return await self._request(path="/api/rest/pairings")
+
     async def get_sysap(self):
         """Get the sysap from the api."""
         return await self._request(path="/api/rest/sysap")
