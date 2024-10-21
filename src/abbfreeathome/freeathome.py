@@ -7,6 +7,7 @@ from .devices.base import Base
 from .devices.des_door_ringing_sensor import DesDoorRingingSensor
 from .devices.dimming_actuator import DimmingActuator
 from .devices.movement_detector import MovementDetector
+from .devices.smoke_detector import SmokeDetector
 from .devices.switch_actuator import SwitchActuator
 from .devices.switch_sensor import SwitchSensor
 from .devices.trigger import Trigger
@@ -192,6 +193,10 @@ class FreeAtHome:
             {
                 "function": Function.FID_DES_DOOR_RINGING_SENSOR,
                 "device_class": DesDoorRingingSensor,
+            },
+            {
+                "function": Function.FID_SMOKE_DETECTOR,
+                "device_class": SmokeDetector,
             },
         ]
 
