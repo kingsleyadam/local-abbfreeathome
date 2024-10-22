@@ -344,6 +344,10 @@ async def test_load_devices(freeathome):
     assert freeathome._devices[device_key].floor_name == "Ground Floor"
     assert freeathome._devices[device_key].room_name == "Living Room"
 
+    # Unload a single device and test it's been removed
+    freeathome.unload_device_by_device_serial(device_serial="ABB7F62F6C0B")
+    assert len(freeathome._devices) == 2
+
 
 @pytest.mark.asyncio
 async def test_load_devices_with_orphans(freeathome_orphans):

@@ -139,6 +139,15 @@ class FreeAtHome:
                 _mapping.get("function"), _mapping.get("device_class")
             )
 
+    def unload_device_by_device_serial(self, device_serial: str):
+        """Unload all devices by device serial id."""
+        for key in [
+            _device
+            for _device in self._devices
+            if _device.split("/")[0] == device_serial
+        ]:
+            self._devices.pop(key)
+
     async def _load_devices_by_function(self, function: Function, device_class: Base):
         _devices = await self.get_devices_by_function(function)
         for _device in _devices:
