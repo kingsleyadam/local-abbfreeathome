@@ -26,12 +26,14 @@ class FreeAtHome:
         api: FreeAtHomeApi,
         interfaces: list[Interface] | None = None,
         device_classes: list[Base] | None = None,
+        include_orphan_channels: bool = False,
     ) -> None:
         """Initialize the FreeAtHome class."""
         self.api: FreeAtHomeApi = api
 
         self._interfaces: list[Interface] = interfaces
         self._device_classes: list[Base] = device_classes
+        self._include_orphan_channels = include_orphan_channels
 
     async def get_config(self, refresh: bool = False) -> dict:
         """Get the Free@Home Configuration."""
@@ -51,6 +53,14 @@ class FreeAtHome:
                 continue
 
             for _channel_key, _channel in _device.get("channels", {}).items():
+                # Filter out any channels not on the Free@Home floorplan
+                if (
+                    not self._include_orphan_channels
+                    and not _channel.get("floor")
+                    and not _channel.get("room")
+                ):
+                    continue
+
                 if (
                     _channel.get("functionID")
                     and int(_channel.get("functionID"), 16) == function.value
