@@ -8,6 +8,7 @@ from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.function import Function
 from src.abbfreeathome.bin.interface import Interface
 from src.abbfreeathome.devices.switch_actuator import SwitchActuator
+from src.abbfreeathome.devices.switch_sensor import SwitchSensor
 from src.abbfreeathome.freeathome import FreeAtHome
 
 
@@ -159,6 +160,80 @@ def api_mock():
                 },
                 "parameters": {},
             },
+            "ABB7F62F6A46": {
+                "deviceReboots": "31",
+                "floor": "01",
+                "room": "18",
+                "interface": "TP",
+                "deviceId": "910C",
+                "displayName": "Kitchen Rocker",
+                "unresponsive": False,
+                "unresponsiveCounter": 0,
+                "defect": False,
+                "channels": {
+                    "ch0000": {
+                        "floor": "01",
+                        "room": "18",
+                        "displayName": "Kitchen Light",
+                        "functionID": "1",
+                        "inputs": {
+                            "idp0000": {"pairingID": 256, "value": "1"},
+                            "idp0001": {"pairingID": 18, "value": "0"},
+                            "idp0002": {"pairingID": 273, "value": "0"},
+                            "idp0004": {"pairingID": 261, "value": "0"},
+                            "idp0005": {"pairingID": 278, "value": "0"},
+                            "idp0009": {"pairingID": 272, "value": "22"},
+                            "idp000a": {"pairingID": 277, "value": "0"},
+                        },
+                        "outputs": {
+                            "odp0000": {"pairingID": 1, "value": "1"},
+                            "odp0001": {"pairingID": 16, "value": "8"},
+                            "odp0006": {"pairingID": 4, "value": "0"},
+                        },
+                        "parameters": {
+                            "par0002": "50",
+                            "par0001": "50",
+                            "par0007": "1",
+                        },
+                    },
+                    "ch0003": {
+                        "displayName": "Ⓐ",
+                        "selectedIcon": "1",
+                        "functionID": "7",
+                        "inputs": {
+                            "idp0000": {"pairingID": 1, "value": "0"},
+                            "idp0001": {"pairingID": 2, "value": "0"},
+                            "idp0002": {"pairingID": 3, "value": "0"},
+                            "idp0003": {"pairingID": 4, "value": "0"},
+                            "idp0004": {"pairingID": 6, "value": "0"},
+                        },
+                        "outputs": {
+                            "odp0000": {"pairingID": 256, "value": "1"},
+                            "odp0001": {"pairingID": 257, "value": "0"},
+                        },
+                        "parameters": {"par0015": "60", "par0014": "1"},
+                    },
+                },
+                "parameters": {"par00ed": "1"},
+            },
+            "ABB28CBC3651": {
+                "interface": "TP",
+                "deviceId": "B008",
+                "displayName": "Sensor/switch actuator",
+                "unresponsive": False,
+                "unresponsiveCounter": 0,
+                "defect": False,
+                "channels": {
+                    "ch0006": {
+                        "displayName": "Ⓐ",
+                        "selectedIcon": "1e",
+                        "functionID": "0",
+                        "inputs": {"idp0000": {"pairingID": 256, "value": "0"}},
+                        "outputs": {"odp0000": {"pairingID": 1, "value": "0"}},
+                        "parameters": {"par0010": "1", "par0043": "1"},
+                    },
+                },
+            },
         },
     }
     return api
@@ -167,7 +242,17 @@ def api_mock():
 @pytest.fixture
 def freeathome(api_mock):
     """Create the FreeAtHome fixture."""
-    return FreeAtHome(api=api_mock, interfaces=[Interface.WIRED_BUS])
+    return FreeAtHome(
+        api=api_mock, interfaces=[Interface.WIRED_BUS], include_orphan_channels=False
+    )
+
+
+@pytest.fixture
+def freeathome_orphans(api_mock):
+    """Create the FreeAtHome fixture."""
+    return FreeAtHome(
+        api=api_mock, interfaces=[Interface.WIRED_BUS], include_orphan_channels=True
+    )
 
 
 @pytest.mark.asyncio
@@ -249,6 +334,8 @@ async def test_load_devices(freeathome):
 
     # Verify that the devices are loaded correctly
     assert len(freeathome._devices) == 4
+
+    # Check a single device
     device_key = "ABB7F500E17A/ch0003"
     assert device_key in freeathome._devices
     assert isinstance(freeathome._devices[device_key], SwitchActuator)
@@ -256,6 +343,28 @@ async def test_load_devices(freeathome):
     assert freeathome._devices[device_key].channel_name == "Study Area Light"
     assert freeathome._devices[device_key].floor_name == "Ground Floor"
     assert freeathome._devices[device_key].room_name == "Living Room"
+
+
+@pytest.mark.asyncio
+async def test_load_devices_with_orphans(freeathome_orphans):
+    """Test the load_devices function."""
+    await freeathome_orphans.load_devices()
+
+    # Verify that the devices are loaded correctly
+    assert len(freeathome_orphans._devices) == 6
+
+    # Check a single orphan device
+    device_key = "ABB28CBC3651/ch0006"
+    assert device_key in freeathome_orphans._devices
+    assert isinstance(freeathome_orphans._devices[device_key], SwitchSensor)
+    assert (
+        freeathome_orphans._devices[device_key].device_name == "Sensor/switch actuator"
+    )
+    assert (
+        freeathome_orphans._devices[device_key].channel_name == "Sensor/switch actuator"
+    )
+    assert freeathome_orphans._devices[device_key].floor_name is None
+    assert freeathome_orphans._devices[device_key].room_name is None
 
 
 @pytest.mark.asyncio
