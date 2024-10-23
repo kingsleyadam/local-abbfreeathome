@@ -1,10 +1,20 @@
 """Free@Home WindowDoorSensor Class."""
 
+import enum
 from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
+
+
+class WindowDoorSensorPosition(enum.Enum):
+    """An Enum class for window/door sensor possible positions."""
+
+    UNKNOWN = None
+    CLOSED = "0"
+    TILTED = "33"
+    OPEN = "100"
 
 
 class WindowDoorSensor(Base):
@@ -29,6 +39,7 @@ class WindowDoorSensor(Base):
     ) -> None:
         """Initialize the Free@Home SwitchSensor class."""
         self._state: bool | None = None
+        self._position: WindowDoorSensorPosition = WindowDoorSensorPosition.UNKNOWN
 
         super().__init__(
             device_id,
@@ -48,6 +59,11 @@ class WindowDoorSensor(Base):
         """Get the sensor state."""
         return self._state
 
+    @property
+    def position(self) -> str | None:
+        """Get the sensor position."""
+        return self._position.name
+
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
@@ -56,5 +72,11 @@ class WindowDoorSensor(Base):
         """
         if output.get("pairingID") == Pairing.AL_WINDOW_DOOR.value:
             self._state = output.get("value") == "1"
+            return True
+        if output.get("pairingID") == Pairing.AL_WINDOW_DOOR_POSITION.value:
+            try:
+                self._position = WindowDoorSensorPosition(output.get("value"))
+            except ValueError:
+                self._position = WindowDoorSensorPosition.UNKNOWN
             return True
         return False
