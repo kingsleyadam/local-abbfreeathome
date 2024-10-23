@@ -41,7 +41,7 @@ def window_door_sensor(mock_api):
 async def test_initial_state(window_door_sensor):
     """Test the intial state of the window-door-sensor."""
     assert window_door_sensor.state is True
-    assert window_door_sensor.position == "TILTED"
+    assert window_door_sensor.position == "tilted"
 
 
 @pytest.mark.asyncio
@@ -68,12 +68,12 @@ def test_refresh_state_from_output(window_door_sensor):
     window_door_sensor._refresh_state_from_output(
         output={"pairingID": 41, "value": "100"},
     )
-    assert window_door_sensor.position == "OPEN"
+    assert window_door_sensor.position == "open"
 
     window_door_sensor._refresh_state_from_output(
         output={"pairingID": 41, "value": "NOTVALID"},
     )
-    assert window_door_sensor.position == "UNKNOWN"
+    assert window_door_sensor.position == "unknown"
 
     # Check output that NOT affects the state.
     window_door_sensor._refresh_state_from_output(
