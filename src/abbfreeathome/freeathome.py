@@ -35,6 +35,10 @@ class FreeAtHome:
         self._device_classes: list[Base] = device_classes
         self._include_orphan_channels = include_orphan_channels
 
+    def clear_devices(self):
+        """Clear all devices in the device list."""
+        self._devices.clear()
+
     async def get_config(self, refresh: bool = False) -> dict:
         """Get the Free@Home Configuration."""
         if self._config is None or refresh:
@@ -134,6 +138,7 @@ class FreeAtHome:
 
     async def load_devices(self):
         """Load all of the devices into the devices object."""
+        self.clear_devices()
         for _mapping in self._get_function_to_device_mapping():
             await self._load_devices_by_function(
                 _mapping.get("function"), _mapping.get("device_class")
