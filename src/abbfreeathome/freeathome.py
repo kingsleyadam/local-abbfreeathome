@@ -211,6 +211,10 @@ class FreeAtHome:
                 "device_class": WindowDoorSensor,
             },
             {
+                "function": Function.FID_WINDOW_DOOR_POSITION_SENSOR,
+                "device_class": WindowDoorSensor,
+            },
+            {
                 "function": Function.FID_DES_DOOR_RINGING_SENSOR,
                 "device_class": DesDoorRingingSensor,
             },
