@@ -26,10 +26,15 @@ The current devices implemented within the library.
 
 | Name | Primary Functions | Properties |
 |--|--|--|
+| CarbonMonoxideSensor |  | `state` |
+| DesDoorRingingSensor |  | |
+| DimmingActuator | `turn_on()`, `turn_off()`, `set_brightness()` | `state`, `brightness` |
 | MovementDetector |  | `state`, `brightness` |
+| SmokeDetector |  | `state` |
 | SwitchActuator | `turn_on()`, `turn_off()` | `state` |
 | SwitchSensor |  | `state` |
 | Trigger | `press()` | |
+| WindowDoorSensor |  | `state`, `position` |
 
 ## FreeAtHome Class Structure and API Interaction
 
