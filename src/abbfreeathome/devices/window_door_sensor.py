@@ -9,12 +9,16 @@ from .base import Base
 
 
 class WindowDoorSensorPosition(enum.Enum):
-    """An Enum class for window/door sensor possible positions."""
+    """
+    An Enum class for window/door sensor possible positions.
 
-    UNKNOWN = None
-    CLOSED = "0"
-    TILTED = "33"
-    OPEN = "100"
+    Home Assistant requires the name to be all lowercase.
+    """
+
+    unknown = None
+    closed = "0"
+    tilted = "33"
+    open = "100"
 
 
 class WindowDoorSensor(Base):
@@ -39,7 +43,7 @@ class WindowDoorSensor(Base):
     ) -> None:
         """Initialize the Free@Home SwitchSensor class."""
         self._state: bool | None = None
-        self._position: WindowDoorSensorPosition = WindowDoorSensorPosition.UNKNOWN
+        self._position: WindowDoorSensorPosition = WindowDoorSensorPosition.unknown
 
         super().__init__(
             device_id,
@@ -77,6 +81,6 @@ class WindowDoorSensor(Base):
             try:
                 self._position = WindowDoorSensorPosition(output.get("value"))
             except ValueError:
-                self._position = WindowDoorSensorPosition.UNKNOWN
+                self._position = WindowDoorSensorPosition.unknown
             return True
         return False
