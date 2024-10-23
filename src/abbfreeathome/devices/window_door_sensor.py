@@ -11,10 +11,10 @@ from .base import Base
 class WindowDoorSensorPosition(enum.Enum):
     """An Enum class for window/door sensor possible positions."""
 
-    Unknown = None
-    Closed = "0"
-    Tilted = "33"
-    Open = "100"
+    UNKNOWN = None
+    CLOSED = "0"
+    TILTED = "33"
+    OPEN = "100"
 
 
 class WindowDoorSensor(Base):
@@ -39,7 +39,7 @@ class WindowDoorSensor(Base):
     ) -> None:
         """Initialize the Free@Home SwitchSensor class."""
         self._state: bool | None = None
-        self._position: WindowDoorSensorPosition = WindowDoorSensorPosition.Unknown
+        self._position: WindowDoorSensorPosition = WindowDoorSensorPosition.UNKNOWN
 
         super().__init__(
             device_id,
@@ -77,6 +77,6 @@ class WindowDoorSensor(Base):
             try:
                 self._position = WindowDoorSensorPosition(output.get("value"))
             except ValueError:
-                self._position = WindowDoorSensorPosition.Unknown
+                self._position = WindowDoorSensorPosition.UNKNOWN
             return True
         return False
