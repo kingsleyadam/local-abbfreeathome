@@ -323,7 +323,7 @@ def test_get_device_by_class(freeathome):
     """Test the get_device_class function."""
     device = MagicMock(spec=SwitchActuator)
     freeathome._devices = {"device1": device}
-    devices = freeathome.get_device_by_class(SwitchActuator)
+    devices = freeathome.get_devices_by_class(SwitchActuator)
     assert devices == [device]
 
 
@@ -332,21 +332,25 @@ async def test_load_devices(freeathome):
     """Test the load_devices function."""
     await freeathome.load_devices()
 
+    # Get the dict of devices
+    devices = freeathome.get_devices()
+
     # Verify that the devices are loaded correctly
-    assert len(freeathome._devices) == 4
+    assert len(devices) == 4
 
     # Check a single device
     device_key = "ABB7F500E17A/ch0003"
-    assert device_key in freeathome._devices
-    assert isinstance(freeathome._devices[device_key], SwitchActuator)
-    assert freeathome._devices[device_key].device_name == "Study Area Rocker"
-    assert freeathome._devices[device_key].channel_name == "Study Area Light"
-    assert freeathome._devices[device_key].floor_name == "Ground Floor"
-    assert freeathome._devices[device_key].room_name == "Living Room"
+    assert device_key in devices
+    assert isinstance(devices[device_key], SwitchActuator)
+    assert devices[device_key].device_name == "Study Area Rocker"
+    assert devices[device_key].channel_name == "Study Area Light"
+    assert devices[device_key].floor_name == "Ground Floor"
+    assert devices[device_key].room_name == "Living Room"
 
     # Unload a single device and test it's been removed
     freeathome.unload_device_by_device_serial(device_serial="ABB7F62F6C0B")
-    assert len(freeathome._devices) == 2
+    devices = freeathome.get_devices()
+    assert len(devices) == 2
 
 
 @pytest.mark.asyncio
@@ -354,21 +358,20 @@ async def test_load_devices_with_orphans(freeathome_orphans):
     """Test the load_devices function."""
     await freeathome_orphans.load_devices()
 
+    # Get the dict of devices
+    devices = freeathome_orphans.get_devices()
+
     # Verify that the devices are loaded correctly
-    assert len(freeathome_orphans._devices) == 6
+    assert len(devices) == 6
 
     # Check a single orphan device
     device_key = "ABB28CBC3651/ch0006"
-    assert device_key in freeathome_orphans._devices
-    assert isinstance(freeathome_orphans._devices[device_key], SwitchSensor)
-    assert (
-        freeathome_orphans._devices[device_key].device_name == "Sensor/switch actuator"
-    )
-    assert (
-        freeathome_orphans._devices[device_key].channel_name == "Sensor/switch actuator"
-    )
-    assert freeathome_orphans._devices[device_key].floor_name is None
-    assert freeathome_orphans._devices[device_key].room_name is None
+    assert device_key in devices
+    assert isinstance(devices[device_key], SwitchSensor)
+    assert devices[device_key].device_name == "Sensor/switch actuator"
+    assert devices[device_key].channel_name == "Sensor/switch actuator"
+    assert devices[device_key].floor_name is None
+    assert devices[device_key].room_name is None
 
 
 @pytest.mark.asyncio
