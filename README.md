@@ -200,7 +200,7 @@ There an additional class called `FreeAtHome`. This class attempts to put it all
 
 ### Get Devices
 
-This example will load the `FreeAtHome` class with all potential devices from the api. Once loaded another function `get_device_by_class` is used to pull all devices that call under a specific "class".
+This example will load the `FreeAtHome` class with all potential devices from the api. Once loaded another function `get_devices_by_class` is used to pull all devices that call under a specific "class".
 
 ```python
 from abbfreeathome.api import FreeAtHomeApi
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     asyncio.run(_free_at_home.load_devices())
 
     # Fetch just the list of switches
-    _switches = _free_at_home.get_device_by_class(device_class=SwitchActuator)
+    _switches = _free_at_home.get_devices_by_class(device_class=SwitchActuator)
 
     # Loop through each switch showing the name and whether is On/Off
     for _switch in _switches:
@@ -261,7 +261,7 @@ if __name__ == "__main__":
     asyncio.run(_free_at_home.load_devices())
 
     # Set the callback function on each switch.
-    for _switch in _free_at_home.get_device_by_class(device_class=SwitchActuator):
+    for _switch in _free_at_home.get_devices_by_class(device_class=SwitchActuator):
         _switch.register_callback(my_very_own_callback)
 
     # Start listenting

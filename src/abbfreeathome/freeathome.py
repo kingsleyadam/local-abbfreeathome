@@ -3,23 +3,12 @@
 from .api import FreeAtHomeApi
 from .bin.function import Function
 from .bin.interface import Interface
+from .const import FUNCTION_DEVICE_MAPPING
 from .devices.base import Base
-from .devices.carbon_monoxide_sensor import CarbonMonoxideSensor
-from .devices.des_door_ringing_sensor import DesDoorRingingSensor
-from .devices.dimming_actuator import DimmingActuator
-from .devices.movement_detector import MovementDetector
-from .devices.smoke_detector import SmokeDetector
-from .devices.switch_actuator import SwitchActuator
-from .devices.switch_sensor import SwitchSensor
-from .devices.trigger import Trigger
-from .devices.window_door_sensor import WindowDoorSensor
 
 
 class FreeAtHome:
     """Provides a class for interacting with the ABB-free@home API."""
-
-    _config: dict | None = None
-    _devices: dict = {}
 
     def __init__(
         self,
@@ -29,11 +18,14 @@ class FreeAtHome:
         include_orphan_channels: bool = False,
     ) -> None:
         """Initialize the FreeAtHome class."""
+        self._config: dict | None = None
+        self._devices: dict[str, Base] = {}
+
         self.api: FreeAtHomeApi = api
 
         self._interfaces: list[Interface] = interfaces
         self._device_classes: list[Base] = device_classes
-        self._include_orphan_channels = include_orphan_channels
+        self._include_orphan_channels: bool = include_orphan_channels
 
     def clear_devices(self):
         """Clear all devices in the device list."""
@@ -45,6 +37,18 @@ class FreeAtHome:
             self._config = await self.api.get_configuration()
 
         return self._config
+
+    def get_devices(self) -> dict[str, Base]:
+        """Get the list of devices."""
+        return self._devices
+
+    def get_devices_by_class(self, device_class: Base) -> list[Base]:
+        """Get the list of devices by class."""
+        return [
+            _device
+            for _device in self._devices.values()
+            if isinstance(_device, device_class)
+        ]
 
     async def get_devices_by_function(self, function: Function) -> list[dict]:
         """Get the list of devices by function."""
@@ -128,21 +132,11 @@ class FreeAtHome:
             .get("name")
         )
 
-    def get_device_by_class(self, device_class: Base) -> list[Base]:
-        """Get the list of devices by class."""
-        return [
-            _device
-            for _device in self._devices.values()
-            if isinstance(_device, device_class)
-        ]
-
     async def load_devices(self):
         """Load all of the devices into the devices object."""
         self.clear_devices()
-        for _mapping in self._get_function_to_device_mapping():
-            await self._load_devices_by_function(
-                _mapping.get("function"), _mapping.get("device_class")
-            )
+        for _function, _device_class in self._get_function_to_device_mapping().items():
+            await self._load_devices_by_function(_function, _device_class)
 
     def unload_device_by_device_serial(self, device_serial: str):
         """Unload all devices by device serial id."""
@@ -189,56 +183,13 @@ class FreeAtHome:
             except KeyError:
                 continue
 
-    def _get_function_to_device_mapping(self) -> list[dict[str, Function | Base]]:
-        _function_to_device_mapping = [
-            {
-                "function": Function.FID_SWITCH_ACTUATOR,
-                "device_class": SwitchActuator,
-            },
-            {
-                "function": Function.FID_SWITCH_SENSOR,
-                "device_class": SwitchSensor,
-            },
-            {
-                "function": Function.FID_TRIGGER,
-                "device_class": Trigger,
-            },
-            {
-                "function": Function.FID_MOVEMENT_DETECTOR,
-                "device_class": MovementDetector,
-            },
-            {
-                "function": Function.FID_DIMMING_ACTUATOR,
-                "device_class": DimmingActuator,
-            },
-            {
-                "function": Function.FID_WINDOW_DOOR_SENSOR,
-                "device_class": WindowDoorSensor,
-            },
-            {
-                "function": Function.FID_WINDOW_DOOR_POSITION_SENSOR,
-                "device_class": WindowDoorSensor,
-            },
-            {
-                "function": Function.FID_DES_DOOR_RINGING_SENSOR,
-                "device_class": DesDoorRingingSensor,
-            },
-            {
-                "function": Function.FID_SMOKE_DETECTOR,
-                "device_class": SmokeDetector,
-            },
-            {
-                "function": Function.FID_CARBON_MONOXIDE_SENSOR,
-                "device_class": CarbonMonoxideSensor,
-            },
-        ]
-
+    def _get_function_to_device_mapping(self) -> dict[Function, Base]:
         return (
-            _function_to_device_mapping
+            FUNCTION_DEVICE_MAPPING
             if not self._device_classes
-            else [
-                _mapping
-                for _mapping in _function_to_device_mapping
-                if _mapping.get("device_class") in self._device_classes
-            ]
+            else {
+                key: value
+                for key, value in FUNCTION_DEVICE_MAPPING.items()
+                if value in self._device_classes
+            }
         )
