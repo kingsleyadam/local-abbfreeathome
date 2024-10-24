@@ -1,6 +1,5 @@
-"""Free@Home WindowDoorSensor Class."""
+"""Free@Home SmokeDetector Class."""
 
-import enum
 from typing import Any
 
 from ..api import FreeAtHomeApi
@@ -8,24 +7,11 @@ from ..bin.pairing import Pairing
 from .base import Base
 
 
-class WindowDoorSensorPosition(enum.Enum):
-    """
-    An Enum class for window/door sensor possible positions.
-
-    Home Assistant requires the name to be all lowercase.
-    """
-
-    unknown = None
-    closed = "0"
-    tilted = "33"
-    open = "100"
-
-
-class WindowDoorSensor(Base):
-    """Free@Home WindowDoorSensor Class."""
+class SmokeDetector(Base):
+    """Free@Home SmokeDetector Class."""
 
     _state_refresh_output_pairings: list[Pairing] = [
-        Pairing.AL_WINDOW_DOOR,
+        Pairing.AL_FIRE_ALARM_ACTIVE,
     ]
 
     def __init__(
@@ -41,9 +27,8 @@ class WindowDoorSensor(Base):
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
-        """Initialize the Free@Home SwitchSensor class."""
+        """Initialize the Free@Home SmokeDetector class."""
         self._state: bool | None = None
-        self._position: WindowDoorSensorPosition = WindowDoorSensorPosition.unknown
 
         super().__init__(
             device_id,
@@ -60,13 +45,8 @@ class WindowDoorSensor(Base):
 
     @property
     def state(self) -> bool | None:
-        """Get the sensor state."""
+        """Get the device state."""
         return self._state
-
-    @property
-    def position(self) -> str | None:
-        """Get the sensor position."""
-        return self._position.name
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
@@ -74,13 +54,7 @@ class WindowDoorSensor(Base):
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_WINDOW_DOOR.value:
+        if output.get("pairingID") == Pairing.AL_FIRE_ALARM_ACTIVE.value:
             self._state = output.get("value") == "1"
-            return True
-        if output.get("pairingID") == Pairing.AL_WINDOW_DOOR_POSITION.value:
-            try:
-                self._position = WindowDoorSensorPosition(output.get("value"))
-            except ValueError:
-                self._position = WindowDoorSensorPosition.unknown
             return True
         return False

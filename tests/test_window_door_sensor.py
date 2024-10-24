@@ -19,8 +19,9 @@ def window_door_sensor(mock_api):
     """Set up the sensor instance for testing the WindowDoorSensor device."""
     inputs = {}
     outputs = {
-        "odp0000": {"pairingID": 53, "value": "0"},
+        "odp0000": {"pairingID": 53, "value": "1"},
         "odp0001": {"pairingID": 0, "value": "0"},
+        "odp0003": {"pairingID": 41, "value": "33"},
     }
     parameters = {"par0010": "2"}
 
@@ -39,7 +40,8 @@ def window_door_sensor(mock_api):
 @pytest.mark.asyncio
 async def test_initial_state(window_door_sensor):
     """Test the intial state of the window-door-sensor."""
-    assert window_door_sensor.state is False
+    assert window_door_sensor.state is True
+    assert window_door_sensor.position == "tilted"
 
 
 @pytest.mark.asyncio
@@ -59,12 +61,22 @@ def test_refresh_state_from_output(window_door_sensor):
     """Test the _refresh_state_from_output function."""
     # Check output that affects the state.
     window_door_sensor._refresh_state_from_output(
-        output={"pairingID": 53, "value": "1"},
+        output={"pairingID": 53, "value": "0"},
     )
-    assert window_door_sensor.state is True
+    assert window_door_sensor.state is False
+
+    window_door_sensor._refresh_state_from_output(
+        output={"pairingID": 41, "value": "100"},
+    )
+    assert window_door_sensor.position == "open"
+
+    window_door_sensor._refresh_state_from_output(
+        output={"pairingID": 41, "value": "NOTVALID"},
+    )
+    assert window_door_sensor.position == "unknown"
 
     # Check output that NOT affects the state.
     window_door_sensor._refresh_state_from_output(
         output={"pairingID": 0, "value": "1"},
     )
-    assert window_door_sensor.state is True
+    assert window_door_sensor.state is False

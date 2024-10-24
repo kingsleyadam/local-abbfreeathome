@@ -3,13 +3,8 @@
 from .api import FreeAtHomeApi
 from .bin.function import Function
 from .bin.interface import Interface
+from .const import FUNCTION_DEVICE_MAPPING
 from .devices.base import Base
-from .devices.dimming_actuator import DimmingActuator
-from .devices.movement_detector import MovementDetector
-from .devices.switch_actuator import SwitchActuator
-from .devices.switch_sensor import SwitchSensor
-from .devices.trigger import Trigger
-from .devices.window_door_sensor import WindowDoorSensor
 
 
 class FreeAtHome:
@@ -24,12 +19,21 @@ class FreeAtHome:
         api: FreeAtHomeApi,
         interfaces: list[Interface] | None = None,
         device_classes: list[Base] | None = None,
+        include_orphan_channels: bool = False,
     ) -> None:
         """Initialize the FreeAtHome class."""
+        self._config: dict | None = None
+        self._devices: dict[str, Base] = {}
+
         self.api: FreeAtHomeApi = api
 
         self._interfaces: list[Interface] = interfaces
         self._device_classes: list[Base] = device_classes
+        self._include_orphan_channels: bool = include_orphan_channels
+
+    def clear_devices(self):
+        """Clear all devices in the device list."""
+        self._devices.clear()
 
     async def get_config(self, refresh: bool = False) -> dict:
         """Get the Free@Home Configuration."""
@@ -37,6 +41,18 @@ class FreeAtHome:
             self._config = await self.api.get_configuration()
 
         return self._config
+
+    def get_devices(self) -> dict[str, Base]:
+        """Get the list of devices."""
+        return self._devices
+
+    def get_devices_by_class(self, device_class: Base) -> list[Base]:
+        """Get the list of devices by class."""
+        return [
+            _device
+            for _device in self._devices.values()
+            if isinstance(_device, device_class)
+        ]
 
     async def get_devices_by_function(self, function: Function) -> list[dict]:
         """Get the list of devices by function."""
@@ -49,6 +65,14 @@ class FreeAtHome:
                 continue
 
             for _channel_key, _channel in _device.get("channels", {}).items():
+                # Filter out any channels not on the Free@Home floorplan
+                if (
+                    not self._include_orphan_channels
+                    and not _channel.get("floor")
+                    and not _channel.get("room")
+                ):
+                    continue
+
                 if (
                     _channel.get("functionID")
                     and int(_channel.get("functionID"), 16) == function.value
@@ -119,20 +143,11 @@ class FreeAtHome:
             .get("name")
         )
 
-    def get_device_by_class(self, device_class: Base) -> list[Base]:
-        """Get the list of devices by class."""
-        return [
-            _device
-            for _device in self._devices.values()
-            if isinstance(_device, device_class)
-        ]
-
     async def load_devices(self):
         """Load all of the devices into the devices object."""
-        for _mapping in self._get_function_to_device_mapping():
-            await self._load_devices_by_function(
-                _mapping.get("function"), _mapping.get("device_class")
-            )
+        self.clear_devices()
+        for _function, _device_class in self._get_function_to_device_mapping().items():
+            await self._load_devices_by_function(_function, _device_class)
 
         # Add the sensor to actuator pairings for actuator lookup
         _pairings = await self.get_pairings()
@@ -144,6 +159,15 @@ class FreeAtHome:
                 )
             except KeyError:
                 continue
+
+    def unload_device_by_device_serial(self, device_serial: str):
+        """Unload all devices by device serial id."""
+        for key in [
+            _device
+            for _device in self._devices
+            if _device.split("/")[0] == device_serial
+        ]:
+            self._devices.pop(key)
 
     async def _load_devices_by_function(self, function: Function, device_class: Base):
         _devices = await self.get_devices_by_function(function)
@@ -181,40 +205,13 @@ class FreeAtHome:
             except KeyError:
                 continue
 
-    def _get_function_to_device_mapping(self) -> list[dict[str, Function | Base]]:
-        _function_to_device_mapping = [
-            {
-                "function": Function.FID_SWITCH_ACTUATOR,
-                "device_class": SwitchActuator,
-            },
-            {
-                "function": Function.FID_SWITCH_SENSOR,
-                "device_class": SwitchSensor,
-            },
-            {
-                "function": Function.FID_TRIGGER,
-                "device_class": Trigger,
-            },
-            {
-                "function": Function.FID_MOVEMENT_DETECTOR,
-                "device_class": MovementDetector,
-            },
-            {
-                "function": Function.FID_DIMMING_ACTUATOR,
-                "device_class": DimmingActuator,
-            },
-            {
-                "function": Function.FID_WINDOW_DOOR_SENSOR,
-                "device_class": WindowDoorSensor,
-            },
-        ]
-
+    def _get_function_to_device_mapping(self) -> dict[Function, Base]:
         return (
-            _function_to_device_mapping
+            FUNCTION_DEVICE_MAPPING
             if not self._device_classes
-            else [
-                _mapping
-                for _mapping in _function_to_device_mapping
-                if _mapping.get("device_class") in self._device_classes
-            ]
+            else {
+                key: value
+                for key, value in FUNCTION_DEVICE_MAPPING.items()
+                if value in self._device_classes
+            }
         )
