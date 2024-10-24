@@ -39,6 +39,7 @@ def switch_sensor(mock_api):
 async def test_initial_state(switch_sensor):
     """Test the intial state of the switch-sensor."""
     assert switch_sensor.state is False
+    assert switch_sensor.event_state_types == ["on", "off"]
 
 
 @pytest.mark.asyncio
@@ -47,6 +48,7 @@ async def test_refresh_state(switch_sensor):
     switch_sensor._api.get_datapoint.return_value = ["1"]
     await switch_sensor.refresh_state()
     assert switch_sensor.state is True
+    assert switch_sensor.event_state == "on"
     switch_sensor._api.get_datapoint.assert_called_with(
         device_id="ABB700D9C0A4",
         channel_id="ch0000",
