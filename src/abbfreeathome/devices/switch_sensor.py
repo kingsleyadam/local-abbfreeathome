@@ -46,12 +46,12 @@ class SwitchSensor(Base):
     @property
     def event_state(self) -> str:
         """Get the event type of the switch."""
-        return "On" if self.state else "Off"
+        return "on" if self.state else "off"
 
     @property
     def event_state_types(self) -> list[str]:
         """Get all possible event types of the switch."""
-        return ["On", "Off"]
+        return ["on", "off"]
 
     @property
     def state(self) -> bool | None:

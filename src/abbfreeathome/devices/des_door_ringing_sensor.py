@@ -44,12 +44,12 @@ class DesDoorRingingSensor(Base):
     @property
     def event_state(self) -> str:
         """Get the event state of the sensor."""
-        return "Press"
+        return "press"
 
     @property
     def event_state_types(self) -> list[str]:
         """Get all possible event state types of the sensor."""
-        return ["Press"]
+        return ["press"]
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
