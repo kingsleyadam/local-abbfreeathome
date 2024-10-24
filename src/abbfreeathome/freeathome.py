@@ -10,10 +10,6 @@ from .devices.base import Base
 class FreeAtHome:
     """Provides a class for interacting with the ABB-free@home API."""
 
-    _config: dict | None = None
-    _pairings: list[dict] | None = None
-    _devices: dict = {}
-
     def __init__(
         self,
         api: FreeAtHomeApi,
@@ -24,6 +20,7 @@ class FreeAtHome:
         """Initialize the FreeAtHome class."""
         self._config: dict | None = None
         self._devices: dict[str, Base] = {}
+        self._pairings: list[dict] | None = None
 
         self.api: FreeAtHomeApi = api
 
