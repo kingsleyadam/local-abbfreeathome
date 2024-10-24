@@ -36,6 +36,13 @@ def des_door_ringing_sensor(mock_api):
     )
 
 
+@pytest.mark.asyncio
+async def test_initial_state(des_door_ringing_sensor):
+    """Test the intial state of the carbon-monoxide-sensor."""
+    assert des_door_ringing_sensor.event_state == "press"
+    assert des_door_ringing_sensor.event_state_types == ["press"]
+
+
 def test_refresh_state_from_output(des_door_ringing_sensor):
     """Test the _refresh_state_from_output function."""
     assert (
@@ -50,3 +57,5 @@ def test_refresh_state_from_output(des_door_ringing_sensor):
         )
         is False
     )
+
+    assert des_door_ringing_sensor.event_state == "press"
