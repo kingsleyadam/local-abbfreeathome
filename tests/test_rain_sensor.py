@@ -14,8 +14,8 @@ def get_rain_sensor(mock_api):
     outputs = {
         "odp0000": {"pairingID": 39, "value": "0"},
         "odp0001": {"pairingID": 4, "value": "0"},
-        # "odp0002": {"pairingID": 1029, "value": "0"},
-        # "odp0003": {"pairingID": 1030, "value": "0"},
+        "odp0002": {"pairingID": 1029, "value": "0"},
+        "odp0003": {"pairingID": 1030, "value": "0"},
     }
     parameters = {"par0049": "1", "par0047": "2", "par0048": "7"}
 
