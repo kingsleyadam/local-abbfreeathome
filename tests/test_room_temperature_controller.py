@@ -1,13 +1,13 @@
-"""Test class to test the RoomTemperatureControllerMasterWithoutFan device."""
+"""Test class to test the RoomTemperatureController device."""
 
 from unittest.mock import AsyncMock
 
-from local_abbfreeathome.src.abbfreeathome.devices.room_temperature_controller import (
-    RoomTemperatureController,
-)
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.devices.room_temperature_controller import (
+    RoomTemperatureController,
+)
 
 
 @pytest.fixture
