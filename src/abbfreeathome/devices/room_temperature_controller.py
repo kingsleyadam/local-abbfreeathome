@@ -1,4 +1,4 @@
-"""Free@Home RoomTemperatureControllerMasterWithoutFan Class."""
+"""Free@Home RoomTemperatureController Class."""
 
 from typing import Any
 
@@ -7,8 +7,8 @@ from ..bin.pairing import Pairing
 from .base import Base
 
 
-class RoomTemperatureControllerMasterWithoutFan(Base):
-    """Free@Home RoomTemperatureControllerWithoutFan Class."""
+class RoomTemperatureController(Base):
+    """Free@Home RoomTemperatureController Class."""
 
     _state_refresh_output_pairings: list[Pairing] = [
         Pairing.AL_SET_POINT_TEMPERATURE,
@@ -31,7 +31,7 @@ class RoomTemperatureControllerMasterWithoutFan(Base):
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
-        """Initialize the Free@Home RoomTemperatureControllerWithoutFan class."""
+        """Initialize the Free@Home RoomTemperatureController class."""
         self._state: bool | None = None
         self._current_temperature: float | None = None
         self._valve: int | None = None
@@ -58,29 +58,29 @@ class RoomTemperatureControllerMasterWithoutFan(Base):
         return bool(self._state)
 
     @property
-    def current_temperature(self) -> float:
+    def current_temperature(self) -> float | None:
         """Get the current temperature."""
-        return float(self._current_temperature)
+        return self._current_temperature
 
     @property
-    def valve(self) -> int:
+    def valve(self) -> int | None:
         """Get the status of the valve."""
-        return int(self._valve)
+        return self._valve
 
     @property
-    def target_temperature(self) -> float:
+    def target_temperature(self) -> float | None:
         """Get the target temperature."""
-        return float(self._target_temperature)
+        return self._target_temperature
 
     @property
-    def state_indication(self) -> int:
+    def state_indication(self) -> int | None:
         """Get the state indication."""
-        return int(self._state_indication)
+        return self._state_indication
 
     @property
-    def eco_mode(self) -> bool:
+    def eco_mode(self) -> bool | None:
         """Get the state of the eco_mode."""
-        return bool(self._eco_mode)
+        return self._eco_mode
 
     async def turn_on(self):
         """Turn on the RTC."""
@@ -122,7 +122,7 @@ class RoomTemperatureControllerMasterWithoutFan(Base):
         This will return whether the state was refreshed as a boolean value.
         """
         if output.get("pairingID") == Pairing.AL_SET_POINT_TEMPERATURE.value:
-            self._target_temperature = output.get("value")
+            self._target_temperature = float(output.get("value"))
             return True
         if output.get("pairingID") == Pairing.AL_CONTROLLER_ON_OFF.value:
             self._state = output.get("value") == "1"
@@ -141,14 +141,14 @@ class RoomTemperatureControllerMasterWithoutFan(Base):
 
             At the moment only 0x04 (eco mode) is needed
             """
-            self._state_indication = output.get("value")
+            self._state_indication = int(output.get("value"))
             self._eco_mode = int(output.get("value")) & 0x04 == 0x04
             return True
         if output.get("pairingID") == Pairing.AL_MEASURED_TEMPERATURE.value:
-            self._current_temperature = output.get("value")
+            self._current_temperature = float(output.get("value"))
             return True
         if output.get("pairingID") == Pairing.AL_HEATING_DEMAND.value:
-            self._valve = output.get("value")
+            self._valve = int(output.get("value"))
             return True
         return False
 
