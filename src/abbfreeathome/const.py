@@ -2,9 +2,14 @@
 
 from .bin.function import Function
 from .devices.base import Base
-from .devices.blind_actuator import BlindActuator
 from .devices.brightness_sensor import BrightnessSensor
 from .devices.carbon_monoxide_sensor import CarbonMonoxideSensor
+from .devices.cover_actuator import (
+    AtticWindowActuator,
+    AwningActuator,
+    BlindActuator,
+    ShutterActuator,
+)
 from .devices.des_door_ringing_sensor import DesDoorRingingSensor
 from .devices.dimming_actuator import DimmingActuator
 from .devices.movement_detector import MovementDetector
@@ -18,8 +23,8 @@ from .devices.wind_sensor import WindSensor
 from .devices.window_door_sensor import WindowDoorSensor
 
 FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
-    Function.FID_ATTIC_WINDOW_ACTUATOR: BlindActuator,
-    Function.FID_AWNING_ACTUATOR: BlindActuator,
+    Function.FID_ATTIC_WINDOW_ACTUATOR: AtticWindowActuator,
+    Function.FID_AWNING_ACTUATOR: AwningActuator,
     Function.FID_BLIND_ACTUATOR: BlindActuator,
     Function.FID_BRIGHTNESS_SENSOR: BrightnessSensor,
     Function.FID_CARBON_MONOXIDE_SENSOR: CarbonMonoxideSensor,
@@ -27,7 +32,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_DIMMING_ACTUATOR: DimmingActuator,
     Function.FID_MOVEMENT_DETECTOR: MovementDetector,
     Function.FID_RAIN_SENSOR: RainSensor,
-    Function.FID_SHUTTER_ACTUATOR: BlindActuator,
+    Function.FID_SHUTTER_ACTUATOR: ShutterActuator,
     Function.FID_SMOKE_DETECTOR: SmokeDetector,
     Function.FID_SWITCH_ACTUATOR: SwitchActuator,
     Function.FID_SWITCH_SENSOR: SwitchSensor,
