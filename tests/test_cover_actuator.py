@@ -275,4 +275,3 @@ async def test_refresh_state_from_output(cover_actuator):
         output={"pairingID": 0, "value": "1"},
     )
     assert cover_actuator.position == 35
-
