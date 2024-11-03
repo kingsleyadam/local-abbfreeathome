@@ -66,7 +66,7 @@ class CoverActuator(Base):
 
     def is_cover_closed(self):
         """Helper-Function returns true if the cover is closed."""
-        return self.position == 0
+        return self.position == 100
 
     def is_cover_opening(self):
         """Helper-Function returns true if the cover is opening."""
@@ -131,10 +131,7 @@ class CoverActuator(Base):
             2 means the blind is currently opening
             3 means the blind is currently closing
             """
-            try:
-                self._state = int(output.get("value"))
-            except ValueError:
-                self._state = -1
+            self._state = int(output.get("value"))
             return True
         if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             """
@@ -142,10 +139,7 @@ class CoverActuator(Base):
             2 means open
             3 means close
             """
-            try:
-                self._forced_position = int(output.get("value"))
-            except ValueError:
-                self._forced_position = -1
+            self._forced_position = int(output.get("value"))
             return True
         if (
             output.get("pairingID")
