@@ -34,6 +34,7 @@ class CoverActuator(Base):
         self._state: int | None = None
         self._position: int | None = None
         self._forced_position: int | None = None
+        self._tilt_position: int | None = None
 
         super().__init__(
             device_id,
@@ -158,6 +159,12 @@ class CoverActuator(Base):
         ):
             self._tilt_position = int(output.get("value"))
             return True
+        if (
+            output.get("pairingID")
+            == Pairing.AL_CURRENT_ABSOLUTE_POSITION_SLATS_PERCENTAGE.value
+        ):
+            self._tilt_position = int(output.get("value"))
+            return True
         return False
 
     async def _set_moving_datapoint(self, value: str):
@@ -212,130 +219,17 @@ class CoverActuator(Base):
 class AtticWindowActuator(CoverActuator):
     """Free@Home AtticWindowActuator Class."""
 
-    def __init__(
-        self,
-        device_id: str,
-        device_name: str,
-        channel_id: str,
-        channel_name: str,
-        inputs: dict[str, dict[str, Any]],
-        outputs: dict[str, dict[str, Any]],
-        parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
-        floor_name: str | None = None,
-        room_name: str | None = None,
-    ) -> None:
-        """Initialize the Free@Home AtticWindowActuator class."""
-
-        super().__init__(
-            device_id,
-            device_name,
-            channel_id,
-            channel_name,
-            inputs,
-            outputs,
-            parameters,
-            api,
-            floor_name,
-            room_name,
-        )
-
 
 class AwningActuator(CoverActuator):
     """Free@Home AwningActuator Class."""
-
-    def __init__(
-        self,
-        device_id: str,
-        device_name: str,
-        channel_id: str,
-        channel_name: str,
-        inputs: dict[str, dict[str, Any]],
-        outputs: dict[str, dict[str, Any]],
-        parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
-        floor_name: str | None = None,
-        room_name: str | None = None,
-    ) -> None:
-        """Initialize the Free@Home AwningActuator class."""
-
-        super().__init__(
-            device_id,
-            device_name,
-            channel_id,
-            channel_name,
-            inputs,
-            outputs,
-            parameters,
-            api,
-            floor_name,
-            room_name,
-        )
 
 
 class BlindActuator(CoverActuator):
     """Free@Home BlindActuator Class."""
 
-    def __init__(
-        self,
-        device_id: str,
-        device_name: str,
-        channel_id: str,
-        channel_name: str,
-        inputs: dict[str, dict[str, Any]],
-        outputs: dict[str, dict[str, Any]],
-        parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
-        floor_name: str | None = None,
-        room_name: str | None = None,
-    ) -> None:
-        """Initialize the Free@Home BindActuator class."""
-
-        super().__init__(
-            device_id,
-            device_name,
-            channel_id,
-            channel_name,
-            inputs,
-            outputs,
-            parameters,
-            api,
-            floor_name,
-            room_name,
-        )
-
 
 class ShutterActuator(CoverActuator):
     """Free@Home ShutterActuator Class."""
-
-    def __init__(
-        self,
-        device_id: str,
-        device_name: str,
-        channel_id: str,
-        channel_name: str,
-        inputs: dict[str, dict[str, Any]],
-        outputs: dict[str, dict[str, Any]],
-        parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
-        floor_name: str | None = None,
-        room_name: str | None = None,
-    ) -> None:
-        """Initialize the Free@Home ShutterActuator class."""
-        self._tilt_position: int | None = None
-
-        super().__init__(
-            device_id,
-            device_name,
-            channel_id,
-            channel_name,
-            inputs,
-            outputs,
-            parameters,
-            api,
-            floor_name,
-            room_name,
-        )
 
     @property
     def tilt_position(self) -> int | None:
@@ -359,22 +253,6 @@ class ShutterActuator(CoverActuator):
 
         await self._set_tilt_datapoint(str(value))
         self._tilt_position = value
-
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
-        """
-        Refresh the state of the device from a given output.
-
-        This will return whether the state was refreshed as a boolean value.
-        """
-        if super()._refresh_state_from_output(output) is True:
-            return True
-        if (
-            output.get("pairingID")
-            == Pairing.AL_CURRENT_ABSOLUTE_POSITION_SLATS_PERCENTAGE.value
-        ):
-            self._tilt_position = int(output.get("value"))
-            return True
-        return False
 
     async def _set_tilt_datapoint(self, value: str):
         """Set the tilt position datapoint on the api."""
