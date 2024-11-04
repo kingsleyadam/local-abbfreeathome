@@ -8,6 +8,7 @@ import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi, FreeAtHomeSettings
 from src.abbfreeathome.exceptions import (
+    ClientConnectionError,
     ConnectionTimeoutException,
     ForbiddenAuthException,
     InvalidApiResponseException,
@@ -68,6 +69,15 @@ async def test_get_settings_invalid_host(settings):
         await settings.load()
 
 
+@pytest.mark.asyncio
+async def test_get_settings_client_connection_error(settings):
+    """Test the _request function for an invalid client."""
+    settings._host = "http://0.0.0.0:1"
+
+    with pytest.raises(ClientConnectionError):
+        await settings.load()
+
+
 def test_get_user(settings):
     """Test getting a user."""
     settings._settings = {"users": [{"name": "test_user"}]}
@@ -88,13 +98,13 @@ def test_get_flag(settings):
 
 
 def test_hardware_version_property(settings):
-    """Test getting verison."""
+    """Test getting hardware verison."""
     settings._settings = {"flags": {"hardwareVersion": "54321"}}
     assert settings.hardware_version == "54321"
 
 
 def test_version_property(settings):
-    """Test getting verison."""
+    """Test getting version."""
     settings._settings = {"flags": {"version": "1.0"}}
     assert settings.version == "1.0"
 
@@ -420,6 +430,15 @@ async def test_request_invalid_host(api):
     api._host = "192.168.1.1"
 
     with pytest.raises(InvalidHostException):
+        await api._request("/test")
+
+
+@pytest.mark.asyncio
+async def test_request_client_connection_error(api):
+    """Test the _request function for an invalid client."""
+    api._host = "http://0.0.0.0:1"
+
+    with pytest.raises(ClientConnectionError):
         await api._request("/test")
 
 
