@@ -2,6 +2,7 @@
 
 from .bin.function import Function
 from .devices.base import Base
+from .devices.blind_sensor import BlindSensor
 from .devices.brightness_sensor import BrightnessSensor
 from .devices.carbon_monoxide_sensor import CarbonMonoxideSensor
 from .devices.cover_actuator import (
@@ -27,6 +28,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_ATTIC_WINDOW_ACTUATOR: AtticWindowActuator,
     Function.FID_AWNING_ACTUATOR: AwningActuator,
     Function.FID_BLIND_ACTUATOR: BlindActuator,
+    Function.FID_BLIND_SENSOR: BlindSensor,
     Function.FID_BRIGHTNESS_SENSOR: BrightnessSensor,
     Function.FID_CARBON_MONOXIDE_SENSOR: CarbonMonoxideSensor,
     Function.FID_DES_DOOR_RINGING_SENSOR: DesDoorRingingSensor,
