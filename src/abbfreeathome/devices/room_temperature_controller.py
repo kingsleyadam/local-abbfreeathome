@@ -151,7 +151,7 @@ class RoomTemperatureController(Base):
             try:
                 self._valve = int(output.get("value"))
             except ValueError:
-                self._value = 0
+                self._valve = None
             return True
         return False
 

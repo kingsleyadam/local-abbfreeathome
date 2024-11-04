@@ -172,7 +172,7 @@ async def test_refresh_state_from_output(
     room_temperature_controller._refresh_state_from_output(
         output={"pairingID": 333, "value": ""}
     )
-    assert room_temperature_controller.valve == 0
+    assert room_temperature_controller.valve is None
 
     # Check output that affects the valve
     room_temperature_controller._refresh_state_from_output(
