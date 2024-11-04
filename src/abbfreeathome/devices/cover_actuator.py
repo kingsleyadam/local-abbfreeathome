@@ -153,12 +153,6 @@ class CoverActuator(Base):
         ):
             self._tilt_position = int(output.get("value"))
             return True
-        if (
-            output.get("pairingID")
-            == Pairing.AL_CURRENT_ABSOLUTE_POSITION_SLATS_PERCENTAGE.value
-        ):
-            self._tilt_position = int(output.get("value"))
-            return True
         return False
 
     async def _set_moving_datapoint(self, value: str):
