@@ -168,6 +168,12 @@ async def test_refresh_state_from_output(
     )
     assert room_temperature_controller.current_temperature == 22.56
 
+    # Check output that reports an empty string for valve
+    room_temperature_controller._refresh_state_from_output(
+        output={"pairingID": 333, "value": ""}
+    )
+    assert room_temperature_controller.valve == 0
+
     # Check output that affects the valve
     room_temperature_controller._refresh_state_from_output(
         output={"pairingID": 333, "value": "57"}

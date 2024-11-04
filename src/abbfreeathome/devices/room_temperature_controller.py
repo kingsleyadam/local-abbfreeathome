@@ -148,7 +148,10 @@ class RoomTemperatureController(Base):
             self._current_temperature = float(output.get("value"))
             return True
         if output.get("pairingID") == Pairing.AL_HEATING_DEMAND.value:
-            self._valve = int(output.get("value"))
+            try:
+                self._valve = int(output.get("value"))
+            except ValueError:
+                self._value = 0
             return True
         return False
 
