@@ -5,6 +5,15 @@ class FreeAtHomeException(Exception):
     """A base class for Free@Home exceptions."""
 
 
+class ClientConnectionError(FreeAtHomeException):
+    """Raise an exception for client connector error."""
+
+    def __init__(self, url: str) -> None:
+        """Initialze the ClientConnectorError class."""
+        self.message = f"Cannot connect to host {url}"
+        super().__init__(self.message)
+
+
 class ConnectionTimeoutException(FreeAtHomeException):
     """Raise an exception if the connection times out."""
 

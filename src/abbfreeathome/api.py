@@ -11,6 +11,7 @@ import aiohttp
 import aiohttp.client_exceptions
 
 from .exceptions import (
+    ClientConnectionError,
     ConnectionTimeoutException,
     ForbiddenAuthException,
     InvalidApiResponseException,
@@ -45,6 +46,8 @@ class FreeAtHomeSettings:
                 _response_json = await resp.json()
         except aiohttp.client_exceptions.InvalidUrlClientError as e:
             raise InvalidHostException(self._host) from e
+        except aiohttp.client_exceptions.ClientConnectionError as e:
+            raise ClientConnectionError(self._host) from e
 
         assert _response_status == 200
 
@@ -191,6 +194,8 @@ class FreeAtHomeApi:
                     _response = await resp.text()
         except aiohttp.client_exceptions.InvalidUrlClientError as e:
             raise InvalidHostException(self._host) from e
+        except aiohttp.client_exceptions.ClientConnectionError as e:
+            raise ClientConnectionError(self._host) from e
 
         # Check the status code and raise exception accordingly.
         if _response_status == 401:
