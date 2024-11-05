@@ -19,7 +19,7 @@ from .devices.rain_sensor import RainSensor
 from .devices.room_temperature_controller import RoomTemperatureController
 from .devices.smoke_detector import SmokeDetector
 from .devices.switch_actuator import SwitchActuator
-from .devices.switch_sensor import SwitchSensor
+from .devices.switch_sensor import DimmingSensor, SwitchSensor
 from .devices.temperature_sensor import TemperatureSensor
 from .devices.trigger import Trigger
 from .devices.wind_sensor import WindSensor
@@ -41,6 +41,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_CARBON_MONOXIDE_SENSOR: CarbonMonoxideSensor,
     Function.FID_DES_DOOR_RINGING_SENSOR: DesDoorRingingSensor,
     Function.FID_DIMMING_ACTUATOR: DimmingActuator,
+    Function.FID_DIMMING_SENSOR: DimmingSensor,
     Function.FID_HEATING_ACTUATOR: HeatingActuator,
     Function.FID_MOVEMENT_DETECTOR: MovementDetector,
     Function.FID_RAIN_SENSOR: RainSensor,
