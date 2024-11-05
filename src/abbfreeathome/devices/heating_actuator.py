@@ -28,7 +28,7 @@ class HeatingActuator(Base):
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home HeatingActuator class."""
-        self._state: int | None = None
+        self._position: int | None = None
 
         super().__init__(
             device_id,
@@ -44,27 +44,23 @@ class HeatingActuator(Base):
         )
 
     @property
-    def state(self) -> int | None:
-        """Get the state of the actuator."""
-        return self._state
+    def position(self) -> int | None:
+        """Get the position of the actuator."""
+        return self._position
 
-    async def set_state(self, value: int):
+    async def set_position(self, value: int):
         """
-        Set the open level of the heating valve.
+        Set the position of the valve.
 
         The position has to be between 0 and 100
         Fully closed = 0
         Fully open = 100
-        Just as an information: This is exaclty the other way round as done in HA,
-        so in HA we have to remember to convert the value with something like:
-        abs(value-100)
-        before sending it to this function
         """
         value = max(0, value)
         value = min(value, 100)
 
-        await self._set_state_datapoint(str(value))
-        self._state = value
+        await self._set_position_datapoint(str(value))
+        self._position = value
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
@@ -73,12 +69,12 @@ class HeatingActuator(Base):
         This will return whether the state was refreshed as a boolean value.
         """
         if output.get("pairingID") == Pairing.AL_INFO_VALUE_HEATING.value:
-            self._state = int(output.get("value"))
+            self._position = int(output.get("value"))
             return True
         return False
 
-    async def _set_state_datapoint(self, value: str):
-        """Set the open level datapoint on the api."""
+    async def _set_position_datapoint(self, value: str):
+        """Set the position datapoint on the api."""
         _position_input_id, _position_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_ACTUATING_VALUE_HEATING
         )
