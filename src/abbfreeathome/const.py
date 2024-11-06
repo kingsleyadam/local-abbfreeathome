@@ -11,6 +11,7 @@ from .devices.cover_actuator import (
     BlindActuator,
     ShutterActuator,
 )
+from .devices.des_door_opener_actuator import DesDoorOpenerActuator
 from .devices.des_door_ringing_sensor import DesDoorRingingSensor
 from .devices.dimming_actuator import DimmingActuator
 from .devices.force_on_off_sensor import ForceOnOffSensor
@@ -40,6 +41,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_BLIND_SENSOR_PUSHBUTTON_TYPE3: BlindSensor,
     Function.FID_BRIGHTNESS_SENSOR: BrightnessSensor,
     Function.FID_CARBON_MONOXIDE_SENSOR: CarbonMonoxideSensor,
+    Function.FID_DES_DOOR_OPENER_ACTUATOR: DesDoorOpenerActuator,
     Function.FID_DES_DOOR_RINGING_SENSOR: DesDoorRingingSensor,
     Function.FID_DIMMING_ACTUATOR: DimmingActuator,
     Function.FID_FORCE_ON_OFF_SENSOR: ForceOnOffSensor,
