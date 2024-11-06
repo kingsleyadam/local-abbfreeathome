@@ -11,6 +11,7 @@ class SwitchActuator(Base):
     """Free@Home SwitchActuator Class."""
 
     _state_refresh_output_pairings: list[Pairing] = [
+        Pairing.AL_INFO_FORCE,
         Pairing.AL_INFO_ON_OFF,
     ]
 
@@ -29,6 +30,7 @@ class SwitchActuator(Base):
     ) -> None:
         """Initialize the Free@Home SwitchActuator class."""
         self._state: bool | None = None
+        self._forced: int | None = None
 
         super().__init__(
             device_id,
@@ -48,6 +50,11 @@ class SwitchActuator(Base):
         """Get the state of the switch."""
         return self._state
 
+    @property
+    def forced(self) -> int | None:
+        """Get the forced state of the switch."""
+        return self._forced
+
     async def turn_on(self):
         """Turn on the switch."""
         await self._set_switching_datapoint("1")
@@ -58,6 +65,24 @@ class SwitchActuator(Base):
         await self._set_switching_datapoint("0")
         self._state = False
 
+    async def set_forced(self, value: int):
+        """
+        Set the forced-option on the switch.
+
+        0 means None
+        2 means force off
+        3 means force on
+        """
+        if value in (0, 2, 3):
+            await self._set_force_datapoint(str(value))
+
+            if value == 0:
+                self._forced = 0
+            elif value == 2:
+                self._forced = 5
+            elif value == 3:
+                self._forced = 4
+
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
@@ -66,6 +91,14 @@ class SwitchActuator(Base):
         """
         if output.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             self._state = output.get("value") == "1"
+            return True
+        if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
+            """
+            0 means off
+            4 means force on
+            5 means force off
+            """
+            self._forced = int(output.get("value"))
             return True
         return False
 
@@ -78,5 +111,17 @@ class SwitchActuator(Base):
             device_id=self.device_id,
             channel_id=self.channel_id,
             datapoint=_switch_input_id,
+            value=value,
+        )
+
+    async def _set_force_datapoint(self, value: str):
+        """Set the force datapoint on the api."""
+        _force_input_id, _force_input_value = self.get_input_by_pairing(
+            pairing=Pairing.AL_FORCED
+        )
+        return await self._api.set_datapoint(
+            device_id=self.device_id,
+            channel_id=self.channel_id,
+            datapoint=_force_input_id,
             value=value,
         )

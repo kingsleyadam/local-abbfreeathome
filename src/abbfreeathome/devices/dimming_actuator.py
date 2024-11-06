@@ -11,6 +11,7 @@ class DimmingActuator(Base):
     """Free@Home DimmingActuator Class."""
 
     _state_refresh_output_pairings: list[Pairing] = [
+        Pairing.AL_INFO_FORCE,
         Pairing.AL_INFO_ON_OFF,
         Pairing.AL_INFO_ACTUAL_DIMMING_VALUE,
     ]
@@ -31,6 +32,7 @@ class DimmingActuator(Base):
         """Initialize the Free@Home DimmingActuator class."""
         self._state: bool | None = None
         self._brightness: int | None = None
+        self._forced: int | None = None
 
         super().__init__(
             device_id,
@@ -55,6 +57,11 @@ class DimmingActuator(Base):
         """Get the brightness level of the dimmer."""
         return int(self._brightness)
 
+    @property
+    def forced(self) -> int | None:
+        """Get the forced state of the dimmer."""
+        return self._forced
+
     async def turn_on(self):
         """Turn on the dimmer."""
         await self._set_switching_datapoint("1")
@@ -78,6 +85,24 @@ class DimmingActuator(Base):
         await self._set_brightness_datapoint(str(value))
         self._brightness = value
 
+    async def set_forced(self, value: int):
+        """
+        Set the forced-option on the dimmer.
+
+        0 means None
+        2 means force off
+        3 means force on
+        """
+        if value in (0, 2, 3):
+            await self._set_force_datapoint(str(value))
+
+            if value == 0:
+                self._forced = 0
+            elif value == 2:
+                self._forced = 5
+            elif value == 3:
+                self._forced = 4
+
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
@@ -89,6 +114,14 @@ class DimmingActuator(Base):
             return True
         if output.get("pairingID") == Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value:
             self._brightness = output.get("value")
+            return True
+        if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
+            """
+            0 means off
+            4 means force on
+            5 means force off
+            """
+            self._forced = int(output.get("value"))
             return True
         return False
 
@@ -113,5 +146,17 @@ class DimmingActuator(Base):
             device_id=self.device_id,
             channel_id=self.channel_id,
             datapoint=_brightness_input_id,
+            value=value,
+        )
+
+    async def _set_force_datapoint(self, value: str):
+        """Set the force datapoint on the api."""
+        _force_input_id, _force_input_value = self.get_input_by_pairing(
+            pairing=Pairing.AL_FORCED
+        )
+        return await self._api.set_datapoint(
+            device_id=self.device_id,
+            channel_id=self.channel_id,
+            datapoint=_force_input_id,
             value=value,
         )
