@@ -15,7 +15,6 @@ class Base:
     """Free@Home Base Class."""
 
     _state_refresh_output_pairings: list[Pairing] = []
-    _state_refresh_input_pairings: list[Pairing] = []
 
     def __init__(
         self,
@@ -105,9 +104,7 @@ class Base:
             datapoint_value,
         )
         _io_key = datapoint_key.split("/")[-1]
-        if _io_key in self._inputs:
-            self._inputs[_io_key]["value"] = datapoint_value
-            _refreshed = self._refresh_state_from_input(input=self._inputs[_io_key])
+
         if _io_key in self._outputs:
             self._outputs[_io_key]["value"] = datapoint_value
             _refreshed = self._refresh_state_from_output(output=self._outputs[_io_key])
@@ -144,14 +141,8 @@ class Base:
                 }
             )
 
-    def _refresh_state_from_input(self, input: dict[str, Any]) -> bool:
-        """Refresh the state of the device a single input."""
-
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """Refresh the state of the device from a single output."""
-
-    def _refresh_state_from_inputs(self):
-        """Refresh the state of the device from the _inputs."""
 
     def _refresh_state_from_outputs(self):
         """Refresh the state of the device from the _outputs."""

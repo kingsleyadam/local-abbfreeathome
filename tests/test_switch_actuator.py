@@ -139,5 +139,3 @@ def test_update_device(switch_actuator):
     # Test scenario where websocket sends update not relevant to the state.
     switch_actuator.update_device("AL_INFO_ON_OFF/odp0001", "1")
     assert switch_actuator.state is False
-
-    switch_actuator.update_device("AL_INFO_ON_OFF/idp0000", "1")
