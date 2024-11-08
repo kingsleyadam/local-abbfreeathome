@@ -5,7 +5,11 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.dimming_actuator import DimmingActuator
+from src.abbfreeathome.devices.dimming_actuator import (
+    DimmingActuator,
+    DimmingActuatorForceCommand,
+    DimmingActuatorForceState,
+)
 
 
 @pytest.fixture
@@ -20,10 +24,12 @@ def dimming_actuator(mock_api):
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
         "idp0002": {"pairingID": 17, "value": "50"},
+        "idp0004": {"pairingID": 3, "value": "0"},
     }
     outputs = {
         "odp0000": {"pairingID": 256, "value": "0"},
         "odp0001": {"pairingID": 272, "value": "50"},
+        "odp0002": {"pairingID": 273, "value": "0"},
         "odp0003": {"pairingID": 257, "value": "0"},
     }
     parameters = {}
@@ -84,6 +90,35 @@ async def test_set_brightness(dimming_actuator):
 
 
 @pytest.mark.asyncio
+async def test_set_forced(dimming_actuator):
+    """Test to set the forced option of the DimmingActuator."""
+    await dimming_actuator.set_forced(DimmingActuatorForceCommand.deactivate)
+    assert dimming_actuator.forced == DimmingActuatorForceState.deactivated.name
+    dimming_actuator._api.set_datapoint.assert_called_with(
+        device_id="ABB70139AF8A",
+        channel_id="ch0000",
+        datapoint="idp0004",
+        value="0",
+    )
+    await dimming_actuator.set_forced(DimmingActuatorForceCommand.force_off)
+    assert dimming_actuator.forced == DimmingActuatorForceState.forced_off.name
+    dimming_actuator._api.set_datapoint.assert_called_with(
+        device_id="ABB70139AF8A",
+        channel_id="ch0000",
+        datapoint="idp0004",
+        value="2",
+    )
+    await dimming_actuator.set_forced(DimmingActuatorForceCommand.force_on)
+    assert dimming_actuator.forced == DimmingActuatorForceState.forced_on.name
+    dimming_actuator._api.set_datapoint.assert_called_with(
+        device_id="ABB70139AF8A",
+        channel_id="ch0000",
+        datapoint="idp0004",
+        value="3",
+    )
+
+
+@pytest.mark.asyncio
 async def test_refresh_state(dimming_actuator):
     """Test refreshing the state of the DimmingActuator."""
     dimming_actuator._api.get_datapoint.return_value = ["1"]
@@ -110,13 +145,14 @@ def test_refresh_state_from_output(dimming_actuator):
     )
     assert dimming_actuator.brightness == 75
 
-    # Check output that does NOT affect the state,
-    # ensure state, brightness are unchanged.
+    # Check output that affects the force-option
     dimming_actuator._refresh_state_from_output(
-        output={"pairingID": 257, "value": "0"},
+        output={
+            "pairingID": 257,
+            "value": str(DimmingActuatorForceState.forced_on.value),
+        },
     )
-    assert dimming_actuator.brightness == 75
-    assert dimming_actuator.state is True
+    assert dimming_actuator.forced == DimmingActuatorForceState.forced_on.name
 
 
 def test_update_device(dimming_actuator):
