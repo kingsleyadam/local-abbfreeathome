@@ -11,8 +11,8 @@ class SwitchSensor(Base):
     """Free@Home SwitchSensor Class."""
 
     _state_refresh_output_pairings: list[Pairing] = [
-        Pairing.AL_SWITCH_ON_OFF,
         Pairing.AL_RELATIVE_SET_VALUE_CONTROL,
+        Pairing.AL_SWITCH_ON_OFF,
     ]
 
     def __init__(
@@ -30,7 +30,7 @@ class SwitchSensor(Base):
     ) -> None:
         """Initialize the Free@Home SwitchSensor class."""
         self._state: bool | None = None
-        self._longpress: int | None = None
+        self._longpress: bool | None = None
 
         super().__init__(
             device_id,
@@ -60,7 +60,7 @@ class SwitchSensor(Base):
             self._state = output.get("value") == "1"
             return True
         if output.get("pairingID") == Pairing.AL_RELATIVE_SET_VALUE_CONTROL.value:
-            self._longpress = output.get("value")
+            self._longpress = output.get("value") == "9" or output.get("value") == "8"
             return True
         return False
 
@@ -69,6 +69,6 @@ class DimmingSensor(SwitchSensor):
     """Free@Home DimmingSensor Class."""
 
     @property
-    def longpress(self) -> int | None:
+    def longpress(self) -> bool | None:
         """Get the longpress value."""
         return self._longpress
