@@ -1,10 +1,20 @@
 """Free@Home abstract CoverActuator Class."""
 
+import enum
 from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
+
+
+class CoverActuatorForcePosition(enum.Enum):
+    """An Enum class for the force_position states."""
+
+    unknown = None
+    deactivated = "0"
+    forced_open = "2"
+    forced_close = "3"
 
 
 class CoverActuator(Base):
@@ -33,7 +43,9 @@ class CoverActuator(Base):
         """Initialize the Free@Home CoverActuator class."""
         self._state: int | None = None
         self._position: int | None = None
-        self._forced_position: int | None = None
+        self._forced_position: CoverActuatorForcePosition = (
+            CoverActuatorForcePosition.unknown
+        )
         self._tilt_position: int | None = None
 
         super().__init__(
@@ -60,9 +72,9 @@ class CoverActuator(Base):
         return self._position
 
     @property
-    def forced_position(self) -> int | None:
+    def forced_position(self) -> str | None:
         """Get the information, if the position is forced."""
-        return self._forced_position
+        return self._forced_position.name
 
     def is_cover_closed(self):
         """Helper-Function returns true if the cover is closed."""
@@ -89,16 +101,11 @@ class CoverActuator(Base):
         if self.state in [2, 3]:
             await self._set_stop_datapoint()
 
-    async def force_position(self, value: int):
-        """
-        Force the position of the cover.
-
-        0 means none
-        2 means open
-        3 means close
-        """
-        if value in [0, 2, 3]:
-            await self._set_force_datapoint(str(value))
+    async def set_force_position(self, value: CoverActuatorForcePosition):
+        """Force the position of the cover."""
+        if value is not CoverActuatorForcePosition.unknown:
+            await self._set_force_datapoint(str(value.value))
+            self._forced_position = value
 
     async def set_position(self, value: int):
         """
@@ -134,12 +141,10 @@ class CoverActuator(Base):
             self._state = int(output.get("value"))
             return True
         if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
-            """
-            0 means none
-            2 means open
-            3 means close
-            """
-            self._forced_position = int(output.get("value"))
+            try:
+                self._forced_position = CoverActuatorForcePosition(output.get("value"))
+            except ValueError:
+                self._forced_position = CoverActuatorForcePosition.unknown
             return True
         if (
             output.get("pairingID")
