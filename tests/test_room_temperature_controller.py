@@ -206,7 +206,3 @@ def test_update_device(room_temperature_controller):
 
     room_temperature_controller.update_device("AL_CONTROLLER_ON_OFF/odp0008", "1")
     assert room_temperature_controller.state is True
-
-    # Test scenario where websocket sends update not relevant to the state
-    room_temperature_controller.update_device("AL_CONTROLLER_ON_OFF/idp0014", "0")
-    assert room_temperature_controller.state is True

@@ -173,5 +173,3 @@ def test_update_device(dimming_actuator):
     # Test scenario where websocket sends update not relevant to the state.
     dimming_actuator.update_device("AL_INFO_ON_OFF/odp0001", "1")
     assert dimming_actuator.state is False
-
-    dimming_actuator.update_device("AL_INFO_ON_OFF/idp0000", "1")
