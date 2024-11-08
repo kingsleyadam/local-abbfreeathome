@@ -92,6 +92,18 @@ def test_refresh_state_from_output_dimming(dimming_sensor):
     """Test the _refresh_state_from_output function."""
     # Check output that affects the state.
     dimming_sensor._refresh_state_from_output(
+        output={"pairingID": 16, "value": "1"},
+    )
+    assert dimming_sensor.longpress == "longpress_down_press"
+    dimming_sensor._refresh_state_from_output(
+        output={"pairingID": 16, "value": "0"},
+    )
+    assert dimming_sensor.longpress == "longpress_down_release"
+    dimming_sensor._refresh_state_from_output(
         output={"pairingID": 16, "value": "9"},
     )
-    assert dimming_sensor.longpress is True
+    assert dimming_sensor.longpress == "longpress_up_press"
+    dimming_sensor._refresh_state_from_output(
+        output={"pairingID": 16, "value": "8"},
+    )
+    assert dimming_sensor.longpress == "longpress_up_release"

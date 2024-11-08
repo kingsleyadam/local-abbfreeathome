@@ -1,10 +1,21 @@
 """Free@Home SwitchSensor Class."""
 
+import enum
 from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
+
+
+class DimmingSensorLongpressState(enum.Enum):
+    """An Enum class for the longpress states."""
+
+    unknown = None
+    longpress_up_press = "9"
+    longpress_up_release = "8"
+    longpress_down_press = "1"
+    longpress_down_release = "0"
 
 
 class SwitchSensor(Base):
@@ -30,7 +41,9 @@ class SwitchSensor(Base):
     ) -> None:
         """Initialize the Free@Home SwitchSensor class."""
         self._state: bool | None = None
-        self._longpress: bool | None = None
+        self._longpress: DimmingSensorLongpressState = (
+            DimmingSensorLongpressState.unknown
+        )
 
         super().__init__(
             device_id,
@@ -60,7 +73,10 @@ class SwitchSensor(Base):
             self._state = output.get("value") == "1"
             return True
         if output.get("pairingID") == Pairing.AL_RELATIVE_SET_VALUE_CONTROL.value:
-            self._longpress = output.get("value") == "9" or output.get("value") == "8"
+            try:
+                self._longpress = DimmingSensorLongpressState(output.get("value"))
+            except ValueError:
+                self._longpress = DimmingSensorLongpressState.unknown
             return True
         return False
 
@@ -69,6 +85,6 @@ class DimmingSensor(SwitchSensor):
     """Free@Home DimmingSensor Class."""
 
     @property
-    def longpress(self) -> bool | None:
+    def longpress(self) -> str | None:
         """Get the longpress value."""
-        return self._longpress
+        return self._longpress.name
