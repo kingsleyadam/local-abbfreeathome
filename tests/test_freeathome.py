@@ -336,7 +336,7 @@ async def test_load_devices(freeathome):
     devices = freeathome.get_devices()
 
     # Verify that the devices are loaded correctly
-    assert len(devices) == 4
+    assert len(devices) == 5
 
     # Check a single device
     device_key = "ABB7F500E17A/ch0003"
@@ -350,7 +350,7 @@ async def test_load_devices(freeathome):
     # Unload a single device and test it's been removed
     freeathome.unload_device_by_device_serial(device_serial="ABB7F62F6C0B")
     devices = freeathome.get_devices()
-    assert len(devices) == 2
+    assert len(devices) == 3
 
 
 @pytest.mark.asyncio
@@ -362,7 +362,7 @@ async def test_load_devices_with_orphans(freeathome_orphans):
     devices = freeathome_orphans.get_devices()
 
     # Verify that the devices are loaded correctly
-    assert len(devices) == 6
+    assert len(devices) == 7
 
     # Check a single orphan device
     device_key = "ABB28CBC3651/ch0006"
