@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.switch_sensor import SwitchSensor, DimmingSensor
+from src.abbfreeathome.devices.switch_sensor import DimmingSensor, SwitchSensor
 
 
 @pytest.fixture
