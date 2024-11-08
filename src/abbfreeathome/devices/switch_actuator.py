@@ -1,10 +1,29 @@
 """Free@Home SwitchActuator Class."""
 
+import enum
 from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
+
+
+class SwitchActuatorForceCommand(enum.Enum):
+    """An Enum class for the force commands."""
+
+    unknown = None
+    deactivate = "0"
+    force_off = "2"
+    force_on = "3"
+
+
+class SwitchActuatorForceState(enum.Enum):
+    """An Enum class for the force states."""
+
+    unknown = None
+    deactivated = "0"
+    forced_on = "4"
+    forced_off = "5"
 
 
 class SwitchActuator(Base):
@@ -30,7 +49,7 @@ class SwitchActuator(Base):
     ) -> None:
         """Initialize the Free@Home SwitchActuator class."""
         self._state: bool | None = None
-        self._forced: int | None = None
+        self._forced: SwitchActuatorForceState = SwitchActuatorForceState.unknown
 
         super().__init__(
             device_id,
@@ -51,9 +70,9 @@ class SwitchActuator(Base):
         return self._state
 
     @property
-    def forced(self) -> int | None:
+    def forced(self) -> str | None:
         """Get the forced state of the switch."""
-        return self._forced
+        return self._forced.name
 
     async def turn_on(self):
         """Turn on the switch."""
@@ -65,23 +84,18 @@ class SwitchActuator(Base):
         await self._set_switching_datapoint("0")
         self._state = False
 
-    async def set_forced(self, value: int):
-        """
-        Set the forced-option on the switch.
+    async def set_forced(self, value: SwitchActuatorForceCommand):
+        """Set the forced-option on the switch."""
 
-        0 means None
-        2 means force off
-        3 means force on
-        """
-        if value in (0, 2, 3):
-            await self._set_force_datapoint(str(value))
+        if value is not SwitchActuatorForceCommand.unknown:
+            await self._set_force_datapoint(str(value.value))
 
-            if value == 0:
-                self._forced = 0
-            elif value == 2:
-                self._forced = 5
-            elif value == 3:
-                self._forced = 4
+            if value is SwitchActuatorForceCommand.deactivate:
+                self._forced = SwitchActuatorForceState.deactivated
+            elif value is SwitchActuatorForceCommand.force_off:
+                self._forced = SwitchActuatorForceState.forced_off
+            elif value is SwitchActuatorForceCommand.force_on:
+                self._forced = SwitchActuatorForceState.forced_on
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
@@ -93,12 +107,10 @@ class SwitchActuator(Base):
             self._state = output.get("value") == "1"
             return True
         if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
-            """
-            0 means off
-            4 means force on
-            5 means force off
-            """
-            self._forced = int(output.get("value"))
+            try:
+                self._forced = SwitchActuatorForceState(output.get("value"))
+            except ValueError:
+                self._forced = SwitchActuatorForceState.unknown
             return True
         return False
 

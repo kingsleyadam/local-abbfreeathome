@@ -5,7 +5,11 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.dimming_actuator import DimmingActuator
+from src.abbfreeathome.devices.dimming_actuator import (
+    DimmingActuator,
+    DimmingActuatorForceCommand,
+    DimmingActuatorForceState,
+)
 
 
 @pytest.fixture
@@ -88,24 +92,24 @@ async def test_set_brightness(dimming_actuator):
 @pytest.mark.asyncio
 async def test_set_forced(dimming_actuator):
     """Test to set the forced option of the DimmingActuator."""
-    await dimming_actuator.set_forced(0)
-    assert dimming_actuator.forced == 0
+    await dimming_actuator.set_forced(DimmingActuatorForceCommand.deactivate)
+    assert dimming_actuator.forced == DimmingActuatorForceState.deactivated.name
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="idp0004",
         value="0",
     )
-    await dimming_actuator.set_forced(2)
-    assert dimming_actuator.forced == 5
+    await dimming_actuator.set_forced(DimmingActuatorForceCommand.force_off)
+    assert dimming_actuator.forced == DimmingActuatorForceState.forced_off.name
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="idp0004",
         value="2",
     )
-    await dimming_actuator.set_forced(3)
-    assert dimming_actuator.forced == 4
+    await dimming_actuator.set_forced(DimmingActuatorForceCommand.force_on)
+    assert dimming_actuator.forced == DimmingActuatorForceState.forced_on.name
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
         channel_id="ch0000",
@@ -143,9 +147,12 @@ def test_refresh_state_from_output(dimming_actuator):
 
     # Check output that affects the force-option
     dimming_actuator._refresh_state_from_output(
-        output={"pairingID": 257, "value": "4"},
+        output={
+            "pairingID": 257,
+            "value": str(DimmingActuatorForceState.forced_on.value),
+        },
     )
-    assert dimming_actuator.forced == 4
+    assert dimming_actuator.forced == DimmingActuatorForceState.forced_on.name
 
 
 def test_update_device(dimming_actuator):

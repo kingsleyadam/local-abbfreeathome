@@ -5,7 +5,11 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.switch_actuator import SwitchActuator
+from src.abbfreeathome.devices.switch_actuator import (
+    SwitchActuator,
+    SwitchActuatorForceCommand,
+    SwitchActuatorForceState,
+)
 
 
 @pytest.fixture
@@ -78,24 +82,24 @@ async def test_turn_off(switch_actuator):
 @pytest.mark.asyncio
 async def test_set_forced(switch_actuator):
     """Test to set the forced option of the switch."""
-    await switch_actuator.set_forced(0)
-    assert switch_actuator.forced == 0
+    await switch_actuator.set_forced(SwitchActuatorForceCommand.deactivate)
+    assert switch_actuator.forced == SwitchActuatorForceState.deactivated.name
     switch_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0002",
         value="0",
     )
-    await switch_actuator.set_forced(2)
-    assert switch_actuator.forced == 5
+    await switch_actuator.set_forced(SwitchActuatorForceCommand.force_off)
+    assert switch_actuator.forced == SwitchActuatorForceState.forced_off.name
     switch_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0002",
         value="2",
     )
-    await switch_actuator.set_forced(3)
-    assert switch_actuator.forced == 4
+    await switch_actuator.set_forced(SwitchActuatorForceCommand.force_on)
+    assert switch_actuator.forced == SwitchActuatorForceState.forced_on.name
     switch_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB7F500E17A",
         channel_id="ch0003",
