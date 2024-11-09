@@ -103,6 +103,7 @@ class Base:
             datapoint_key,
             datapoint_value,
         )
+        _refreshed = None
         _io_key = datapoint_key.split("/")[-1]
 
         if _io_key in self._outputs:
