@@ -7,9 +7,9 @@ import pytest
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.devices.switch_sensor import (
     DimmingSensor,
-    SwitchSensor,
     DimmingSensorCombinedState,
     DimmingSensorLongpressState,
+    SwitchSensor,
 )
 
 
