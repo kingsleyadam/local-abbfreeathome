@@ -18,6 +18,18 @@ class DimmingSensorLongpressState(enum.Enum):
     longpress_down_release = "0"
 
 
+class DimmingSensorCombinedState(enum.Enum):
+    """An Enum class for the combined state."""
+
+    unknown = None
+    longpress_up_press = "9"
+    longpress_up_release = "8"
+    longpress_down_press = "1"
+    longpress_down_release = "0"
+    shortpress_up = 2
+    shortpress_down = 3
+
+
 class SwitchSensor(Base):
     """Free@Home SwitchSensor Class."""
 
@@ -43,6 +55,9 @@ class SwitchSensor(Base):
         self._state: bool | None = None
         self._longpress: DimmingSensorLongpressState = (
             DimmingSensorLongpressState.unknown
+        )
+        self._combined_state: DimmingSensorCombinedState = (
+            DimmingSensorCombinedState.unknown
         )
 
         super().__init__(
@@ -71,12 +86,20 @@ class SwitchSensor(Base):
         """
         if output.get("pairingID") == Pairing.AL_SWITCH_ON_OFF.value:
             self._state = output.get("value") == "1"
+
+            if self._state:
+                self._combined_state = DimmingSensorCombinedState.shortpress_up
+            else:
+                self._combined_state = DimmingSensorCombinedState.shortpress_down
+
             return True
         if output.get("pairingID") == Pairing.AL_RELATIVE_SET_VALUE_CONTROL.value:
             try:
                 self._longpress = DimmingSensorLongpressState(output.get("value"))
             except ValueError:
                 self._longpress = DimmingSensorLongpressState.unknown
+
+            self._combined_state = self._longpress
             return True
         return False
 
@@ -88,3 +111,8 @@ class DimmingSensor(SwitchSensor):
     def longpress(self) -> str | None:
         """Get the longpress value."""
         return self._longpress.name
+
+    @property
+    def combined_state(self) -> str | None:
+        """Get the combined state value."""
+        return self._combined_state.name

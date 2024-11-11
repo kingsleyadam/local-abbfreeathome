@@ -5,7 +5,12 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.switch_sensor import DimmingSensor, SwitchSensor
+from src.abbfreeathome.devices.switch_sensor import (
+    DimmingSensor,
+    SwitchSensor,
+    DimmingSensorCombinedState,
+    DimmingSensorLongpressState,
+)
 
 
 @pytest.fixture
@@ -92,18 +97,64 @@ def test_refresh_state_from_output_dimming(dimming_sensor):
     """Test the _refresh_state_from_output function."""
     # Check output that affects the state.
     dimming_sensor._refresh_state_from_output(
+        output={"pairingID": 1, "value": "1"},
+    )
+    assert dimming_sensor.state is True
+    assert (
+        dimming_sensor.combined_state == DimmingSensorCombinedState.shortpress_up.name
+    )
+
+    dimming_sensor._refresh_state_from_output(
+        output={"pairingID": 1, "value": "0"},
+    )
+    assert dimming_sensor.state is False
+    assert (
+        dimming_sensor.combined_state == DimmingSensorCombinedState.shortpress_down.name
+    )
+
+    dimming_sensor._refresh_state_from_output(
         output={"pairingID": 16, "value": "1"},
     )
-    assert dimming_sensor.longpress == "longpress_down_press"
+    assert (
+        dimming_sensor.longpress
+        == DimmingSensorLongpressState.longpress_down_press.name
+    )
+    assert (
+        dimming_sensor.combined_state
+        == DimmingSensorCombinedState.longpress_down_press.name
+    )
+
     dimming_sensor._refresh_state_from_output(
         output={"pairingID": 16, "value": "0"},
     )
-    assert dimming_sensor.longpress == "longpress_down_release"
+    assert (
+        dimming_sensor.longpress
+        == DimmingSensorLongpressState.longpress_down_release.name
+    )
+    assert (
+        dimming_sensor.combined_state
+        == DimmingSensorCombinedState.longpress_down_release.name
+    )
+
     dimming_sensor._refresh_state_from_output(
         output={"pairingID": 16, "value": "9"},
     )
-    assert dimming_sensor.longpress == "longpress_up_press"
+    assert (
+        dimming_sensor.longpress == DimmingSensorLongpressState.longpress_up_press.name
+    )
+    assert (
+        dimming_sensor.combined_state
+        == DimmingSensorCombinedState.longpress_up_press.name
+    )
+
     dimming_sensor._refresh_state_from_output(
         output={"pairingID": 16, "value": "8"},
     )
-    assert dimming_sensor.longpress == "longpress_up_release"
+    assert (
+        dimming_sensor.longpress
+        == DimmingSensorLongpressState.longpress_up_release.name
+    )
+    assert (
+        dimming_sensor.combined_state
+        == DimmingSensorCombinedState.longpress_up_release.name
+    )

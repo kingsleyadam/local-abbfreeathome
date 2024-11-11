@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.blind_sensor import BlindSensor
+from src.abbfreeathome.devices.blind_sensor import BlindSensor, BlindSensorCombinedState
 
 
 @pytest.fixture
@@ -63,8 +63,10 @@ def test_refresh_state_from_output(blind_sensor):
         output={"pairingID": 33, "value": "1"},
     )
     assert blind_sensor.state is True
+    assert blind_sensor.combined_state == BlindSensorCombinedState.shortpress_down.name
 
     blind_sensor._refresh_state_from_output(
         output={"pairingID": 32, "value": "1"},
     )
     assert blind_sensor.longpress is True
+    assert blind_sensor.combined_state == BlindSensorCombinedState.longpress_down.name

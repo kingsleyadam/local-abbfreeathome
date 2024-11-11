@@ -1,10 +1,21 @@
 """Free@Home BlindSensor Class."""
 
+import enum
 from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
+
+
+class BlindSensorCombinedState(enum.Enum):
+    """An Enum class for the combined state."""
+
+    unknown = None
+    shortpress_up = 0
+    shortpress_down = 1
+    longpress_up = 2
+    longpress_down = 3
 
 
 class BlindSensor(Base):
@@ -31,6 +42,9 @@ class BlindSensor(Base):
         """Initialize the Free@Home BlindSensor class."""
         self._state: bool | None = None
         self._longpress: bool | None = None
+        self._combined_state: BlindSensorCombinedState = (
+            BlindSensorCombinedState.unknown
+        )
 
         super().__init__(
             device_id,
@@ -55,6 +69,11 @@ class BlindSensor(Base):
         """Get the info, if the rocker was long pressed."""
         return self._longpress
 
+    @property
+    def combined_state(self) -> str | None:
+        """Get the combined state value."""
+        return self._combined_state.name
+
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
@@ -67,6 +86,12 @@ class BlindSensor(Base):
             1 means down was pressed
             """
             self._state = output.get("value") == "1"
+
+            if self._state:
+                self._combined_state = BlindSensorCombinedState.shortpress_down
+            else:
+                self._combined_state = BlindSensorCombinedState.shortpress_up
+
             return True
         if output.get("pairingID") == Pairing.AL_MOVE_UP_DOWN.value:
             """
@@ -74,5 +99,11 @@ class BlindSensor(Base):
             1 means down was long pressed
             """
             self._longpress = output.get("value") == "1"
+
+            if self._longpress:
+                self._combined_state = BlindSensorCombinedState.longpress_down
+            else:
+                self._combined_state = BlindSensorCombinedState.longpress_up
+
             return True
         return False
