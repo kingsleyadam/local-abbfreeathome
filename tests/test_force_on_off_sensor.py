@@ -5,7 +5,10 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.force_on_off_sensor import ForceOnOffSensor
+from src.abbfreeathome.devices.force_on_off_sensor import (
+    ForceOnOffSensor,
+    ForceOnOffSensorState,
+)
 
 
 @pytest.fixture
@@ -39,7 +42,7 @@ def force_on_off_sensor(mock_api):
 @pytest.mark.asyncio
 async def test_initial_state(force_on_off_sensor):
     """Test the intial state of the force-on-off-sensor."""
-    assert force_on_off_sensor.state is False
+    assert force_on_off_sensor.state == ForceOnOffSensorState.off.name
 
 
 @pytest.mark.asyncio
@@ -47,7 +50,7 @@ async def test_refresh_state(force_on_off_sensor):
     """Test refreshing the state of the force-on-off-sensor."""
     force_on_off_sensor._api.get_datapoint.return_value = ["1"]
     await force_on_off_sensor.refresh_state()
-    assert force_on_off_sensor.state is False
+    assert force_on_off_sensor.state == ForceOnOffSensorState.off.name
     force_on_off_sensor._api.get_datapoint.assert_called_with(
         device_id="ABB7F5923D74",
         channel_id="ch0000",
@@ -61,19 +64,24 @@ def test_refresh_state_from_output(force_on_off_sensor):
     force_on_off_sensor._refresh_state_from_output(
         output={"pairingID": 3, "value": "0"},
     )
-    assert force_on_off_sensor.state is False
+    assert force_on_off_sensor.state == ForceOnOffSensorState.off.name
 
     force_on_off_sensor._refresh_state_from_output(
         output={"pairingID": 3, "value": "1"},
     )
-    assert force_on_off_sensor.state is False
+    assert force_on_off_sensor.state == ForceOnOffSensorState.off.name
 
     force_on_off_sensor._refresh_state_from_output(
         output={"pairingID": 3, "value": "2"},
     )
-    assert force_on_off_sensor.state is True
+    assert force_on_off_sensor.state == ForceOnOffSensorState.on.name
 
     force_on_off_sensor._refresh_state_from_output(
         output={"pairingID": 3, "value": "3"},
     )
-    assert force_on_off_sensor.state is True
+    assert force_on_off_sensor.state == ForceOnOffSensorState.on.name
+
+    force_on_off_sensor._refresh_state_from_output(
+        output={"pairingID": 3, "value": "INVALID"},
+    )
+    assert force_on_off_sensor.state == ForceOnOffSensorState.unknown.name

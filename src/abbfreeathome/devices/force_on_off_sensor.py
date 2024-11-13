@@ -1,10 +1,19 @@
 """Free@Home ForceOnOffSensor Class."""
 
+import enum
 from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
+
+
+class ForceOnOffSensorState(enum.Enum):
+    """An Enum class for the force on off sensor states."""
+
+    unknown = None
+    off = "0"
+    on = "1"
 
 
 class ForceOnOffSensor(Base):
@@ -28,7 +37,7 @@ class ForceOnOffSensor(Base):
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home ForceOnOffSensor class."""
-        self._state: bool | None = None
+        self._state: ForceOnOffSensorState = ForceOnOffSensorState.unknown
 
         super().__init__(
             device_id,
@@ -44,9 +53,9 @@ class ForceOnOffSensor(Base):
         )
 
     @property
-    def state(self) -> bool | None:
+    def state(self) -> str:
         """Get the forceOnOff state."""
-        return self._state
+        return self._state.name
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
@@ -56,6 +65,8 @@ class ForceOnOffSensor(Base):
         """
         if output.get("pairingID") == Pairing.AL_FORCED.value:
             """
+            Forces value dependent high priority on or off state
+
             If the rocker is configured as 'force on':
             3 means on
             1 means off
@@ -63,6 +74,11 @@ class ForceOnOffSensor(Base):
             2 means on
             0 means off
             """
-            self._state = output.get("value") in ("2", "3")
+            if output.get("value") in ("2", "3"):
+                self._state = ForceOnOffSensorState.on
+            elif output.get("value") in ("0", "1"):
+                self._state = ForceOnOffSensorState.off
+            else:
+                self._state = ForceOnOffSensorState.unknown
             return True
         return False
