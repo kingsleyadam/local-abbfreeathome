@@ -7,9 +7,9 @@ import pytest
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.devices.switch_sensor import (
     DimmingSensor,
-    DimmingSensorCombinedState,
-    DimmingSensorLongpressState,
+    DimmingSensorState,
     SwitchSensor,
+    SwitchSensorState,
 )
 
 
@@ -68,7 +68,7 @@ def dimming_sensor(mock_api):
 @pytest.mark.asyncio
 async def test_initial_state(switch_sensor):
     """Test the intial state of the switch-sensor."""
-    assert switch_sensor.state is False
+    assert switch_sensor.state == "unknown"
 
 
 @pytest.mark.asyncio
@@ -76,7 +76,7 @@ async def test_refresh_state(switch_sensor):
     """Test refreshing the state of the switch-sensor."""
     switch_sensor._api.get_datapoint.return_value = ["1"]
     await switch_sensor.refresh_state()
-    assert switch_sensor.state is True
+    assert switch_sensor.state == "on"
     switch_sensor._api.get_datapoint.assert_called_with(
         device_id="ABB700D9C0A4",
         channel_id="ch0000",
@@ -90,7 +90,7 @@ def test_refresh_state_from_output_switch(switch_sensor):
     switch_sensor._refresh_state_from_output(
         output={"pairingID": 1, "value": "1"},
     )
-    assert switch_sensor.state is True
+    assert switch_sensor.state == "on"
 
 
 def test_refresh_state_from_output_dimming(dimming_sensor):
@@ -99,62 +99,36 @@ def test_refresh_state_from_output_dimming(dimming_sensor):
     dimming_sensor._refresh_state_from_output(
         output={"pairingID": 1, "value": "1"},
     )
-    assert dimming_sensor.state is True
-    assert (
-        dimming_sensor.combined_state == DimmingSensorCombinedState.shortpress_up.name
-    )
+    assert dimming_sensor.state == SwitchSensorState.on.name
+    assert dimming_sensor.switching_state == SwitchSensorState.on
 
     dimming_sensor._refresh_state_from_output(
         output={"pairingID": 1, "value": "0"},
     )
-    assert dimming_sensor.state is False
-    assert (
-        dimming_sensor.combined_state == DimmingSensorCombinedState.shortpress_down.name
-    )
+    assert dimming_sensor.state == SwitchSensorState.off.name
+    assert dimming_sensor.switching_state == SwitchSensorState.off
 
     dimming_sensor._refresh_state_from_output(
         output={"pairingID": 16, "value": "1"},
     )
-    assert (
-        dimming_sensor.longpress
-        == DimmingSensorLongpressState.longpress_down_press.name
-    )
-    assert (
-        dimming_sensor.combined_state
-        == DimmingSensorCombinedState.longpress_down_press.name
-    )
+    assert dimming_sensor.state == DimmingSensorState.longpress_down.name
+    assert dimming_sensor.dimming_state == DimmingSensorState.longpress_down
 
     dimming_sensor._refresh_state_from_output(
         output={"pairingID": 16, "value": "0"},
     )
-    assert (
-        dimming_sensor.longpress
-        == DimmingSensorLongpressState.longpress_down_release.name
-    )
-    assert (
-        dimming_sensor.combined_state
-        == DimmingSensorCombinedState.longpress_down_release.name
-    )
+
+    assert dimming_sensor.state == DimmingSensorState.longpress_down_release.name
+    assert dimming_sensor.dimming_state == DimmingSensorState.longpress_down_release
 
     dimming_sensor._refresh_state_from_output(
         output={"pairingID": 16, "value": "9"},
     )
-    assert (
-        dimming_sensor.longpress == DimmingSensorLongpressState.longpress_up_press.name
-    )
-    assert (
-        dimming_sensor.combined_state
-        == DimmingSensorCombinedState.longpress_up_press.name
-    )
+    assert dimming_sensor.state == DimmingSensorState.longpress_up.name
+    assert dimming_sensor.dimming_state == DimmingSensorState.longpress_up
 
     dimming_sensor._refresh_state_from_output(
         output={"pairingID": 16, "value": "8"},
     )
-    assert (
-        dimming_sensor.longpress
-        == DimmingSensorLongpressState.longpress_up_release.name
-    )
-    assert (
-        dimming_sensor.combined_state
-        == DimmingSensorCombinedState.longpress_up_release.name
-    )
+    assert dimming_sensor.state == DimmingSensorState.longpress_up_release.name
+    assert dimming_sensor.dimming_state == DimmingSensorState.longpress_up_release
