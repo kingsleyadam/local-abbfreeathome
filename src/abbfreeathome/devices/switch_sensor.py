@@ -66,14 +66,14 @@ class SwitchSensor(Base):
         )
 
     @property
-    def state(self) -> str | None:
+    def state(self) -> str:
         """Get the state."""
         return self._state.name
 
     @property
-    def switching_state(self) -> SwitchSensorState:
+    def switching_state(self) -> str:
         """Get the switch state."""
-        return self._switch_sensor_state
+        return self._switch_sensor_state.name
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
@@ -96,9 +96,9 @@ class DimmingSensor(SwitchSensor):
     """Free@Home DimmingSensor Class."""
 
     @property
-    def dimming_state(self) -> DimmingSensorState:
+    def dimming_state(self) -> str:
         """Get the dimming state."""
-        return self._dimming_sensor_state
+        return self._dimming_sensor_state.name
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """

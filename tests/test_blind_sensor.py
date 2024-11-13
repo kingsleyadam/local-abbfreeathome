@@ -63,23 +63,23 @@ def test_refresh_state_from_output(blind_sensor):
         output={"pairingID": 33, "value": "1"},
     )
     assert blind_sensor.state == BlindSensorState.step_down.name
-    assert blind_sensor.step_state == BlindSensorState.step_down
+    assert blind_sensor.step_state == BlindSensorState.step_down.name
 
     blind_sensor._refresh_state_from_output(
         output={"pairingID": 32, "value": "1"},
     )
     assert blind_sensor.state == BlindSensorState.move_down.name
-    assert blind_sensor.move_state == BlindSensorState.move_down
+    assert blind_sensor.move_state == BlindSensorState.move_down.name
 
     # Test unknown values
     blind_sensor._refresh_state_from_output(
         output={"pairingID": 32, "value": "INVALID"},
     )
     assert blind_sensor.state == BlindSensorState.unknown.name
-    assert blind_sensor.move_state == BlindSensorState.unknown
+    assert blind_sensor.move_state == BlindSensorState.unknown.name
 
     blind_sensor._refresh_state_from_output(
         output={"pairingID": 33, "value": "INVALID"},
     )
     assert blind_sensor.state == BlindSensorState.unknown.name
-    assert blind_sensor.step_state == BlindSensorState.unknown
+    assert blind_sensor.step_state == BlindSensorState.unknown.name

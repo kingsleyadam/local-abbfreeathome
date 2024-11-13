@@ -58,19 +58,19 @@ class BlindSensor(Base):
         )
 
     @property
-    def state(self) -> str | None:
+    def state(self) -> str:
         """Get the sensor state."""
         return self._state.name
 
     @property
-    def step_state(self) -> BlindSensorState:
+    def step_state(self) -> str:
         """Get the step state property."""
-        return self._step_state
+        return self._step_state.name
 
     @property
-    def move_state(self) -> BlindSensorState:
+    def move_state(self) -> str:
         """Get the move state property."""
-        return self._move_state
+        return self._move_state.name
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
