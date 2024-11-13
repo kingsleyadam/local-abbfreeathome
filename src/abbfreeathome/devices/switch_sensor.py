@@ -9,7 +9,7 @@ from .base import Base
 
 
 class SwitchSensorState(enum.Enum):
-    """An Enum class for the longpress states."""
+    """An Enum class for the switch sensor states."""
 
     unknown = None
     off = "0"
@@ -17,7 +17,7 @@ class SwitchSensorState(enum.Enum):
 
 
 class DimmingSensorState(enum.Enum):
-    """An Enum class for the longpress states."""
+    """An Enum class for the dimming sensor states."""
 
     unknown = None
     longpress_up = "9"
@@ -48,7 +48,7 @@ class SwitchSensor(Base):
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home SwitchSensor class."""
-        self._state: SwitchSensorState | DimmingSensorState | None = None
+        self._state: SwitchSensorState | DimmingSensorState = SwitchSensorState.unknown
         self._switch_sensor_state: SwitchSensorState = SwitchSensorState.unknown
         self._dimming_sensor_state: DimmingSensorState = DimmingSensorState.unknown
 
@@ -75,11 +75,6 @@ class SwitchSensor(Base):
         """Get the switch state."""
         return self._switch_sensor_state
 
-    @property
-    def dimming_state(self) -> DimmingSensorState:
-        """Get the switch state."""
-        return self._dimming_sensor_state
-
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
@@ -94,6 +89,26 @@ class SwitchSensor(Base):
 
             self._state = self._switch_sensor_state
             return True
+        return False
+
+
+class DimmingSensor(SwitchSensor):
+    """Free@Home DimmingSensor Class."""
+
+    @property
+    def dimming_state(self) -> DimmingSensorState:
+        """Get the dimming state."""
+        return self._dimming_sensor_state
+
+    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+        """
+        Refresh the state of the device from a given output.
+
+        This will return whether the state was refreshed as a boolean value.
+        """
+        if super()._refresh_state_from_output(output):
+            return True
+
         if output.get("pairingID") == Pairing.AL_RELATIVE_SET_VALUE_CONTROL.value:
             try:
                 self._dimming_sensor_state = DimmingSensorState(output.get("value"))
@@ -103,7 +118,3 @@ class SwitchSensor(Base):
             self._state = self._dimming_sensor_state
             return True
         return False
-
-
-class DimmingSensor(SwitchSensor):
-    """Free@Home DimmingSensor Class."""

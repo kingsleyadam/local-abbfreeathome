@@ -8,14 +8,14 @@ from ..bin.pairing import Pairing
 from .base import Base
 
 
-class BlindSensorCombinedState(enum.Enum):
-    """An Enum class for the combined state."""
+class BlindSensorState(enum.Enum):
+    """An Enum class for the blind sensor state."""
 
     unknown = None
-    shortpress_up = 0
-    shortpress_down = 1
-    longpress_up = 2
-    longpress_down = 3
+    step_up = "0"
+    step_down = "1"
+    move_up = "2"
+    move_down = "3"
 
 
 class BlindSensor(Base):
@@ -40,11 +40,9 @@ class BlindSensor(Base):
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home BlindSensor class."""
-        self._state: bool | None = None
-        self._longpress: bool | None = None
-        self._combined_state: BlindSensorCombinedState = (
-            BlindSensorCombinedState.unknown
-        )
+        self._state: BlindSensorState = BlindSensorState.unknown
+        self._step_state: BlindSensorState = BlindSensorState.unknown
+        self._move_state: BlindSensorState = BlindSensorState.unknown
 
         super().__init__(
             device_id,
@@ -60,19 +58,19 @@ class BlindSensor(Base):
         )
 
     @property
-    def state(self) -> bool | None:
+    def state(self) -> str | None:
         """Get the sensor state."""
-        return self._state
+        return self._state.name
 
     @property
-    def longpress(self) -> bool | None:
-        """Get the info, if the rocker was long pressed."""
-        return self._longpress
+    def step_state(self) -> BlindSensorState:
+        """Get the step state property."""
+        return self._step_state
 
     @property
-    def combined_state(self) -> str | None:
-        """Get the combined state value."""
-        return self._combined_state.name
+    def move_state(self) -> BlindSensorState:
+        """Get the move state property."""
+        return self._move_state
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
@@ -82,28 +80,35 @@ class BlindSensor(Base):
         """
         if output.get("pairingID") == Pairing.AL_STOP_STEP_UP_DOWN.value:
             """
+            Stops the sunblind and to step it up/down
+
             0 means up was pressed
             1 means down was pressed
             """
-            self._state = output.get("value") == "1"
-
-            if self._state:
-                self._combined_state = BlindSensorCombinedState.shortpress_down
+            if output.get("value") == "0":
+                self._step_state = BlindSensorState.step_up
+            elif output.get("value") == "1":
+                self._step_state = BlindSensorState.step_down
             else:
-                self._combined_state = BlindSensorCombinedState.shortpress_up
+                self._step_state = BlindSensorState.unknown
 
+            self._state = self._step_state
             return True
+
         if output.get("pairingID") == Pairing.AL_MOVE_UP_DOWN.value:
             """
-            0 means up was long pressed
-            1 means down was long pressed
+            Moves sunblind up (0) and down (1)
+
+            0 means up was pressed
+            1 means down was pressed
             """
-            self._longpress = output.get("value") == "1"
-
-            if self._longpress:
-                self._combined_state = BlindSensorCombinedState.longpress_down
+            if output.get("value") == "0":
+                self._move_state = BlindSensorState.move_up
+            elif output.get("value") == "1":
+                self._move_state = BlindSensorState.move_down
             else:
-                self._combined_state = BlindSensorCombinedState.longpress_up
+                self._move_state = BlindSensorState.unknown
 
+            self._state = self._move_state
             return True
         return False

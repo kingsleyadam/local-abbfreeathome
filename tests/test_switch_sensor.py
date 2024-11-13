@@ -68,7 +68,7 @@ def dimming_sensor(mock_api):
 @pytest.mark.asyncio
 async def test_initial_state(switch_sensor):
     """Test the intial state of the switch-sensor."""
-    assert switch_sensor.state == "unknown"
+    assert switch_sensor.state == SwitchSensorState.off.name
 
 
 @pytest.mark.asyncio
@@ -76,7 +76,7 @@ async def test_refresh_state(switch_sensor):
     """Test refreshing the state of the switch-sensor."""
     switch_sensor._api.get_datapoint.return_value = ["1"]
     await switch_sensor.refresh_state()
-    assert switch_sensor.state == "on"
+    assert switch_sensor.state == SwitchSensorState.on.name
     switch_sensor._api.get_datapoint.assert_called_with(
         device_id="ABB700D9C0A4",
         channel_id="ch0000",
@@ -90,7 +90,12 @@ def test_refresh_state_from_output_switch(switch_sensor):
     switch_sensor._refresh_state_from_output(
         output={"pairingID": 1, "value": "1"},
     )
-    assert switch_sensor.state == "on"
+    assert switch_sensor.state == SwitchSensorState.on.name
+
+    switch_sensor._refresh_state_from_output(
+        output={"pairingID": 1, "value": "INVALID"},
+    )
+    assert switch_sensor.state == SwitchSensorState.unknown.name
 
 
 def test_refresh_state_from_output_dimming(dimming_sensor):

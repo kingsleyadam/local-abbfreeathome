@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.blind_sensor import BlindSensor, BlindSensorCombinedState
+from src.abbfreeathome.devices.blind_sensor import BlindSensor, BlindSensorState
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def blind_sensor(mock_api):
 @pytest.mark.asyncio
 async def test_initial_state(blind_sensor):
     """Test the intial state of the blind-sensor."""
-    assert blind_sensor.state is False
+    assert blind_sensor.state == BlindSensorState.step_up.name
 
 
 @pytest.mark.asyncio
@@ -48,7 +48,7 @@ async def test_refresh_state(blind_sensor):
     """Test refreshing the state of the blind-sensor."""
     blind_sensor._api.get_datapoint.return_value = ["1"]
     await blind_sensor.refresh_state()
-    assert blind_sensor.state is True
+    assert blind_sensor.state == BlindSensorState.step_down.name
     blind_sensor._api.get_datapoint.assert_called_with(
         device_id="ABB700DAD681",
         channel_id="ch0003",
@@ -62,11 +62,24 @@ def test_refresh_state_from_output(blind_sensor):
     blind_sensor._refresh_state_from_output(
         output={"pairingID": 33, "value": "1"},
     )
-    assert blind_sensor.state is True
-    assert blind_sensor.combined_state == BlindSensorCombinedState.shortpress_down.name
+    assert blind_sensor.state == BlindSensorState.step_down.name
+    assert blind_sensor.step_state == BlindSensorState.step_down
 
     blind_sensor._refresh_state_from_output(
         output={"pairingID": 32, "value": "1"},
     )
-    assert blind_sensor.longpress is True
-    assert blind_sensor.combined_state == BlindSensorCombinedState.longpress_down.name
+    assert blind_sensor.state == BlindSensorState.move_down.name
+    assert blind_sensor.move_state == BlindSensorState.move_down
+
+    # Test unknown values
+    blind_sensor._refresh_state_from_output(
+        output={"pairingID": 32, "value": "INVALID"},
+    )
+    assert blind_sensor.state == BlindSensorState.unknown.name
+    assert blind_sensor.move_state == BlindSensorState.unknown
+
+    blind_sensor._refresh_state_from_output(
+        output={"pairingID": 33, "value": "INVALID"},
+    )
+    assert blind_sensor.state == BlindSensorState.unknown.name
+    assert blind_sensor.step_state == BlindSensorState.unknown
