@@ -47,7 +47,7 @@ class FreeAtHome:
         return [
             _device
             for _device in self._devices.values()
-            if isinstance(_device, device_class)
+            if type(_device) is device_class
         ]
 
     async def get_devices_by_function(self, function: Function) -> list[dict]:
