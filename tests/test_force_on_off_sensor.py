@@ -80,3 +80,8 @@ def test_refresh_state_from_output(force_on_off_sensor):
         output={"pairingID": 3, "value": "3"},
     )
     assert force_on_off_sensor.state == ForceOnOffSensorState.on.name
+
+    force_on_off_sensor._refresh_state_from_output(
+        output={"pairingID": 3, "value": "INVALID"},
+    )
+    assert force_on_off_sensor.state == ForceOnOffSensorState.unknown.name
