@@ -7,7 +7,7 @@ import pytest
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.devices.cover_actuator import (
     CoverActuator,
-    CoverActuatorForcePosition,
+    CoverActuatorForcedPosition,
     ShutterActuator,
 )
 
@@ -166,36 +166,49 @@ async def test_stop(cover_actuator):
 
 
 @pytest.mark.asyncio
-async def test_set_force_position(cover_actuator):
+async def test_set_forced_position(cover_actuator):
     """Test to force a position of a cover."""
-    await cover_actuator.set_force_position(CoverActuatorForcePosition.deactivated)
+    await cover_actuator.set_forced_position(
+        CoverActuatorForcedPosition.deactivated.name
+    )
+    assert (
+        cover_actuator.forced_position == CoverActuatorForcedPosition.deactivated.name
+    )
     cover_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0004",
         value="0",
     )
-    assert cover_actuator.forced_position == CoverActuatorForcePosition.deactivated.name
 
-    await cover_actuator.set_force_position(CoverActuatorForcePosition.forced_open)
+    await cover_actuator.set_forced_position(
+        CoverActuatorForcedPosition.forced_open.name
+    )
+    assert (
+        cover_actuator.forced_position == CoverActuatorForcedPosition.forced_open.name
+    )
     cover_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0004",
         value="2",
     )
-    assert cover_actuator.forced_position == CoverActuatorForcePosition.forced_open.name
 
-    await cover_actuator.set_force_position(CoverActuatorForcePosition.forced_close)
+    await cover_actuator.set_forced_position(
+        CoverActuatorForcedPosition.forced_closed.name
+    )
+    assert (
+        cover_actuator.forced_position == CoverActuatorForcedPosition.forced_closed.name
+    )
     cover_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0004",
         value="3",
     )
-    assert (
-        cover_actuator.forced_position == CoverActuatorForcePosition.forced_close.name
-    )
+
+    await cover_actuator.set_forced_position("INVALID")
+    assert cover_actuator.forced_position == CoverActuatorForcedPosition.unknown.name
 
 
 @pytest.mark.asyncio
@@ -271,10 +284,12 @@ async def test_refresh_state_from_output(cover_actuator):
 
     # Check output that affects the forced position
     cover_actuator._refresh_state_from_output(output={"pairingID": 257, "value": "2"})
-    assert cover_actuator.forced_position == CoverActuatorForcePosition.forced_open.name
+    assert (
+        cover_actuator.forced_position == CoverActuatorForcedPosition.forced_open.name
+    )
 
     cover_actuator._refresh_state_from_output(output={"pairingID": 257, "value": "4"})
-    assert cover_actuator.forced_position == CoverActuatorForcePosition.unknown.name
+    assert cover_actuator.forced_position == CoverActuatorForcedPosition.unknown.name
 
     # Check output that affects the position
     cover_actuator._refresh_state_from_output(output={"pairingID": 289, "value": "35"})

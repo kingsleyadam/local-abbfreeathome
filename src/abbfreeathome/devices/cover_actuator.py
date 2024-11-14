@@ -8,13 +8,13 @@ from ..bin.pairing import Pairing
 from .base import Base
 
 
-class CoverActuatorForcePosition(enum.Enum):
+class CoverActuatorForcedPosition(enum.Enum):
     """An Enum class for the force_position states."""
 
     unknown = None
     deactivated = "0"
     forced_open = "2"
-    forced_close = "3"
+    forced_closed = "3"
 
 
 class CoverActuator(Base):
@@ -43,8 +43,8 @@ class CoverActuator(Base):
         """Initialize the Free@Home CoverActuator class."""
         self._state: int | None = None
         self._position: int | None = None
-        self._forced_position: CoverActuatorForcePosition = (
-            CoverActuatorForcePosition.unknown
+        self._forced_position: CoverActuatorForcedPosition = (
+            CoverActuatorForcedPosition.unknown
         )
         self._tilt_position: int | None = None
 
@@ -101,11 +101,15 @@ class CoverActuator(Base):
         if self.state in [2, 3]:
             await self._set_stop_datapoint()
 
-    async def set_force_position(self, value: CoverActuatorForcePosition):
+    async def set_forced_position(self, position: str):
         """Force the position of the cover."""
-        if value is not CoverActuatorForcePosition.unknown:
-            await self._set_force_datapoint(str(value.value))
-            self._forced_position = value
+        try:
+            _position = CoverActuatorForcedPosition[position]
+        except KeyError:
+            _position = CoverActuatorForcedPosition.unknown
+
+        await self._set_force_datapoint(_position.value)
+        self._forced_position = _position
 
     async def set_position(self, value: int):
         """
@@ -142,9 +146,9 @@ class CoverActuator(Base):
             return True
         if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
-                self._forced_position = CoverActuatorForcePosition(output.get("value"))
+                self._forced_position = CoverActuatorForcedPosition(output.get("value"))
             except ValueError:
-                self._forced_position = CoverActuatorForcePosition.unknown
+                self._forced_position = CoverActuatorForcedPosition.unknown
             return True
         if (
             output.get("pairingID")
