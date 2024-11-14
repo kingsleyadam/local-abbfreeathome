@@ -1,4 +1,7 @@
-aiohttp
+# There's an issue with aioresponses and the latest version of aiohttp
+# Pin an earlier version for development until PR is merged and released.
+# https://github.com/pnuckowski/aioresponses/pull/262
+aiohttp<3.11.0
 pytest
 pytest-asyncio
 pytest-cov

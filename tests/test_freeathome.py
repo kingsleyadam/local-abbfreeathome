@@ -319,12 +319,13 @@ async def test_get_room_name(freeathome):
     assert room_name is None
 
 
-def test_get_device_by_class(freeathome):
+@pytest.mark.asyncio
+async def test_get_device_by_class(freeathome):
     """Test the get_device_class function."""
-    device = MagicMock(spec=SwitchActuator)
-    freeathome._devices = {"device1": device}
+    await freeathome.load_devices()
+
     devices = freeathome.get_devices_by_class(SwitchActuator)
-    assert devices == [device]
+    assert len(devices) == 2
 
 
 @pytest.mark.asyncio
