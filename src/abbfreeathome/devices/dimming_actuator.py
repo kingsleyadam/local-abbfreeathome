@@ -8,16 +8,7 @@ from ..bin.pairing import Pairing
 from .base import Base
 
 
-class DimmingActuatorForceCommand(enum.Enum):
-    """An Enum class for the force commands."""
-
-    unknown = None
-    deactivate = "0"
-    force_off = "2"
-    force_on = "3"
-
-
-class DimmingActuatorForceState(enum.Enum):
+class DimmingActuatorForcedPosition(enum.Enum):
     """An Enum class for the force states."""
 
     unknown = None
@@ -51,7 +42,9 @@ class DimmingActuator(Base):
         """Initialize the Free@Home DimmingActuator class."""
         self._state: bool | None = None
         self._brightness: int | None = None
-        self._forced: DimmingActuatorForceState = DimmingActuatorForceState.unknown
+        self._forced_position: DimmingActuatorForcedPosition = (
+            DimmingActuatorForcedPosition.unknown
+        )
 
         super().__init__(
             device_id,
@@ -77,9 +70,9 @@ class DimmingActuator(Base):
         return int(self._brightness)
 
     @property
-    def forced(self) -> str | None:
+    def forced_posiiton(self) -> str | None:
         """Get the forced state of the dimmer."""
-        return self._forced.name
+        return self._forced_position.name
 
     async def turn_on(self):
         """Turn on the dimmer."""
@@ -104,17 +97,21 @@ class DimmingActuator(Base):
         await self._set_brightness_datapoint(str(value))
         self._brightness = value
 
-    async def set_forced(self, value: DimmingActuatorForceCommand):
+    async def set_forced_position(self, position: str):
         """Set the forced-option on the dimmer."""
-        if value is not DimmingActuatorForceCommand.unknown:
-            await self._set_force_datapoint(str(value.value))
+        try:
+            _position = DimmingActuatorForcedPosition[position]
+        except KeyError:
+            _position = DimmingActuatorForcedPosition.unknown
 
-            if value is DimmingActuatorForceCommand.deactivate:
-                self._forced = DimmingActuatorForceState.deactivated
-            elif value is DimmingActuatorForceCommand.force_off:
-                self._forced = DimmingActuatorForceState.forced_off
-            elif value is DimmingActuatorForceCommand.force_on:
-                self._forced = DimmingActuatorForceState.forced_on
+        if _position == DimmingActuatorForcedPosition.deactivated:
+            await self._set_forced_datapoint("0")
+        if _position == DimmingActuatorForcedPosition.forced_on:
+            await self._set_forced_datapoint("3")
+        if _position == DimmingActuatorForcedPosition.forced_off:
+            await self._set_forced_datapoint("2")
+
+        self._forced_position = _position
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
@@ -130,9 +127,11 @@ class DimmingActuator(Base):
             return True
         if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
-                self._forced = DimmingActuatorForceState(output.get("value"))
+                self._forced_position = DimmingActuatorForcedPosition(
+                    output.get("value")
+                )
             except ValueError:
-                self._forced = DimmingActuatorForceState.unknown
+                self._forced_position = DimmingActuatorForcedPosition.unknown
             return True
         return False
 
@@ -160,7 +159,7 @@ class DimmingActuator(Base):
             value=value,
         )
 
-    async def _set_force_datapoint(self, value: str):
+    async def _set_forced_datapoint(self, value: str):
         """Set the force datapoint on the api."""
         _force_input_id, _force_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_FORCED
