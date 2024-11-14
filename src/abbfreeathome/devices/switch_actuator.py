@@ -8,16 +8,7 @@ from ..bin.pairing import Pairing
 from .base import Base
 
 
-class SwitchActuatorForceCommand(enum.Enum):
-    """An Enum class for the force commands."""
-
-    unknown = None
-    deactivate = "0"
-    force_off = "2"
-    force_on = "3"
-
-
-class SwitchActuatorForceState(enum.Enum):
+class SwitchActuatorForcedPosition(enum.Enum):
     """An Enum class for the force states."""
 
     unknown = None
@@ -49,7 +40,9 @@ class SwitchActuator(Base):
     ) -> None:
         """Initialize the Free@Home SwitchActuator class."""
         self._state: bool | None = None
-        self._forced: SwitchActuatorForceState = SwitchActuatorForceState.unknown
+        self._forced_position: SwitchActuatorForcedPosition = (
+            SwitchActuatorForcedPosition.unknown
+        )
 
         super().__init__(
             device_id,
@@ -70,9 +63,9 @@ class SwitchActuator(Base):
         return self._state
 
     @property
-    def forced(self) -> str | None:
+    def forced_position(self) -> str | None:
         """Get the forced state of the switch."""
-        return self._forced.name
+        return self._forced_position.name
 
     async def turn_on(self):
         """Turn on the switch."""
@@ -84,18 +77,21 @@ class SwitchActuator(Base):
         await self._set_switching_datapoint("0")
         self._state = False
 
-    async def set_forced(self, value: SwitchActuatorForceCommand):
+    async def set_forced_position(self, position: str):
         """Set the forced-option on the switch."""
+        try:
+            _position = SwitchActuatorForcedPosition[position]
+        except KeyError:
+            _position = SwitchActuatorForcedPosition.unknown
 
-        if value is not SwitchActuatorForceCommand.unknown:
-            await self._set_force_datapoint(str(value.value))
+        if _position == SwitchActuatorForcedPosition.deactivated:
+            await self._set_force_datapoint("0")
+        if _position == SwitchActuatorForcedPosition.forced_on:
+            await self._set_force_datapoint("3")
+        if _position == SwitchActuatorForcedPosition.forced_off:
+            await self._set_force_datapoint("2")
 
-            if value is SwitchActuatorForceCommand.deactivate:
-                self._forced = SwitchActuatorForceState.deactivated
-            elif value is SwitchActuatorForceCommand.force_off:
-                self._forced = SwitchActuatorForceState.forced_off
-            elif value is SwitchActuatorForceCommand.force_on:
-                self._forced = SwitchActuatorForceState.forced_on
+        self._forced_position = _position
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
@@ -108,9 +104,11 @@ class SwitchActuator(Base):
             return True
         if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
-                self._forced = SwitchActuatorForceState(output.get("value"))
+                self._forced_position = SwitchActuatorForcedPosition(
+                    output.get("value")
+                )
             except ValueError:
-                self._forced = SwitchActuatorForceState.unknown
+                self._forced_position = SwitchActuatorForcedPosition.unknown
             return True
         return False
 
