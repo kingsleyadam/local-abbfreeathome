@@ -70,7 +70,7 @@ class DimmingActuator(Base):
         return int(self._brightness)
 
     @property
-    def forced_posititon(self) -> str | None:
+    def forced_position(self) -> str | None:
         """Get the forced state of the dimmer."""
         return self._forced_position.name
 

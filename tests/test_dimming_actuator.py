@@ -95,7 +95,7 @@ async def test_set_forced(dimming_actuator):
         DimmingActuatorForcedPosition.deactivated.name
     )
     assert (
-        dimming_actuator.forced_posititon
+        dimming_actuator.forced_position
         == DimmingActuatorForcedPosition.deactivated.name
     )
     dimming_actuator._api.set_datapoint.assert_called_with(
@@ -108,7 +108,7 @@ async def test_set_forced(dimming_actuator):
         DimmingActuatorForcedPosition.forced_off.name
     )
     assert (
-        dimming_actuator.forced_posititon
+        dimming_actuator.forced_position
         == DimmingActuatorForcedPosition.forced_off.name
     )
     dimming_actuator._api.set_datapoint.assert_called_with(
@@ -121,8 +121,7 @@ async def test_set_forced(dimming_actuator):
         DimmingActuatorForcedPosition.forced_on.name
     )
     assert (
-        dimming_actuator.forced_posititon
-        == DimmingActuatorForcedPosition.forced_on.name
+        dimming_actuator.forced_position == DimmingActuatorForcedPosition.forced_on.name
     )
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
@@ -133,7 +132,7 @@ async def test_set_forced(dimming_actuator):
 
     await dimming_actuator.set_forced_position("INVALID")
     assert (
-        dimming_actuator.forced_posititon == DimmingActuatorForcedPosition.unknown.name
+        dimming_actuator.forced_position == DimmingActuatorForcedPosition.unknown.name
     )
 
 
@@ -172,8 +171,7 @@ def test_refresh_state_from_output(dimming_actuator):
         },
     )
     assert (
-        dimming_actuator.forced_posititon
-        == DimmingActuatorForcedPosition.forced_on.name
+        dimming_actuator.forced_position == DimmingActuatorForcedPosition.forced_on.name
     )
 
 
