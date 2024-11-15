@@ -51,7 +51,7 @@ class CoverActuator(Base):
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home CoverActuator class."""
-        self._state: str
+        self._state: CoverActuatorState = CoverActuatorState.unknown
         self._position: int | None = None
         self._forced_position: CoverActuatorForcedPosition = (
             CoverActuatorForcedPosition.unknown
@@ -72,7 +72,7 @@ class CoverActuator(Base):
         )
 
     @property
-    def state(self) -> CoverActuatorState | None:
+    def state(self) -> str:
         """Get the state of the cover actuator."""
         return self._state.name
 
