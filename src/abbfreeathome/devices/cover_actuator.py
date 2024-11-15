@@ -51,7 +51,7 @@ class CoverActuator(Base):
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home CoverActuator class."""
-        self._state: CoverActuatorState = CoverActuatorState.unknown
+        self._state: str
         self._position: int | None = None
         self._forced_position: CoverActuatorForcedPosition = (
             CoverActuatorForcedPosition.unknown
