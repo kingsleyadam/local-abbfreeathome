@@ -8,6 +8,7 @@ from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.devices.cover_actuator import (
     CoverActuator,
     CoverActuatorForcedPosition,
+    CoverActuatorState,
     ShutterActuator,
 )
 
@@ -93,37 +94,7 @@ def shutter_actuator(mock_api):
 @pytest.mark.asyncio
 async def test_initial_state(cover_actuator):
     """Test the intial state of the RTC."""
-    assert cover_actuator.state == 0
-
-
-def test_is_cover_closed(cover_actuator):
-    """Test to check if cover is closed."""
-    interim = cover_actuator._position
-    cover_actuator._position = 100
-    assert cover_actuator.is_cover_closed() is True
-    cover_actuator._position = 99
-    assert cover_actuator.is_cover_closed() is False
-    cover_actuator._position = interim
-
-
-def test_is_cover_opening(cover_actuator):
-    """Test to check if cover is opening."""
-    interim = cover_actuator._state
-    cover_actuator._state = 2
-    assert cover_actuator.is_cover_opening() is True
-    cover_actuator._state = 0
-    assert cover_actuator.is_cover_opening() is False
-    cover_actuator._state = interim
-
-
-def test_is_cover_closing(cover_actuator):
-    """Test to check if cover is closing."""
-    interim = cover_actuator._state
-    cover_actuator._state = 3
-    assert cover_actuator.is_cover_closing() is True
-    cover_actuator._state = 0
-    assert cover_actuator.is_cover_closing() is False
-    cover_actuator._state = interim
+    assert cover_actuator.state == CoverActuatorState.opened.name
 
 
 @pytest.mark.asyncio
@@ -154,7 +125,7 @@ async def test_close(cover_actuator):
 async def test_stop(cover_actuator):
     """Test to stop the cover."""
     interim = cover_actuator._state
-    cover_actuator._state = 2
+    cover_actuator._state = CoverActuatorState.opening
     await cover_actuator.stop()
     cover_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB2AC253651",
@@ -280,7 +251,12 @@ async def test_refresh_state_from_output(cover_actuator):
     cover_actuator._refresh_state_from_output(
         output={"pairingID": 288, "value": "1"},
     )
-    assert cover_actuator.state == 1
+    assert cover_actuator.state == CoverActuatorState.partly_opened.name
+
+    cover_actuator._refresh_state_from_output(
+        output={"pairingID": 288, "value": "4"},
+    )
+    assert cover_actuator.state == CoverActuatorState.unknown.name
 
     # Check output that affects the forced position
     cover_actuator._refresh_state_from_output(output={"pairingID": 257, "value": "2"})
