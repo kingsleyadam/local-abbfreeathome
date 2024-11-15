@@ -17,6 +17,16 @@ class CoverActuatorForcedPosition(enum.Enum):
     forced_closed = "3"
 
 
+class CoverActuatorState(enum.Enum):
+    """An Enum class for the cover states."""
+
+    unknown = None
+    opened = "0"
+    partly_opened = "1"
+    opening = "2"
+    closing = "3"
+
+
 class CoverActuator(Base):
     """Free@Home CoverActuator Class."""
 
@@ -41,7 +51,7 @@ class CoverActuator(Base):
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home CoverActuator class."""
-        self._state: int | None = None
+        self._state: CoverActuatorState = CoverActuatorState.unknown
         self._position: int | None = None
         self._forced_position: CoverActuatorForcedPosition = (
             CoverActuatorForcedPosition.unknown
@@ -62,9 +72,9 @@ class CoverActuator(Base):
         )
 
     @property
-    def state(self) -> int | None:
+    def state(self) -> str:
         """Get the state of the cover actuator."""
-        return self._state
+        return self._state.name
 
     @property
     def position(self) -> int | None:
@@ -76,18 +86,6 @@ class CoverActuator(Base):
         """Get the information, if the position is forced."""
         return self._forced_position.name
 
-    def is_cover_closed(self):
-        """Helper-Function returns true if the cover is closed."""
-        return self.position == 100
-
-    def is_cover_opening(self):
-        """Helper-Function returns true if the cover is opening."""
-        return self.state == 2
-
-    def is_cover_closing(self):
-        """Helper-Function returns true if the cover is closing."""
-        return self.state == 3
-
     async def open(self):
         """Open the cover."""
         await self._set_moving_datapoint("0")
@@ -98,7 +96,10 @@ class CoverActuator(Base):
 
     async def stop(self):
         """Stop the movement of the cover."""
-        if self.state in [2, 3]:
+        if self.state in [
+            CoverActuatorState.opening.name,
+            CoverActuatorState.closing.name,
+        ]:
             await self._set_stop_datapoint()
 
     async def set_forced_position(self, forced_position_name: str):
@@ -136,13 +137,10 @@ class CoverActuator(Base):
         This will return whether the state was refreshed as a boolean value.
         """
         if output.get("pairingID") == Pairing.AL_INFO_MOVE_UP_DOWN.value:
-            """
-            0 means the blind is fully opened
-            1 means the blind is partly opened
-            2 means the blind is currently opening
-            3 means the blind is currently closing
-            """
-            self._state = int(output.get("value"))
+            try:
+                self._state = CoverActuatorState(output.get("value"))
+            except ValueError:
+                self._state = CoverActuatorState.unknown
             return True
         if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
