@@ -7,8 +7,7 @@ import pytest
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.devices.dimming_actuator import (
     DimmingActuator,
-    DimmingActuatorForceCommand,
-    DimmingActuatorForceState,
+    DimmingActuatorForcedPosition,
 )
 
 
@@ -92,29 +91,48 @@ async def test_set_brightness(dimming_actuator):
 @pytest.mark.asyncio
 async def test_set_forced(dimming_actuator):
     """Test to set the forced option of the DimmingActuator."""
-    await dimming_actuator.set_forced(DimmingActuatorForceCommand.deactivate)
-    assert dimming_actuator.forced == DimmingActuatorForceState.deactivated.name
+    await dimming_actuator.set_forced_position(
+        DimmingActuatorForcedPosition.deactivated.name
+    )
+    assert (
+        dimming_actuator.forced_posiiton
+        == DimmingActuatorForcedPosition.deactivated.name
+    )
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="idp0004",
         value="0",
     )
-    await dimming_actuator.set_forced(DimmingActuatorForceCommand.force_off)
-    assert dimming_actuator.forced == DimmingActuatorForceState.forced_off.name
+    await dimming_actuator.set_forced_position(
+        DimmingActuatorForcedPosition.forced_off.name
+    )
+    assert (
+        dimming_actuator.forced_posiiton
+        == DimmingActuatorForcedPosition.forced_off.name
+    )
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="idp0004",
         value="2",
     )
-    await dimming_actuator.set_forced(DimmingActuatorForceCommand.force_on)
-    assert dimming_actuator.forced == DimmingActuatorForceState.forced_on.name
+    await dimming_actuator.set_forced_position(
+        DimmingActuatorForcedPosition.forced_on.name
+    )
+    assert (
+        dimming_actuator.forced_posiiton == DimmingActuatorForcedPosition.forced_on.name
+    )
     dimming_actuator._api.set_datapoint.assert_called_with(
         device_id="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="idp0004",
         value="3",
+    )
+
+    await dimming_actuator.set_forced_position("INVALID")
+    assert (
+        dimming_actuator.forced_posiiton == DimmingActuatorForcedPosition.unknown.name
     )
 
 
@@ -149,10 +167,12 @@ def test_refresh_state_from_output(dimming_actuator):
     dimming_actuator._refresh_state_from_output(
         output={
             "pairingID": 257,
-            "value": str(DimmingActuatorForceState.forced_on.value),
+            "value": DimmingActuatorForcedPosition.forced_on.value,
         },
     )
-    assert dimming_actuator.forced == DimmingActuatorForceState.forced_on.name
+    assert (
+        dimming_actuator.forced_posiiton == DimmingActuatorForcedPosition.forced_on.name
+    )
 
 
 def test_update_device(dimming_actuator):
