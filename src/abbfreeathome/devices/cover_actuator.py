@@ -101,10 +101,10 @@ class CoverActuator(Base):
         if self.state in [2, 3]:
             await self._set_stop_datapoint()
 
-    async def set_forced_position(self, position: str):
+    async def set_forced_position(self, forced_position_name: str):
         """Force the position of the cover."""
         try:
-            _position = CoverActuatorForcedPosition[position]
+            _position = CoverActuatorForcedPosition[forced_position_name]
         except KeyError:
             _position = CoverActuatorForcedPosition.unknown
 

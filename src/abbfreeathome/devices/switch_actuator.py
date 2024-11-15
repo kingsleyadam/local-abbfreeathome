@@ -77,10 +77,10 @@ class SwitchActuator(Base):
         await self._set_switching_datapoint("0")
         self._state = False
 
-    async def set_forced_position(self, position: str):
+    async def set_forced_position(self, forced_position_name: str):
         """Set the forced-option on the switch."""
         try:
-            _position = SwitchActuatorForcedPosition[position]
+            _position = SwitchActuatorForcedPosition[forced_position_name]
         except KeyError:
             _position = SwitchActuatorForcedPosition.unknown
 

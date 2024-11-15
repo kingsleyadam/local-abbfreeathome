@@ -97,10 +97,10 @@ class DimmingActuator(Base):
         await self._set_brightness_datapoint(str(value))
         self._brightness = value
 
-    async def set_forced_position(self, position: str):
+    async def set_forced_position(self, forced_position_name: str):
         """Set the forced-option on the dimmer."""
         try:
-            _position = DimmingActuatorForcedPosition[position]
+            _position = DimmingActuatorForcedPosition[forced_position_name]
         except KeyError:
             _position = DimmingActuatorForcedPosition.unknown
 
