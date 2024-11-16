@@ -307,25 +307,3 @@ class FreeAtHomeApi:
             WSMsgType.CLOSING,
         ):
             _LOGGER.warning("Websocket Connection Closed.")
-
-
-# def callback(data):
-#     logging.info(data)
-
-
-# async def free_at_home_test():
-#     async with FreeAtHomeApi(
-#         host="http://10.5.3.16/",
-#         username="installer",
-#         password="BNR12!",
-#         client_session=ClientSession(),
-#     ) as api:
-#         await api.ws_listen(callback=callback)
-
-
-# if __name__ == "__main__":
-#     import asyncio
-
-#     logging.basicConfig(level=logging.DEBUG)
-
-#     asyncio.run(free_at_home_test())
