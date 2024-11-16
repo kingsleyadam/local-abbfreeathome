@@ -122,11 +122,50 @@ def test_name_property(settings):
 
 
 @pytest.mark.asyncio
-async def test_aexit(api):
-    """Test the __aexit__ function."""
-    with patch.object(api, "ws_close", new_callable=AsyncMock) as mock_ws_close:
-        await api.__aexit__()
-        mock_ws_close.assert_called_once()
+async def test_aenter_returns_instance(api):
+    """Test the __aenter__ function with own session."""
+    async with api as instance:
+        assert instance is api
+
+
+@pytest.mark.asyncio
+async def test_aexit_closes_client_session_and_websocket(api):
+    """Test the __aexit__ function with own session."""
+    mock_session = AsyncMock(spec=aiohttp.ClientSession)
+
+    api._client_session = mock_session
+    api._ws_response = AsyncMock()
+    api._ws_response.closed = False
+    api._close_client_session = True  # Ensure the session should close
+
+    # Call the __aexit__ method
+    await api.__aexit__(None, None, None)
+
+    # Assert that the websocket close method was called
+    api._ws_response.close.assert_awaited_once()
+
+    # Assert that the client session close method was called
+    api._client_session.close.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_aexit_does_not_close_client_session_when_not_needed(api):
+    """Test the __aexit__ function with external session."""
+    mock_session = AsyncMock(spec=aiohttp.ClientSession)
+
+    api._client_session = mock_session
+    api._ws_response = AsyncMock()
+    api._ws_response.closed = False  # Ensure the websocket is initially open
+    api._close_client_session = False  # Ensure the session should NOT close
+
+    # Call the __aexit__ method
+    await api.__aexit__(None, None, None)
+
+    # Assert that the websocket close method was called
+    api._ws_response.close.assert_awaited_once()
+
+    # Assert that the client session close method was NOT called
+    api._client_session.close.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -258,35 +297,9 @@ async def test_ws_close(api):
         patch.object(
             FreeAtHomeApi, "ws_disconnect", new_callable=AsyncMock
         ) as mock_ws_disconnect,
-        patch.object(
-            FreeAtHomeApi, "_ws_session", new_callable=PropertyMock
-        ) as mock_ws_session,
     ):
-        mock_ws_session.return_value = AsyncMock()
-        with patch.object(
-            api._ws_session, "close", new_callable=AsyncMock
-        ) as mock_close:
-            await api.ws_close()
-            mock_ws_disconnect.assert_called_once()
-            mock_close.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_ws_close_no_session(api):
-    """Test the ws_close function with no session."""
-    with (
-        patch.object(
-            FreeAtHomeApi, "ws_disconnect", new_callable=AsyncMock
-        ) as mock_ws_disconnect,
-        patch.object(
-            FreeAtHomeApi, "_ws_session", new_callable=PropertyMock
-        ) as mock_ws_session,
-    ):
-        mock_ws_session.return_value = None
         await api.ws_close()
         mock_ws_disconnect.assert_called_once()
-        # Ensure no exception is raised and no call to close is made
-        assert True
 
 
 @pytest.mark.asyncio
