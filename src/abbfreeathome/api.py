@@ -7,8 +7,14 @@ import logging
 from typing import Any
 from urllib.parse import urlparse
 
-import aiohttp
-import aiohttp.client_exceptions
+from aiohttp.client import ClientSession, ClientWebSocketResponse
+from aiohttp.client_exceptions import (
+    ClientConnectionError as AioHttpClientConnectionError,
+    InvalidUrlClientError as AioHttpInvalidUrlClientError,
+    WSServerHandshakeError as AioHttpWSServerHandshakeError,
+)
+from aiohttp.helpers import BasicAuth
+from aiohttp.http import WSMsgType
 
 from .exceptions import (
     ClientConnectionError,
@@ -39,14 +45,14 @@ class FreeAtHomeSettings:
         """Load settings into the class object."""
         try:
             async with (
-                aiohttp.ClientSession() as session,
+                ClientSession() as session,
                 session.get(f"{self._host}/settings.json") as resp,
             ):
                 _response_status = resp.status
                 _response_json = await resp.json()
-        except aiohttp.client_exceptions.InvalidUrlClientError as e:
+        except AioHttpInvalidUrlClientError as e:
             raise InvalidHostException(self._host) from e
-        except aiohttp.client_exceptions.ClientConnectionError as e:
+        except AioHttpClientConnectionError as e:
             raise ClientConnectionError(self._host) from e
 
         assert _response_status == 200
@@ -95,8 +101,9 @@ class FreeAtHomeSettings:
 class FreeAtHomeApi:
     """Provides a class for interacting with the ABB-free@home API."""
 
-    _ws_session: aiohttp.ClientSession = None
-    _ws_response: aiohttp.ClientWebSocketResponse = None
+    _client_session: ClientSession = None
+    _close_client_session: bool = False
+    _ws_response: ClientWebSocketResponse = None
 
     def __init__(
         self,
@@ -104,20 +111,29 @@ class FreeAtHomeApi:
         username: str,
         password: str,
         sysap_uuid: str = "00000000-0000-0000-0000-000000000000",
-        ws_timeout: float = 60,
-        ws_heartbeat: float = 30,
+        client_session: ClientSession = None,
+        ws_heartbeat: int = 30,
     ) -> None:
         """Initialize the FreeAtHomeApi class."""
-        self._sysap_uuid = sysap_uuid
         self._host = host.rstrip("/")
-        self._username = username
-        self._password = password
-        self._ws_timeout = ws_timeout
+        self._auth = BasicAuth(username, password)
+        self._sysap_uuid = sysap_uuid
+        self._client_session = client_session
         self._ws_heartbeat = ws_heartbeat
 
+    async def __aenter__(self):
+        """Async enter and return self."""
+        return self
+
     async def __aexit__(self, *_exc_info: object):
-        """Close websocket connection."""
+        """Close client session connections."""
         await self.ws_close()
+        await self.close_client_session()
+
+    async def close_client_session(self):
+        """Close the client session if created by FreeAtHome."""
+        if self._client_session and self._close_client_session:
+            await self._client_session.close()
 
     async def get_configuration(self) -> dict:
         """Get the Free@Home Configuration."""
@@ -169,6 +185,14 @@ class FreeAtHomeApi:
 
         return True
 
+    def _get_client_session(self) -> ClientSession:
+        """Get the ClientSession aiohttp object."""
+        if self._client_session is None:
+            self._client_session = ClientSession()
+            self._close_client_session = True
+
+        return self._client_session
+
     async def _request(self, path: str, method: str = "get", data: Any | None = None):
         """Make a request to the API."""
 
@@ -179,38 +203,36 @@ class FreeAtHomeApi:
 
         try:
             async with (
-                aiohttp.ClientSession(
-                    auth=aiohttp.BasicAuth(self._username, self._password),
-                ) as client,
-                client.request(
-                    method=method, url=f"{self._host}{_full_path}", data=data
+                self._get_client_session().request(
+                    method=method,
+                    url=f"{self._host}{_full_path}",
+                    data=data,
+                    auth=self._auth,
                 ) as resp,
             ):
                 _response_status = resp.status
-                _response = None
+                _response_data = None
                 if resp.content_type == "application/json":
-                    _response = await resp.json()
+                    _response_data = await resp.json()
                 elif resp.content_type == "text/plain":
-                    _response = await resp.text()
-        except aiohttp.client_exceptions.InvalidUrlClientError as e:
+                    _response_data = await resp.text()
+        except AioHttpInvalidUrlClientError as e:
             raise InvalidHostException(self._host) from e
-        except aiohttp.client_exceptions.ClientConnectionError as e:
+        except AioHttpClientConnectionError as e:
             raise ClientConnectionError(self._host) from e
 
         # Check the status code and raise exception accordingly.
         if _response_status == 401:
-            raise InvalidCredentialsException(self._username)
+            raise InvalidCredentialsException(self._auth.login)
         if _response_status == 403:
             raise ForbiddenAuthException(path)
         if _response_status == 502:
             raise ConnectionTimeoutException(self._host)
 
-        try:
-            assert _response_status == 200
-        except AssertionError:
+        if _response_status != 200:
             raise InvalidApiResponseException(_response_status) from None
 
-        return _response
+        return _response_data
 
     @property
     def ws_connected(self) -> bool:
@@ -221,28 +243,18 @@ class FreeAtHomeApi:
         """Close the websocket session."""
         await self.ws_disconnect()
 
-        if self._ws_session:
-            await self._ws_session.close()
-
     async def ws_connect(self):
         """Connect to the host websocket."""
+        if self.ws_connected:
+            return
 
         _parsed_host = urlparse(self._host)
         _full_path = f"{_parsed_host.hostname}/fhapi/{API_VERSION}/api/ws"
         _url = f"ws://{_full_path}"
 
-        if self.ws_connected:
-            return
-
-        _timeout = aiohttp.ClientTimeout(total=self._ws_timeout)
-        if self._ws_session is None:
-            self._ws_session = aiohttp.ClientSession(
-                auth=aiohttp.BasicAuth(self._username, self._password), timeout=_timeout
-            )
-
         _LOGGER.info("Websocket attempting to connect %s", _url)
-        self._ws_response = await self._ws_session.ws_connect(
-            url=_url, heartbeat=self._ws_heartbeat
+        self._ws_response = await self._get_client_session().ws_connect(
+            url=_url, heartbeat=self._ws_heartbeat, auth=self._auth
         )
         _LOGGER.info("Websocket connected %s", _url)
 
@@ -267,11 +279,11 @@ class FreeAtHomeApi:
         if not self._ws_response or not self.ws_connected:
             try:
                 await self.ws_connect()
-            except aiohttp.WSServerHandshakeError:
+            except AioHttpWSServerHandshakeError:
                 _LOGGER.exception("Websocket Handshake Connection Error.")
                 await asyncio.sleep(retry_interval)
                 return
-            except aiohttp.ClientConnectionError:
+            except AioHttpClientConnectionError:
                 _LOGGER.exception("Websocket Client Connection Error.")
                 await asyncio.sleep(retry_interval)
                 return
@@ -281,18 +293,18 @@ class FreeAtHomeApi:
                 return
 
         data = await self._ws_response.receive()
-        if data.type == aiohttp.WSMsgType.TEXT:
+        if data.type == WSMsgType.TEXT:
             _ws_data = data.json().get(self._sysap_uuid)
             if callback and inspect.iscoroutinefunction(callback):
                 await callback(_ws_data)
             elif callback:
                 callback(_ws_data)
-        elif data.type == aiohttp.WSMsgType.ERROR:
+        elif data.type == WSMsgType.ERROR:
             _LOGGER.error("Websocket Response Error. Data: %s", data)
             await asyncio.sleep(retry_interval)
         elif data.type in (
-            aiohttp.WSMsgType.CLOSE,
-            aiohttp.WSMsgType.CLOSED,
-            aiohttp.WSMsgType.CLOSING,
+            WSMsgType.CLOSE,
+            WSMsgType.CLOSED,
+            WSMsgType.CLOSING,
         ):
             _LOGGER.warning("Websocket Connection Closed.")
