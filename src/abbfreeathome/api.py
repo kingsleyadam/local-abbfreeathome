@@ -42,6 +42,7 @@ class FreeAtHomeSettings:
     def __init__(self, host: str, client_session: ClientSession = None) -> None:
         """Initialize the FreeAtHomeSettings class."""
         self._host: str = host
+        self._client_session: ClientSession = client_session
 
     async def __aenter__(self):
         """Async enter and return self."""
