@@ -35,18 +35,32 @@ _LOGGER = logging.getLogger(__name__)
 class FreeAtHomeSettings:
     """Provides a class for fetching the settings from a ABB free@home SysAP."""
 
-    _settings = None
+    _client_session: ClientSession = None
+    _close_client_session: bool = False
+    _settings: dict = None
 
-    def __init__(self, host: str) -> None:
+    def __init__(self, host: str, client_session: ClientSession = None) -> None:
         """Initialize the FreeAtHomeSettings class."""
-        self._host = host
+        self._host: str = host
+
+    async def __aenter__(self):
+        """Async enter and return self."""
+        return self
+
+    async def __aexit__(self, *_exc_info: object):
+        """Close client session connections."""
+        await self.close_client_session()
+
+    async def close_client_session(self):
+        """Close the client session if created by FreeAtHomeSettings."""
+        if self._client_session and self._close_client_session:
+            await self._client_session.close()
 
     async def load(self):
         """Load settings into the class object."""
         try:
             async with (
-                ClientSession() as session,
-                session.get(f"{self._host}/settings.json") as resp,
+                self._get_client_session().get(f"{self._host}/settings.json") as resp,
             ):
                 _response_status = resp.status
                 _response_json = await resp.json()
@@ -96,6 +110,14 @@ class FreeAtHomeSettings:
     def name(self):
         """Get the vesion running on SysAP."""
         return self.get_flag("name")
+
+    def _get_client_session(self) -> ClientSession:
+        """Get the aiohttp ClientSession object."""
+        if self._client_session is None:
+            self._client_session = ClientSession()
+            self._close_client_session = True
+
+        return self._client_session
 
 
 class FreeAtHomeApi:

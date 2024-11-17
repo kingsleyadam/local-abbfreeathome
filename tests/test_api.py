@@ -32,6 +32,28 @@ def settings():
 
 
 @pytest.mark.asyncio
+async def test_settings_aenter_returns_instance(settings):
+    """Test the __aenter__ function with own session."""
+    async with settings as instance:
+        assert instance is settings
+
+
+@pytest.mark.asyncio
+async def test_settings_aexit_closes_client_session(settings):
+    """Test the __aexit__ function with own session."""
+    mock_session = AsyncMock(spec=aiohttp.ClientSession)
+
+    settings._client_session = mock_session
+    settings._close_client_session = True  # Ensure the session should close
+
+    # Call the __aexit__ method
+    await settings.__aexit__(None, None, None)
+
+    # Assert that the client session close method was called
+    settings._client_session.close.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_load_success(settings):
     """Test loading settings into class."""
     with aioresponses() as m:
