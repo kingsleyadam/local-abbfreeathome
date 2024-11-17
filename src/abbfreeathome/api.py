@@ -131,7 +131,7 @@ class FreeAtHomeApi:
         await self.close_client_session()
 
     async def close_client_session(self):
-        """Clos the client session if created by FreeAtHome."""
+        """Close the client session if created by FreeAtHome."""
         if self._client_session and self._close_client_session:
             await self._client_session.close()
 
@@ -186,6 +186,7 @@ class FreeAtHomeApi:
         return True
 
     def _get_client_session(self) -> ClientSession:
+        """Get the ClientSession aiohttp object."""
         if self._client_session is None:
             self._client_session = ClientSession()
             self._close_client_session = True
@@ -210,11 +211,11 @@ class FreeAtHomeApi:
                 ) as resp,
             ):
                 _response_status = resp.status
-                _response = None
+                _response_data = None
                 if resp.content_type == "application/json":
-                    _response = await resp.json()
+                    _response_data = await resp.json()
                 elif resp.content_type == "text/plain":
-                    _response = await resp.text()
+                    _response_data = await resp.text()
         except AioHttpInvalidUrlClientError as e:
             raise InvalidHostException(self._host) from e
         except AioHttpClientConnectionError as e:
@@ -231,7 +232,7 @@ class FreeAtHomeApi:
         if _response_status != 200:
             raise InvalidApiResponseException(_response_status) from None
 
-        return _response
+        return _response_data
 
     @property
     def ws_connected(self) -> bool:
