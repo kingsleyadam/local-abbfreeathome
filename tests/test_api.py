@@ -119,6 +119,15 @@ def test_get_flag(settings):
     assert settings.get_flag("version") == "1.0"
 
 
+def test_has_api_support_property(settings):
+    """Test getting has_api_support property."""
+    settings._settings = {"flags": {"version": "1.0"}}
+    assert settings.has_api_support is False
+
+    settings._settings = {"flags": {"version": "2.6.0"}}
+    assert settings.has_api_support is True
+
+
 def test_hardware_version_property(settings):
     """Test getting hardware verison."""
     settings._settings = {"flags": {"hardwareVersion": "54321"}}

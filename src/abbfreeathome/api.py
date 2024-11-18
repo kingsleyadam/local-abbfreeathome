@@ -15,6 +15,7 @@ from aiohttp.client_exceptions import (
 )
 from aiohttp.helpers import BasicAuth
 from aiohttp.http import WSMsgType
+from packaging.version import Version
 
 from .exceptions import (
     ClientConnectionError,
@@ -91,6 +92,11 @@ class FreeAtHomeSettings:
     def get_flag(self, name: str) -> Any:
         """Get a flag from the settings response."""
         return self._settings.get("flags").get(name)
+
+    @property
+    def has_api_support(self):
+        """Get whether the SysAp has API support."""
+        return Version(self.version) >= Version("2.6.0")
 
     @property
     def hardware_version(self):
