@@ -68,4 +68,6 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_WIND_SENSOR: WindSensor,
     Function.FID_WINDOW_DOOR_POSITION_SENSOR: WindowDoorSensor,
     Function.FID_WINDOW_DOOR_SENSOR: WindowDoorSensor,
+    Function.FID_MOVEMENT_DETECTOR_PYCUSTOM0: MovementDetector,
+    Function.FID_SWITCH_ACTUATOR_PYCUSTOM0: SwitchActuator,
 }
