@@ -412,3 +412,7 @@ class Function(enum.Enum):
     FID_2_PUSH_BUTTON_SENSOR_ICON = 65532
     FID_2_ROCKER_SWITCH_SENSOR_ICON = 65534
     FID_1_ROCKER_SWITCH_SENSOR_ICON = 65535
+    # Functions below this line are custom to this python package
+    # as they are not in the official API-documentation
+    FID_SWITCH_ACTUATOR_PYCUSTOM0 = 240
+    FID_MOVEMENT_DETECTOR_PYCUSTOM0 = 4249
