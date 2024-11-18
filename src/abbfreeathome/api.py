@@ -318,6 +318,8 @@ class FreeAtHomeApi:
         data = await self._ws_response.receive()
         if data.type == WSMsgType.TEXT:
             _ws_data = data.json().get(self._sysap_uuid)
+
+            _LOGGER.debug("Websocket Response: %s", _ws_data)
             if callback and inspect.iscoroutinefunction(callback):
                 await callback(_ws_data)
             elif callback:
