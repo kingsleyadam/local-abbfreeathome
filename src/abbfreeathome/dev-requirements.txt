@@ -1,7 +1,8 @@
 aiohttp!=3.11.0
+aioresponses
+packaging
+pre-commit
 pytest
 pytest-asyncio
 pytest-cov
-aioresponses
 ruff
-pre-commit
