@@ -24,17 +24,17 @@ Copy the username listed within that window (usually `installer`) to be used whe
 
 The current devices implemented within the library.
 
-| Name | Primary Functions | Properties |
-|--|--|--|
-| CarbonMonoxideSensor |  | `state` |
-| DesDoorRingingSensor |  | |
-| DimmingActuator | `turn_on()`, `turn_off()`, `set_brightness()` | `state`, `brightness` |
-| MovementDetector |  | `state`, `brightness` |
-| SmokeDetector |  | `state` |
-| SwitchActuator | `turn_on()`, `turn_off()` | `state` |
-| SwitchSensor |  | `state` |
-| Trigger | `press()` | |
-| WindowDoorSensor |  | `state`, `position` |
+| Name                 | Primary Functions                             | Properties            |
+| -------------------- | --------------------------------------------- | --------------------- |
+| CarbonMonoxideSensor |                                               | `state`               |
+| DesDoorRingingSensor |                                               |                       |
+| DimmingActuator      | `turn_on()`, `turn_off()`, `set_brightness()` | `state`, `brightness` |
+| MovementDetector     |                                               | `state`, `brightness` |
+| SmokeDetector        |                                               | `state`               |
+| SwitchActuator       | `turn_on()`, `turn_off()`                     | `state`               |
+| SwitchSensor         |                                               | `state`               |
+| Trigger              | `press()`                                     |                       |
+| WindowDoorSensor     |                                               | `state`, `position`   |
 
 ## FreeAtHome Class Structure and API Interaction
 
@@ -56,8 +56,8 @@ The `FreeAtHome` class (in general) would NOT update the state of any individual
 
 To make things simple and easy to test each device should map to a single Free@Home [function](https://developer.eu.mybuildings.abb.com/fah_local/reference/functionids). This is because each function would likely have a unique set up inputs/outputs to interact with the Free@Home device, requiring unique methods within the class to properly expose and update the device. But, it is possible that a device could have multiple functions if the functions operated identically to each other. This mapping can be applied in the `FreeAtHome._get_function_to_device_mapping` method.
 
-| Device Class | Function(s) |
-|---|---|
+| Device Class   | Function(s)         |
+| -------------- | ------------------- |
 | SwitchActuator | FID_SWITCH_ACTUATOR |
 
 If multiple functions share a number of the same properties but are slightly different we can create additional levels to the class inheritence hierachy as needed to avoid repeat code.
@@ -189,7 +189,7 @@ if __name__ == "__main__":
 
     # Pull SysAP Configuration
     _config = asyncio.run(_fah_api.get_configuration())
-    
+
     # Print All Devices
     print(_config.get("devices"))
 ```
@@ -244,28 +244,32 @@ import logging
 import asyncio
 
 
+async def websocket_test():
+    # Create an instance of the api using context management
+    async with FreeAtHomeApi(
+        host="http://<IP or HOSTNAME>", username="installer", password="<password>"
+    ) as _free_at_home_api:
+        # Create an Instance of the FreeAtHome class
+        _free_at_home = FreeAtHome(_free_at_home_api)
+
+        # Load all devices into the FreeAtHome Class
+        await _free_at_home.load_devices()
+
+        # Add our very own callback
+        for _switch in _free_at_home.get_devices_by_class(device_class=SwitchActuator):
+            _switch.register_callback(my_very_own_callback)
+
+        # Start listening for events.
+        await _free_at_home.ws_listen()
+
+
 def my_very_own_callback():
     print("The switches datapoints have been updated.")
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-
-    _free_at_home = FreeAtHome(
-        api=FreeAtHomeApi(
-          host="http://<IP or HOSTNAME>", username="installer", password="<password>"
-        )
-    )
-
-    # Load all devices into the FreeAtHome object.
-    asyncio.run(_free_at_home.load_devices())
-
-    # Set the callback function on each switch.
-    for _switch in _free_at_home.get_devices_by_class(device_class=SwitchActuator):
-        _switch.register_callback(my_very_own_callback)
-
-    # Start listenting
-    asyncio.run(_free_at_home.ws_listen())
+    asyncio.run(websocket_test())
 ```
 
 #### Output
