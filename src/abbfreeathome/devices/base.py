@@ -28,6 +28,7 @@ class Base:
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
+        virtual_device: bool = False,
     ) -> None:
         """Initialize the Free@Home Base class."""
         self._device_id = device_id
@@ -41,6 +42,7 @@ class Base:
         self._floor_name = floor_name
         self._room_name = room_name
         self._callbacks = set()
+        self._virtual_device = virtual_device
 
         # Set the initial state of the device based on output
         self._refresh_state_from_outputs()
@@ -75,6 +77,11 @@ class Base:
         """Get the room name of the device."""
         return self._room_name
 
+    @property
+    def virtual_device(self) -> bool:
+        """Get the virtual_device state of the device."""
+        return self._virtual_device
+
     def get_input_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
         """Get the channel input by pairing id."""
         for _input_id, _input in self._inputs.items():
@@ -95,7 +102,7 @@ class Base:
             self.device_id, self.channel_id, pairing.value
         )
 
-    def update_device(self, datapoint_key: str, datapoint_value: str):
+    async def update_device(self, datapoint_key: str, datapoint_value: str):
         """Update the device state."""
         _LOGGER.info(
             "%s received updated data: %s: %s",
@@ -109,6 +116,10 @@ class Base:
         if _io_key in self._outputs:
             self._outputs[_io_key]["value"] = datapoint_value
             _refreshed = self._refresh_state_from_output(output=self._outputs[_io_key])
+
+        # If this is a virtual device and the update was an input, ack the request.
+        if self.virtual_device and _io_key in self._inputs:
+            await self._vd_acknowledgement(datapoint_key, datapoint_value)
 
         if _refreshed and self._callbacks:
             for callback in self._callbacks:
@@ -149,3 +160,8 @@ class Base:
         """Refresh the state of the device from the _outputs."""
         for _output in self._outputs.values():
             self._refresh_state_from_output(_output)
+
+    async def _vd_acknowledgement(
+        self, datapoint_key: str, datapoint_value: str
+    ) -> bool:
+        """Acknowledge a request from free@home to control the device."""

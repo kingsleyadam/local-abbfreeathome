@@ -49,6 +49,7 @@ class CoverActuator(Base):
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
+        virtual_device: bool = False,
     ) -> None:
         """Initialize the Free@Home CoverActuator class."""
         self._state: CoverActuatorState = CoverActuatorState.unknown
@@ -69,6 +70,7 @@ class CoverActuator(Base):
             api,
             floor_name,
             room_name,
+            virtual_device,
         )
 
     @property

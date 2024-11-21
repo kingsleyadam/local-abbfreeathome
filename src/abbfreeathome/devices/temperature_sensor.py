@@ -27,6 +27,7 @@ class TemperatureSensor(Base):
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
+        virtual_device: bool = False,
     ) -> None:
         """Initialize the Free@Home TemperatureSensor class."""
         self._state: float | None = None
@@ -43,6 +44,7 @@ class TemperatureSensor(Base):
             api,
             floor_name,
             room_name,
+            virtual_device,
         )
 
     @property

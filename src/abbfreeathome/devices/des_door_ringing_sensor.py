@@ -26,6 +26,7 @@ class DesDoorRingingSensor(Base):
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
+        virtual_device: bool = False,
     ) -> None:
         """Initialize the Free@Home SwitchSensor class."""
         super().__init__(
@@ -39,6 +40,7 @@ class DesDoorRingingSensor(Base):
             api,
             floor_name,
             room_name,
+            virtual_device,
         )
 
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:

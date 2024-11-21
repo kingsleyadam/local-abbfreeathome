@@ -28,6 +28,7 @@ class WindSensor(Base):
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
+        virtual_device: bool = False,
     ) -> None:
         """Initialize the Free@Home WindSensor class."""
         self._state: float | None = None
@@ -45,6 +46,7 @@ class WindSensor(Base):
             api,
             floor_name,
             room_name,
+            virtual_device,
         )
 
     @property

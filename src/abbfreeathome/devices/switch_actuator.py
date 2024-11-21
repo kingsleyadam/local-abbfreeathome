@@ -37,6 +37,7 @@ class SwitchActuator(Base):
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
+        virtual_device: bool = False,
     ) -> None:
         """Initialize the Free@Home SwitchActuator class."""
         self._state: bool | None = None
@@ -55,6 +56,7 @@ class SwitchActuator(Base):
             api,
             floor_name,
             room_name,
+            virtual_device,
         )
 
     @property
@@ -93,6 +95,28 @@ class SwitchActuator(Base):
 
         self._forced_position = _position
 
+    async def _vd_acknowledgement(
+        self, datapoint_key: str, datapoint_value: str
+    ) -> bool:
+        _io_key = datapoint_key.split("/")[-1]
+
+        try:
+            _input = self._inputs[_io_key]
+        except KeyError:
+            return False
+
+        if _input.get("pairingID") == Pairing.AL_SWITCH_ON_OFF.value:
+            _switch_datapoint_id, _switch_datapoint_value = self.get_output_by_pairing(
+                pairing=Pairing.AL_INFO_ON_OFF
+            )
+            return await self._api.set_datapoint(
+                device_id=self.device_id,
+                channel_id=self.channel_id,
+                datapoint=_switch_datapoint_id,
+                value=datapoint_value,
+            )
+        return False
+
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
@@ -114,13 +138,18 @@ class SwitchActuator(Base):
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""
-        _switch_input_id, _switch_input_value = self.get_input_by_pairing(
-            pairing=Pairing.AL_SWITCH_ON_OFF
-        )
+        if self.virtual_device:
+            _switch_datapoint_id, _switch_datapoint_value = self.get_output_by_pairing(
+                pairing=Pairing.AL_INFO_ON_OFF
+            )
+        else:
+            _switch_datapoint_id, _switch_datapoint_value = self.get_input_by_pairing(
+                pairing=Pairing.AL_SWITCH_ON_OFF
+            )
         return await self._api.set_datapoint(
             device_id=self.device_id,
             channel_id=self.channel_id,
-            datapoint=_switch_input_id,
+            datapoint=_switch_datapoint_id,
             value=value,
         )
 

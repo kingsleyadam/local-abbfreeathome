@@ -30,6 +30,7 @@ class RoomTemperatureController(Base):
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
+        virtual_device: bool = False,
     ) -> None:
         """Initialize the Free@Home RoomTemperatureController class."""
         self._state: bool | None = None
@@ -50,6 +51,7 @@ class RoomTemperatureController(Base):
             api,
             floor_name,
             room_name,
+            virtual_device,
         )
 
     @property

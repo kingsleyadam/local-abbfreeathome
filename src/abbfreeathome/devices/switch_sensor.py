@@ -46,6 +46,7 @@ class SwitchSensor(Base):
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
+        virtual_device: bool = False,
     ) -> None:
         """Initialize the Free@Home SwitchSensor class."""
         self._state: SwitchSensorState | DimmingSensorState = SwitchSensorState.unknown
@@ -63,6 +64,7 @@ class SwitchSensor(Base):
             api,
             floor_name,
             room_name,
+            virtual_device,
         )
 
     @property

@@ -54,10 +54,18 @@ class FreeAtHome:
         """Get the list of devices by function."""
         _devices = []
         for _device_key, _device in (await self.get_config()).get("devices").items():
+            _interface = None
+            if _device_key == "6000EBE59C03":
+                _interface = Interface.VIRTUAL_DEVICE
+
+            if not _interface:
+                try:
+                    _interface = Interface(_device.get("interface"))
+                except ValueError:
+                    _interface = Interface.UNDEFINED
+
             # Filter by interface if provided
-            if self._interfaces and _device.get("interface") not in [
-                interface.value for interface in self._interfaces
-            ]:
+            if self._interfaces and _interface not in self._interfaces:
                 continue
 
             for _channel_key, _channel in _device.get("channels", {}).items():
@@ -100,6 +108,7 @@ class FreeAtHome:
                             "inputs": _channel.get("inputs"),
                             "outputs": _channel.get("outputs"),
                             "parameters": _channel.get("parameters"),
+                            "is_virtual_device": _interface == Interface.VIRTUAL_DEVICE,
                         }
                     )
 
@@ -162,6 +171,7 @@ class FreeAtHome:
                     api=self.api,
                     floor_name=_device.get("floor_name"),
                     room_name=_device.get("room_name"),
+                    virtual_device=_device.get("is_virtual_device"),
                 )
             )
 
@@ -179,7 +189,7 @@ class FreeAtHome:
             _unique_id = "/".join(_datapoint_key.split("/")[:-1])
             try:
                 _device = self._devices[_unique_id]
-                _device.update_device(_datapoint_key, _datapoint_value)
+                await _device.update_device(_datapoint_key, _datapoint_value)
             except KeyError:
                 continue
 
