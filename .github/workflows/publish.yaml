@@ -75,6 +75,11 @@ jobs:
       id-token: write # IMPORTANT: mandatory for sigstore
 
     steps:
+      - name: Use latest version of Python 3.x
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
       - name: Download all the dists
         uses: actions/download-artifact@v3
         with:
