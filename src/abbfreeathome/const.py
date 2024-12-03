@@ -48,7 +48,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_FORCE_ON_OFF_SENSOR: ForceOnOffSensor,
     Function.FID_HEATING_ACTUATOR: HeatingActuator,
     Function.FID_MOVEMENT_DETECTOR: MovementDetector,
-    Function.FID_MOVEMENT_DETECTOR_PYCUSTOM0: MovementDetector,
+    Function.FID_MOVEMENT_DETECTOR_TYPE7: MovementDetector,
     Function.FID_RAIN_SENSOR: RainSensor,
     Function.FID_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITHOUT_FAN: (
         RoomTemperatureController
@@ -56,7 +56,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_SHUTTER_ACTUATOR: ShutterActuator,
     Function.FID_SMOKE_DETECTOR: SmokeDetector,
     Function.FID_SWITCH_ACTUATOR: SwitchActuator,
-    Function.FID_SWITCH_ACTUATOR_PYCUSTOM0: SwitchActuator,
+    Function.FID_SWITCH_ACTUATOR_TYPE1: SwitchActuator,
     Function.FID_SWITCH_SENSOR: SwitchSensor,
     Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE0: SwitchSensor,
     Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE1: SwitchSensor,
