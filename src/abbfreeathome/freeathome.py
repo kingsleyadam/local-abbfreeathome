@@ -3,7 +3,7 @@
 from .api import FreeAtHomeApi
 from .bin.function import Function
 from .bin.interface import Interface
-from .const import FUNCTION_DEVICE_MAPPING
+from .const import FUNCTION_DEVICE_MAPPING, FUNCTION_DEVICE_MAPPING_VIRTUAL
 from .devices.base import Base
 
 
@@ -16,6 +16,7 @@ class FreeAtHome:
         interfaces: list[Interface] | None = None,
         device_classes: list[Base] | None = None,
         include_orphan_channels: bool = False,
+        include_virtual_devices: bool = True,
     ) -> None:
         """Initialize the FreeAtHome class."""
         self._config: dict | None = None
@@ -26,6 +27,7 @@ class FreeAtHome:
         self._interfaces: list[Interface] = interfaces
         self._device_classes: list[Base] = device_classes
         self._include_orphan_channels: bool = include_orphan_channels
+        self._include_virtual_devices: bool = include_virtual_devices
 
     def clear_devices(self):
         """Clear all devices in the device list."""
@@ -60,6 +62,10 @@ class FreeAtHome:
             ]:
                 continue
 
+            # Filter out virtual devices
+            if _device_key[0:4] == "6000" and not self._include_virtual_devices:
+                continue
+
             for _channel_key, _channel in _device.get("channels", {}).items():
                 # Filter out any channels not on the Free@Home floorplan
                 if (
@@ -81,6 +87,7 @@ class FreeAtHome:
                         {
                             "device_id": _device_key,
                             "device_name": _device.get("displayName"),
+                            "is_virtual": _device_key[0:4] == "6000",
                             "channel_id": _channel_key,
                             "channel_name": _channel_name,
                             "function_id": int(_channel.get("functionID"), 16),
@@ -135,6 +142,13 @@ class FreeAtHome:
     async def load_devices(self):
         """Load all of the devices into the devices object."""
         self.clear_devices()
+
+        for (
+            _function,
+            _device_class,
+        ) in self._get_function_to_device_mapping_virtual().items():
+            await self._load_devices_by_function(_function, _device_class)
+
         for _function, _device_class in self._get_function_to_device_mapping().items():
             await self._load_devices_by_function(_function, _device_class)
 
@@ -150,6 +164,15 @@ class FreeAtHome:
     async def _load_devices_by_function(self, function: Function, device_class: Base):
         _devices = await self.get_devices_by_function(function)
         for _device in _devices:
+            if (
+                device_class in FUNCTION_DEVICE_MAPPING_VIRTUAL.values()
+                and not _device.get("is_virtual")
+            ) or (
+                device_class in FUNCTION_DEVICE_MAPPING.values()
+                and _device.get("is_virtual")
+            ):
+                continue
+
             self._devices[f"{_device.get('device_id')}/{_device.get('channel_id')}"] = (
                 device_class(
                     device_id=_device.get("device_id"),
@@ -190,6 +213,17 @@ class FreeAtHome:
             else {
                 key: value
                 for key, value in FUNCTION_DEVICE_MAPPING.items()
+                if value in self._device_classes
+            }
+        )
+
+    def _get_function_to_device_mapping_virtual(self) -> dict[Function]:
+        return (
+            FUNCTION_DEVICE_MAPPING_VIRTUAL
+            if not self._device_classes
+            else {
+                key: value
+                for key, value in FUNCTION_DEVICE_MAPPING_VIRTUAL.items()
                 if value in self._device_classes
             }
         )

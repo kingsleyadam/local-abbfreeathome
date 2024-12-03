@@ -21,11 +21,18 @@ from .devices.rain_sensor import RainSensor
 from .devices.room_temperature_controller import RoomTemperatureController
 from .devices.smoke_detector import SmokeDetector
 from .devices.switch_actuator import SwitchActuator
+from .devices.switch_actuator_virtual import SwitchActuatorVirtual
 from .devices.switch_sensor import DimmingSensor, SwitchSensor
 from .devices.temperature_sensor import TemperatureSensor
 from .devices.trigger import Trigger
 from .devices.wind_sensor import WindSensor
 from .devices.window_door_sensor import WindowDoorSensor
+from .devices.window_door_sensor_virtual import WindowDoorSensorVirtual
+
+FUNCTION_DEVICE_MAPPING_VIRTUAL: dict[Function, Base] = {
+    Function.FID_WINDOW_DOOR_SENSOR: WindowDoorSensorVirtual,
+    Function.FID_SWITCH_ACTUATOR: SwitchActuatorVirtual,
+}
 
 FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_ATTIC_WINDOW_ACTUATOR: AtticWindowActuator,

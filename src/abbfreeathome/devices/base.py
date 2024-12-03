@@ -15,6 +15,7 @@ class Base:
     """Free@Home Base Class."""
 
     _state_refresh_output_pairings: list[Pairing] = []
+    _state_refresh_input_pairings: list[Pairing] = []
 
     def __init__(
         self,
@@ -44,6 +45,8 @@ class Base:
 
         # Set the initial state of the device based on output
         self._refresh_state_from_outputs()
+        # Set the initial state of the device based on input
+        self._refresh_state_from_inputs()
 
     @property
     def device_id(self) -> str:
@@ -110,6 +113,10 @@ class Base:
             self._outputs[_io_key]["value"] = datapoint_value
             _refreshed = self._refresh_state_from_output(output=self._outputs[_io_key])
 
+        if _io_key in self._inputs:
+            self._inputs[_io_key]["value"] = datapoint_value
+            _refreshed = self._refresh_state_from_input(input=self._inputs[_io_key])
+
         if _refreshed and self._callbacks:
             for callback in self._callbacks:
                 callback()
@@ -142,6 +149,24 @@ class Base:
                 }
             )
 
+        for _pairing in self._state_refresh_input_pairings:
+            _input_id, _input_value = self.get_input_by_pairing(pairing=_pairing)
+
+            _datapoint = (
+                await self._api.get_datapoint(
+                    device_id=self.device_id,
+                    channel_id=self.channel_id,
+                    datapoint=_input_id,
+                )
+            )[0]
+
+            self._refresh_state_from_input(
+                input={
+                    "pairingID": _pairing.value,
+                    "value": _datapoint,
+                }
+            )
+
     def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
         """Refresh the state of the device from a single output."""
 
@@ -149,3 +174,11 @@ class Base:
         """Refresh the state of the device from the _outputs."""
         for _output in self._outputs.values():
             self._refresh_state_from_output(_output)
+
+    def _refresh_state_from_input(self, input: dict[str, Any]) -> bool:
+        """Refresh the state of the device from a single input."""
+
+    def _refresh_state_from_inputs(self):
+        """Refresh the state of the device from the _inputs."""
+        for _input in self._inputs.values():
+            self._refresh_state_from_input(_input)
