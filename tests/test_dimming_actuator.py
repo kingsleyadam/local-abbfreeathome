@@ -52,8 +52,10 @@ async def test_initial_state(dimming_actuator):
 
 
 @pytest.mark.asyncio
-async def test_turn_on(dimming_actuator):
+async def test_turn_on_while_off(dimming_actuator):
     """Test to turning on the DimmingActuator."""
+    dimming_actuator._state = False
+    assert dimming_actuator.state is False
     await dimming_actuator.turn_on()
     assert dimming_actuator.state is True
     dimming_actuator._api.set_datapoint.assert_called_with(
@@ -65,8 +67,20 @@ async def test_turn_on(dimming_actuator):
 
 
 @pytest.mark.asyncio
-async def test_turn_off(dimming_actuator):
+async def test_turn_on_while_on(dimming_actuator):
+    """Test to turning on the DimmingActuator, while already on."""
+    dimming_actuator._state = True
+    assert dimming_actuator.state is True
+    await dimming_actuator.turn_on()
+    assert dimming_actuator.state is True
+    dimming_actuator._api.set_datapoint.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_turn_off_while_on(dimming_actuator):
     """Test to turning off the DimmingActuator."""
+    dimming_actuator._state = True
+    assert dimming_actuator.state is True
     await dimming_actuator.turn_off()
     assert dimming_actuator.state is False
     dimming_actuator._api.set_datapoint.assert_called_with(
@@ -75,6 +89,16 @@ async def test_turn_off(dimming_actuator):
         datapoint="idp0000",
         value="0",
     )
+
+
+@pytest.mark.asyncio
+async def test_turn_off_while_off(dimming_actuator):
+    """Test to turning off the DimmingActuator, while already off."""
+    dimming_actuator._state = False
+    assert dimming_actuator.state is False
+    await dimming_actuator.turn_off()
+    assert dimming_actuator.state is False
+    dimming_actuator._api.set_datapoint.assert_not_called()
 
 
 @pytest.mark.asyncio

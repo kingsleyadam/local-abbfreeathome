@@ -53,8 +53,10 @@ async def test_initial_state(switch_actuator):
 
 
 @pytest.mark.asyncio
-async def test_turn_on(switch_actuator):
+async def test_turn_on_while_off(switch_actuator):
     """Test to turning on of the switch."""
+    switch_actuator._state = False
+    assert switch_actuator.state is False
     await switch_actuator.turn_on()
     assert switch_actuator.state is True
     switch_actuator._api.set_datapoint.assert_called_with(
@@ -66,8 +68,20 @@ async def test_turn_on(switch_actuator):
 
 
 @pytest.mark.asyncio
-async def test_turn_off(switch_actuator):
+async def test_turn_on_while_on(switch_actuator):
+    """Test to turning on of the switch, while already on."""
+    switch_actuator._state = True
+    assert switch_actuator.state is True
+    await switch_actuator.turn_on()
+    assert switch_actuator.state is True
+    switch_actuator._api.set_datapoint.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_turn_off_while_on(switch_actuator):
     """Test to turning off of the switch."""
+    switch_actuator._state = True
+    assert switch_actuator.state is True
     await switch_actuator.turn_off()
     assert switch_actuator.state is False
     switch_actuator._api.set_datapoint.assert_called_with(
@@ -76,6 +90,16 @@ async def test_turn_off(switch_actuator):
         datapoint="idp0000",
         value="0",
     )
+
+
+@pytest.mark.asyncio
+async def test_turn_off_while_off(switch_actuator):
+    """Test to turning off of the switch, while already off."""
+    switch_actuator._state = False
+    assert switch_actuator.state is False
+    await switch_actuator.turn_off()
+    assert switch_actuator.state is False
+    switch_actuator._api.set_datapoint.assert_not_called()
 
 
 @pytest.mark.asyncio

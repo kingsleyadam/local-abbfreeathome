@@ -76,13 +76,15 @@ class DimmingActuator(Base):
 
     async def turn_on(self):
         """Turn on the dimmer."""
-        await self._set_switching_datapoint("1")
-        self._state = True
+        if not self._state:
+            await self._set_switching_datapoint("1")
+            self._state = True
 
     async def turn_off(self):
         """Turn on the dimmer."""
-        await self._set_switching_datapoint("0")
-        self._state = False
+        if self._state:
+            await self._set_switching_datapoint("0")
+            self._state = False
 
     async def set_brightness(self, value: int):
         """
