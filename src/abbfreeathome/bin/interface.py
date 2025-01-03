@@ -16,4 +16,5 @@ class Interface(enum.Enum):
     WIRELESS_RF = "RF"
     HUE = "hue"
     SONOS = "sonos"
-    VIRTUAL_DEVICE = "vdev:installer@busch-jaeger.de"
+    # This can be re-added, when ABB fixes the bug
+    # VIRTUAL_DEVICE = "vdev:installer@busch-jaeger.de"

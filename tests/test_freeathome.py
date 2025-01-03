@@ -234,6 +234,62 @@ def api_mock():
                     },
                 },
             },
+            # This can be removed, when ABB fixes the bug
+            "60002AE2F1BE": {
+                "nativeId": "abcd12350",
+                "deviceId": "0004",
+                "displayName": "MyVirtualDoorSensor",
+                "unresponsive": False,
+                "unresponsiveCounter": 0,
+                "defect": False,
+                "channels": {
+                    "ch0000": {
+                        "displayName": "MyVirtualDoorSensor",
+                        "floor": "01",
+                        "room": "01",
+                        "functionID": "f",
+                        "inputs": {},
+                        "outputs": {"odp000c": {"pairingID": 53, "value": ""}},
+                        "parameters": {"par0010": "1"},
+                        "selectedIcon": "51",
+                    }
+                },
+                "parameters": {},
+            },
+            # This can be removed, when ABB fixes the bug
+            "60005D808C54": {
+                "floor": "01",
+                "room": "01",
+                "nativeId": "virtual-switch-sleep",
+                "interface": "vdev:installer@busch-jaeger.de",
+                "deviceId": "0001",
+                "displayName": "Sleepmode",
+                "unresponsive": False,
+                "unresponsiveCounter": 0,
+                "defect": False,
+                "channels": {
+                    "ch0000": {
+                        "displayName": "Sleepmode",
+                        "floor": "01",
+                        "room": "01",
+                        "functionID": "7",
+                        "inputs": {
+                            "idp0000": {"pairingID": 1, "value": "1"},
+                            "idp0001": {"pairingID": 2, "value": ""},
+                            "idp0002": {"pairingID": 3, "value": ""},
+                            "idp0003": {"pairingID": 4, "value": ""},
+                            "idp0004": {"pairingID": 6, "value": ""},
+                        },
+                        "outputs": {
+                            "odp0000": {"pairingID": 256, "value": "0"},
+                            "odp0001": {"pairingID": 257, "value": "0"},
+                        },
+                        "parameters": {"par0015": "60", "par0014": "1"},
+                        "selectedIcon": "0B",
+                    }
+                },
+                "parameters": {},
+            },
         },
     }
     return api
@@ -243,7 +299,10 @@ def api_mock():
 def freeathome(api_mock):
     """Create the FreeAtHome fixture."""
     return FreeAtHome(
-        api=api_mock, interfaces=[Interface.WIRED_BUS], include_orphan_channels=False
+        api=api_mock,
+        interfaces=[Interface.WIRED_BUS],
+        include_orphan_channels=False,
+        include_virtual_devices=False,
     )
 
 
@@ -251,7 +310,22 @@ def freeathome(api_mock):
 def freeathome_orphans(api_mock):
     """Create the FreeAtHome fixture."""
     return FreeAtHome(
-        api=api_mock, interfaces=[Interface.WIRED_BUS], include_orphan_channels=True
+        api=api_mock,
+        interfaces=[Interface.WIRED_BUS],
+        include_orphan_channels=True,
+        include_virtual_devices=False,
+    )
+
+
+# This can be removed, when ABB fixes the bug
+@pytest.fixture
+def freeathome_virtuals(api_mock):
+    """Create the FreeAtHome fixture."""
+    return FreeAtHome(
+        api=api_mock,
+        interfaces=[Interface.WIRED_BUS, Interface.UNDEFINED],
+        include_orphan_channels=False,
+        include_virtual_devices=True,
     )
 
 
@@ -361,6 +435,28 @@ async def test_load_devices_with_orphans(freeathome_orphans):
 
     # Get the dict of devices
     devices = freeathome_orphans.get_devices()
+
+    # Verify that the devices are loaded correctly
+    assert len(devices) == 7
+
+    # Check a single orphan device
+    device_key = "ABB28CBC3651/ch0006"
+    assert device_key in devices
+    assert isinstance(devices[device_key], SwitchSensor)
+    assert devices[device_key].device_name == "Sensor/switch actuator"
+    assert devices[device_key].channel_name == "Sensor/switch actuator"
+    assert devices[device_key].floor_name is None
+    assert devices[device_key].room_name is None
+
+
+# This can be removed, when ABB fixes the bug
+@pytest.mark.asyncio
+async def test_load_devices_with_virtuals(freeathome_virtuals):
+    """Test the load_devices function."""
+    await freeathome_virtuals.load_devices()
+
+    # Get the dict of devices
+    devices = freeathome_virtuals.get_devices()
 
     # Verify that the devices are loaded correctly
     assert len(devices) == 7
