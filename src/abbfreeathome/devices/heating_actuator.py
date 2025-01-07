@@ -69,7 +69,7 @@ class HeatingActuator(Base):
         This will return whether the state was refreshed as a boolean value.
         """
         if output.get("pairingID") == Pairing.AL_INFO_VALUE_HEATING.value:
-            self._position = int(output.get("value"))
+            self._position = int(float(output.get("value")))
             return True
         return False
 

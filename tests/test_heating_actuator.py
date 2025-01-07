@@ -84,8 +84,14 @@ async def test_refresh_state_from_output(heating_actuator):
     )
     assert heating_actuator.position == 35
 
+    # Check output that affects the position with a float value
+    heating_actuator._refresh_state_from_output(
+        output={"pairingID": 305, "value": "3.5"}
+    )
+    assert heating_actuator.position == 3
+
     # Check output that does NOT affects the position
     heating_actuator._refresh_state_from_output(
         output={"pairingID": 273, "value": "1"},
     )
-    assert heating_actuator.position == 35
+    assert heating_actuator.position == 3

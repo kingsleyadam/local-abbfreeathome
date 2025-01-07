@@ -180,6 +180,12 @@ async def test_refresh_state_from_output(
     )
     assert room_temperature_controller.valve == 57
 
+    # Check output that affects the valve with a float value
+    room_temperature_controller._refresh_state_from_output(
+        output={"pairingID": 333, "value": "5.7"}
+    )
+    assert room_temperature_controller.valve == 5
+
     # Check output that does NOT affects the RTC
     room_temperature_controller._refresh_state_from_output(
         output={"pairingID": 0, "value": "1"},
@@ -189,7 +195,7 @@ async def test_refresh_state_from_output(
     assert room_temperature_controller.eco_mode is True
     assert room_temperature_controller.state_indication == 68
     assert room_temperature_controller.current_temperature == 22.56
-    assert room_temperature_controller.valve == 57
+    assert room_temperature_controller.valve == 5
 
 
 def test_update_device(room_temperature_controller):

@@ -271,12 +271,22 @@ async def test_refresh_state_from_output(cover_actuator):
     cover_actuator._refresh_state_from_output(output={"pairingID": 289, "value": "35"})
     assert cover_actuator.position == 35
 
+    # Check output that affects the position with a float value
+    cover_actuator._refresh_state_from_output(
+        output={"pairingID": 289, "value": "2.35294"}
+    )
+    assert cover_actuator.position == 2
+
     # Check output that affects the tilt
     cover_actuator._refresh_state_from_output(output={"pairingID": 290, "value": "45"})
     assert cover_actuator._tilt_position == 45
+
+    # Check output that affects the tile with a float value
+    cover_actuator._refresh_state_from_output(output={"pairingID": 290, "value": "4.9"})
+    assert cover_actuator._tilt_position == 4
 
     # Check output that does NOT affects the RTC
     cover_actuator._refresh_state_from_output(
         output={"pairingID": 0, "value": "1"},
     )
-    assert cover_actuator.position == 35
+    assert cover_actuator.position == 2
