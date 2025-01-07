@@ -234,7 +234,6 @@ def api_mock():
                     },
                 },
             },
-            # This can be removed, when ABB fixes the bug
             "60002AE2F1BE": {
                 "nativeId": "abcd12350",
                 "deviceId": "0004",
@@ -256,7 +255,6 @@ def api_mock():
                 },
                 "parameters": {},
             },
-            # This can be removed, when ABB fixes the bug
             "60005D808C54": {
                 "floor": "01",
                 "room": "01",
@@ -449,7 +447,6 @@ async def test_load_devices_with_orphans(freeathome_orphans):
     assert devices[device_key].room_name is None
 
 
-# This can be removed, when ABB fixes the bug
 @pytest.mark.asyncio
 async def test_load_devices_with_virtuals(freeathome_virtuals):
     """Test the load_devices function."""
@@ -461,14 +458,25 @@ async def test_load_devices_with_virtuals(freeathome_virtuals):
     # Verify that the devices are loaded correctly
     assert len(devices) == 7
 
-    # Check a single orphan device
-    device_key = "ABB28CBC3651/ch0006"
+    # Check a single virtual device
+    device_key = "60005D808C54/ch0000"
     assert device_key in devices
-    assert isinstance(devices[device_key], SwitchSensor)
-    assert devices[device_key].device_name == "Sensor/switch actuator"
-    assert devices[device_key].channel_name == "Sensor/switch actuator"
-    assert devices[device_key].floor_name is None
-    assert devices[device_key].room_name is None
+    assert isinstance(devices[device_key], SwitchActuator)
+    assert devices[device_key].device_name == "Sleepmode"
+    assert devices[device_key].channel_name == "Sleepmode"
+    assert devices[device_key].floor_name == "Ground Floor"
+    assert devices[device_key].room_name == "Living Room"
+    assert devices[device_key].is_virtual is True
+
+    # Check a single device
+    device_key = "ABB7F500E17A/ch0003"
+    assert device_key in devices
+    assert isinstance(devices[device_key], SwitchActuator)
+    assert devices[device_key].device_name == "Study Area Rocker"
+    assert devices[device_key].channel_name == "Study Area Light"
+    assert devices[device_key].floor_name == "Ground Floor"
+    assert devices[device_key].room_name == "Living Room"
+    assert devices[device_key].is_virtual is False
 
 
 @pytest.mark.asyncio

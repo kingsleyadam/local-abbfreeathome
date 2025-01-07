@@ -16,7 +16,6 @@ class FreeAtHome:
         interfaces: list[Interface] | None = None,
         device_classes: list[Base] | None = None,
         include_orphan_channels: bool = False,
-        # This can be removed, when ABB fixes the bug
         include_virtual_devices: bool = False,
     ) -> None:
         """Initialize the FreeAtHome class."""
@@ -28,7 +27,6 @@ class FreeAtHome:
         self._interfaces: list[Interface] = interfaces
         self._device_classes: list[Base] = device_classes
         self._include_orphan_channels: bool = include_orphan_channels
-        # This can be removed, when ABB fixes the bug
         self._include_virtual_devices: bool = include_virtual_devices
 
     def clear_devices(self):
@@ -58,12 +56,6 @@ class FreeAtHome:
         """Get the list of devices by function."""
         _devices = []
         for _device_key, _device in (await self.get_config()).get("devices").items():
-            # There seems to be a bug in F@H that a newly created virtual device
-            # doesn't has anymore the interface-setting
-            # For now the serial is checked (needs to start with '6000')
-            # If this is try AND a interface-setting is available the
-            # the interface-setting will be removed.
-            # This can be removed, when ABB fixes the bug
             _is_virtual = False
             if _device_key[0:4] == "6000":
                 _is_virtual = True
@@ -104,7 +96,6 @@ class FreeAtHome:
                             "channel_id": _channel_key,
                             "channel_name": _channel_name,
                             "function_id": int(_channel.get("functionID"), 16),
-                            # This can be removed, when ABB fixes the bug
                             "is_virtual": _is_virtual,
                             "floor_name": await self.get_floor_name(
                                 floor_serial_id=_channel.get(

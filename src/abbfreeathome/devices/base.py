@@ -75,6 +75,11 @@ class Base:
         """Get the room name of the device."""
         return self._room_name
 
+    @property
+    def is_virtual(self) -> bool | None:
+        """Get the virtual-status of the device."""
+        return self.device_id[0:4] == "6000"
+
     def get_input_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
         """Get the channel input by pairing id."""
         for _input_id, _input in self._inputs.items():
