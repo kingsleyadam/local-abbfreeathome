@@ -33,6 +33,9 @@ from .exceptions import (
 
 API_VERSION = "v1"
 
+# API Requests Configuration
+DEFAULT_FREEATHOME_MAX_REQUEST_TRIES = 5
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -228,7 +231,11 @@ class FreeAtHomeApi:
     @backoff.on_exception(
         backoff.expo,
         InvalidApiResponseException,
-        max_tries=int(os.environ.get("FREEATHOME_MAX_REQUEST_TRIES", 5)),
+        max_tries=int(
+            os.environ.get(
+                "FREEATHOME_MAX_REQUEST_TRIES", DEFAULT_FREEATHOME_MAX_REQUEST_TRIES
+            )
+        ),
     )
     async def _request(self, path: str, method: str = "get", data: Any | None = None):
         """Make a request to the API."""
