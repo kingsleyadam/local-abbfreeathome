@@ -16,7 +16,6 @@ class FreeAtHome:
         interfaces: list[Interface] | None = None,
         device_classes: list[Base] | None = None,
         include_orphan_channels: bool = False,
-        include_virtual_devices: bool = False,
     ) -> None:
         """Initialize the FreeAtHome class."""
         self._config: dict | None = None
@@ -27,7 +26,6 @@ class FreeAtHome:
         self._interfaces: list[Interface] = interfaces
         self._device_classes: list[Base] = device_classes
         self._include_orphan_channels: bool = include_orphan_channels
-        self._include_virtual_devices: bool = include_virtual_devices
 
     def clear_devices(self):
         """Clear all devices in the device list."""
@@ -56,15 +54,8 @@ class FreeAtHome:
         """Get the list of devices by function."""
         _devices = []
         for _device_key, _device in (await self.get_config()).get("devices").items():
-            _is_virtual = False
             if _device_key[0:4] == "6000":
-                _is_virtual = True
-
-                if "interface" in _device:
-                    del _device["interface"]
-
-                if not self._include_virtual_devices:
-                    continue
+                _device["interface"] = "VD"
 
             # Filter by interface if provided
             if self._interfaces and _device.get("interface") not in [
@@ -96,7 +87,6 @@ class FreeAtHome:
                             "channel_id": _channel_key,
                             "channel_name": _channel_name,
                             "function_id": int(_channel.get("functionID"), 16),
-                            "is_virtual": _is_virtual,
                             "floor_name": await self.get_floor_name(
                                 floor_serial_id=_channel.get(
                                     "floor", _device.get("floor")
