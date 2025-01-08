@@ -54,6 +54,9 @@ class FreeAtHome:
         """Get the list of devices by function."""
         _devices = []
         for _device_key, _device in (await self.get_config()).get("devices").items():
+            if _device_key[0:4] == "6000":
+                _device["interface"] = "VD"
+
             # Filter by interface if provided
             if self._interfaces and _device.get("interface") not in [
                 interface.value for interface in self._interfaces

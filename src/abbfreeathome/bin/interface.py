@@ -16,4 +16,4 @@ class Interface(enum.Enum):
     WIRELESS_RF = "RF"
     HUE = "hue"
     SONOS = "sonos"
-    VIRTUAL_DEVICE = "vdev:installer@busch-jaeger.de"
+    VIRTUAL_DEVICE = "VD"
