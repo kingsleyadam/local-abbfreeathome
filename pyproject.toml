@@ -20,7 +20,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-  "aiohttp", "packaging"
+  "aiohttp", "packaging", "backoff"
 ]
 
 [project.urls]
@@ -163,6 +163,9 @@ asyncio_default_fixture_loop_scope = "function"
 pythonpath = [
   "."
 ]
+
+[tool.pytest_env]
+FREEATHOME_MAX_REQUEST_TRIES = "1"
 
 [tool.coverage.run]
 omit = ["*/tests/*"]

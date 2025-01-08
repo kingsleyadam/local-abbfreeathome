@@ -4,17 +4,20 @@ import asyncio
 from collections.abc import Callable
 import inspect
 import logging
+import os
 from typing import Any
 from urllib.parse import urlparse
 
 from aiohttp.client import ClientSession, ClientWebSocketResponse
 from aiohttp.client_exceptions import (
     ClientConnectionError as AioHttpClientConnectionError,
+    ClientResponseError as AioHttpClientResponseError,
     InvalidUrlClientError as AioHttpInvalidUrlClientError,
     WSServerHandshakeError as AioHttpWSServerHandshakeError,
 )
 from aiohttp.helpers import BasicAuth
 from aiohttp.http import WSMsgType
+import backoff
 from packaging.version import Version
 
 from .exceptions import (
@@ -29,6 +32,9 @@ from .exceptions import (
 )
 
 API_VERSION = "v1"
+
+# API Requests Configuration
+DEFAULT_FREEATHOME_MAX_REQUEST_TRIES = 5
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -222,6 +228,15 @@ class FreeAtHomeApi:
 
         return self._client_session
 
+    @backoff.on_exception(
+        backoff.expo,
+        InvalidApiResponseException,
+        max_tries=int(
+            os.environ.get(
+                "FREEATHOME_MAX_REQUEST_TRIES", DEFAULT_FREEATHOME_MAX_REQUEST_TRIES
+            )
+        ),
+    )
     async def _request(self, path: str, method: str = "get", data: Any | None = None):
         """Make a request to the API."""
 
@@ -237,6 +252,7 @@ class FreeAtHomeApi:
                     url=f"{self._host}{_full_path}",
                     data=data,
                     auth=self._auth,
+                    raise_for_status=True,
                 ) as resp,
             ):
                 _response_status = resp.status
@@ -249,17 +265,14 @@ class FreeAtHomeApi:
             raise InvalidHostException(self._host) from e
         except AioHttpClientConnectionError as e:
             raise ClientConnectionError(self._host) from e
-
-        # Check the status code and raise exception accordingly.
-        if _response_status == 401:
-            raise InvalidCredentialsException(self._auth.login)
-        if _response_status == 403:
-            raise ForbiddenAuthException(path)
-        if _response_status == 502:
-            raise ConnectionTimeoutException(self._host)
-
-        if _response_status != 200:
-            raise InvalidApiResponseException(_response_status) from None
+        except AioHttpClientResponseError as e:
+            if e.status == 401:
+                raise InvalidCredentialsException(self._auth.login) from e
+            if e.status == 403:
+                raise ForbiddenAuthException(path) from e
+            if e.status == 502:
+                raise ConnectionTimeoutException(self._host) from e
+            raise InvalidApiResponseException(e.status) from e
 
         return _response_data
 
