@@ -123,7 +123,7 @@ class DimmingActuator(Base):
             self._state = output.get("value") == "1"
             return True
         if output.get("pairingID") == Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value:
-            self._brightness = output.get("value")
+            self._brightness = int(float(output.get("value")))
             return True
         if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:

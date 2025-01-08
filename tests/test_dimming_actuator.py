@@ -159,9 +159,15 @@ def test_refresh_state_from_output(dimming_actuator):
 
     # Check output that affects the brightness
     dimming_actuator._refresh_state_from_output(
-        output={"pairingID": 272, "value": 75},
+        output={"pairingID": 272, "value": "75"},
     )
     assert dimming_actuator.brightness == 75
+
+    # Check output that affects the brightness with a float value
+    dimming_actuator._refresh_state_from_output(
+        output={"pairingID": 272, "value": "7.5"}
+    )
+    assert dimming_actuator.brightness == 7
 
     # Check output that affects the force-option
     dimming_actuator._refresh_state_from_output(

@@ -152,13 +152,13 @@ class CoverActuator(Base):
             output.get("pairingID")
             == Pairing.AL_CURRENT_ABSOLUTE_POSITION_BLINDS_PERCENTAGE.value
         ):
-            self._position = int(output.get("value"))
+            self._position = int(float(output.get("value")))
             return True
         if (
             output.get("pairingID")
             == Pairing.AL_CURRENT_ABSOLUTE_POSITION_SLATS_PERCENTAGE.value
         ):
-            self._tilt_position = int(output.get("value"))
+            self._tilt_position = int(float(output.get("value")))
             return True
         return False
 
