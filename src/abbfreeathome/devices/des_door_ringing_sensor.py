@@ -4,13 +4,13 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .base import Base
+from .real_base import RealBase
 
 
-class DesDoorRingingSensor(Base):
+class DesDoorRingingSensor(RealBase):
     """Free@Home DesDoorRingingSensor Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_TIMED_START_STOP,
     ]
 
@@ -27,7 +27,7 @@ class DesDoorRingingSensor(Base):
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
-        """Initialize the Free@Home SwitchSensor class."""
+        """Initialize the Free@Home DesDoorRingingSensor class."""
         super().__init__(
             device_id,
             device_name,
@@ -41,10 +41,10 @@ class DesDoorRingingSensor(Base):
             room_name,
         )
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        return output.get("pairingID") == Pairing.AL_TIMED_START_STOP.value
+        return datapoint.get("pairingID") == Pairing.AL_TIMED_START_STOP.value

@@ -4,13 +4,13 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .base import Base
+from .real_base import RealBase
 
 
-class TemperatureSensor(Base):
+class TemperatureSensor(RealBase):
     """Free@Home TemperatureSensor Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_OUTDOOR_TEMPERATURE,
         Pairing.AL_FROST_ALARM,
     ]
@@ -55,16 +55,16 @@ class TemperatureSensor(Base):
         """Get the alarm state of the sensor."""
         return self._alarm
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_OUTDOOR_TEMPERATURE.value:
-            self._state = float(output.get("value"))
+        if datapoint.get("pairingID") == Pairing.AL_OUTDOOR_TEMPERATURE.value:
+            self._state = float(datapoint.get("value"))
             return True
-        if output.get("pairingID") == Pairing.AL_FROST_ALARM.value:
-            self._alarm = output.get("value") == "1"
+        if datapoint.get("pairingID") == Pairing.AL_FROST_ALARM.value:
+            self._alarm = datapoint.get("value") == "1"
             return True
         return False

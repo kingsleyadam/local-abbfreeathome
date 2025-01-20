@@ -62,22 +62,22 @@ async def test_refresh_state(brightness_sensor):
     )
 
 
-def test_refresh_state_from_output(brightness_sensor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(brightness_sensor):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    brightness_sensor._refresh_state_from_output(
-        output={"pairingID": 1027, "value": "50.7"},
+    brightness_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1027, "value": "50.7"},
     )
     assert brightness_sensor.state == 50.7
 
     # Check output that affects the state.
-    brightness_sensor._refresh_state_from_output(
-        output={"pairingID": 1026, "value": "1"},
+    brightness_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1026, "value": "1"},
     )
     assert brightness_sensor.alarm is True
 
     # Check output that does NOT affect the state.
-    brightness_sensor._refresh_state_from_output(
-        output={"pairingID": 4, "value": "1"},
+    brightness_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 4, "value": "1"},
     )
     assert brightness_sensor.state == 50.7

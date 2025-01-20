@@ -5,7 +5,7 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .base import Base
+from .real_base import RealBase
 
 
 class CoverActuatorForcedPosition(enum.Enum):
@@ -27,10 +27,10 @@ class CoverActuatorState(enum.Enum):
     closing = "3"
 
 
-class CoverActuator(Base):
+class CoverActuator(RealBase):
     """Free@Home CoverActuator Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_INFO_MOVE_UP_DOWN,
         Pairing.AL_CURRENT_ABSOLUTE_POSITION_BLINDS_PERCENTAGE,
         Pairing.AL_INFO_FORCE,
@@ -130,35 +130,37 @@ class CoverActuator(Base):
         await self._set_position_datapoint(str(value))
         self._position = value
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_INFO_MOVE_UP_DOWN.value:
+        if datapoint.get("pairingID") == Pairing.AL_INFO_MOVE_UP_DOWN.value:
             try:
-                self._state = CoverActuatorState(output.get("value"))
+                self._state = CoverActuatorState(datapoint.get("value"))
             except ValueError:
                 self._state = CoverActuatorState.unknown
             return True
-        if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
+        if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
-                self._forced_position = CoverActuatorForcedPosition(output.get("value"))
+                self._forced_position = CoverActuatorForcedPosition(
+                    datapoint.get("value")
+                )
             except ValueError:
                 self._forced_position = CoverActuatorForcedPosition.unknown
             return True
         if (
-            output.get("pairingID")
+            datapoint.get("pairingID")
             == Pairing.AL_CURRENT_ABSOLUTE_POSITION_BLINDS_PERCENTAGE.value
         ):
-            self._position = int(float(output.get("value")))
+            self._position = int(float(datapoint.get("value")))
             return True
         if (
-            output.get("pairingID")
+            datapoint.get("pairingID")
             == Pairing.AL_CURRENT_ABSOLUTE_POSITION_SLATS_PERCENTAGE.value
         ):
-            self._tilt_position = int(float(output.get("value")))
+            self._tilt_position = int(float(datapoint.get("value")))
             return True
         return False
 

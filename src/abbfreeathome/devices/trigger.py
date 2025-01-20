@@ -5,12 +5,12 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .base import Base
+from .real_base import RealBase
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class Trigger(Base):
+class Trigger(RealBase):
     """Free@Home Trigger Class."""
 
     def __init__(

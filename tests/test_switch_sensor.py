@@ -84,43 +84,43 @@ async def test_refresh_state(switch_sensor):
     )
 
 
-def test_refresh_state_from_output_switch(switch_sensor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint_switch(switch_sensor):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    switch_sensor._refresh_state_from_output(
-        output={"pairingID": 1, "value": "1"},
+    switch_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1, "value": "1"},
     )
     assert switch_sensor.state == SwitchSensorState.on.name
 
-    switch_sensor._refresh_state_from_output(
-        output={"pairingID": 1, "value": "INVALID"},
+    switch_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1, "value": "INVALID"},
     )
     assert switch_sensor.state == SwitchSensorState.unknown.name
 
 
-def test_refresh_state_from_output_dimming(dimming_sensor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint_dimming(dimming_sensor):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    dimming_sensor._refresh_state_from_output(
-        output={"pairingID": 1, "value": "1"},
+    dimming_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1, "value": "1"},
     )
     assert dimming_sensor.state == SwitchSensorState.on.name
     assert dimming_sensor.switching_state == SwitchSensorState.on.name
 
-    dimming_sensor._refresh_state_from_output(
-        output={"pairingID": 1, "value": "0"},
+    dimming_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1, "value": "0"},
     )
     assert dimming_sensor.state == SwitchSensorState.off.name
     assert dimming_sensor.switching_state == SwitchSensorState.off.name
 
-    dimming_sensor._refresh_state_from_output(
-        output={"pairingID": 16, "value": "1"},
+    dimming_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 16, "value": "1"},
     )
     assert dimming_sensor.state == DimmingSensorState.longpress_down.name
     assert dimming_sensor.dimming_state == DimmingSensorState.longpress_down.name
 
-    dimming_sensor._refresh_state_from_output(
-        output={"pairingID": 16, "value": "0"},
+    dimming_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 16, "value": "0"},
     )
 
     assert dimming_sensor.state == DimmingSensorState.longpress_down_release.name
@@ -128,14 +128,14 @@ def test_refresh_state_from_output_dimming(dimming_sensor):
         dimming_sensor.dimming_state == DimmingSensorState.longpress_down_release.name
     )
 
-    dimming_sensor._refresh_state_from_output(
-        output={"pairingID": 16, "value": "9"},
+    dimming_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 16, "value": "9"},
     )
     assert dimming_sensor.state == DimmingSensorState.longpress_up.name
     assert dimming_sensor.dimming_state == DimmingSensorState.longpress_up.name
 
-    dimming_sensor._refresh_state_from_output(
-        output={"pairingID": 16, "value": "8"},
+    dimming_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 16, "value": "8"},
     )
     assert dimming_sensor.state == DimmingSensorState.longpress_up_release.name
     assert dimming_sensor.dimming_state == DimmingSensorState.longpress_up_release.name

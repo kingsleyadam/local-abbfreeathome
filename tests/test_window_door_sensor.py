@@ -57,26 +57,26 @@ async def test_refresh_state(window_door_sensor):
     )
 
 
-def test_refresh_state_from_output(window_door_sensor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(window_door_sensor):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    window_door_sensor._refresh_state_from_output(
-        output={"pairingID": 53, "value": "0"},
+    window_door_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 53, "value": "0"},
     )
     assert window_door_sensor.state is False
 
-    window_door_sensor._refresh_state_from_output(
-        output={"pairingID": 41, "value": "100"},
+    window_door_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 41, "value": "100"},
     )
     assert window_door_sensor.position == "open"
 
-    window_door_sensor._refresh_state_from_output(
-        output={"pairingID": 41, "value": "NOTVALID"},
+    window_door_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 41, "value": "NOTVALID"},
     )
     assert window_door_sensor.position == "unknown"
 
     # Check output that NOT affects the state.
-    window_door_sensor._refresh_state_from_output(
-        output={"pairingID": 0, "value": "1"},
+    window_door_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 0, "value": "1"},
     )
     assert window_door_sensor.state is False

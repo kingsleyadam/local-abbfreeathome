@@ -4,13 +4,13 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .base import Base
+from .real_base import RealBase
 
 
-class HeatingActuator(Base):
+class HeatingActuator(RealBase):
     """Free@Home HeatingActuator Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_INFO_VALUE_HEATING,
     ]
 
@@ -62,14 +62,14 @@ class HeatingActuator(Base):
         await self._set_position_datapoint(str(value))
         self._position = value
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_INFO_VALUE_HEATING.value:
-            self._position = int(float(output.get("value")))
+        if datapoint.get("pairingID") == Pairing.AL_INFO_VALUE_HEATING.value:
+            self._position = int(float(datapoint.get("value")))
             return True
         return False
 

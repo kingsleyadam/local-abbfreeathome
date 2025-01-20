@@ -5,7 +5,7 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .base import Base
+from .real_base import RealBase
 
 
 class ForceOnOffSensorState(enum.Enum):
@@ -16,10 +16,10 @@ class ForceOnOffSensorState(enum.Enum):
     on = "1"
 
 
-class ForceOnOffSensor(Base):
+class ForceOnOffSensor(RealBase):
     """Free@Home ForceOnOffSensor Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_FORCED,
     ]
 
@@ -57,13 +57,13 @@ class ForceOnOffSensor(Base):
         """Get the forceOnOff state."""
         return self._state.name
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_FORCED.value:
+        if datapoint.get("pairingID") == Pairing.AL_FORCED.value:
             """
             Forces value dependent high priority on or off state
 
@@ -74,9 +74,9 @@ class ForceOnOffSensor(Base):
             2 means on
             0 means off
             """
-            if output.get("value") in ("2", "3"):
+            if datapoint.get("value") in ("2", "3"):
                 self._state = ForceOnOffSensorState.on
-            elif output.get("value") in ("0", "1"):
+            elif datapoint.get("value") in ("0", "1"):
                 self._state = ForceOnOffSensorState.off
             else:
                 self._state = ForceOnOffSensorState.unknown

@@ -149,29 +149,29 @@ async def test_refresh_state(dimming_actuator):
     )
 
 
-def test_refresh_state_from_output(dimming_actuator):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(dimming_actuator):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    dimming_actuator._refresh_state_from_output(
-        output={"pairingID": 256, "value": "1"},
+    dimming_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 256, "value": "1"},
     )
     assert dimming_actuator.state is True
 
     # Check output that affects the brightness
-    dimming_actuator._refresh_state_from_output(
-        output={"pairingID": 272, "value": "75"},
+    dimming_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 272, "value": "75"},
     )
     assert dimming_actuator.brightness == 75
 
     # Check output that affects the brightness with a float value
-    dimming_actuator._refresh_state_from_output(
-        output={"pairingID": 272, "value": "7.5"}
+    dimming_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 272, "value": "7.5"}
     )
     assert dimming_actuator.brightness == 7
 
     # Check output that affects the force-option
-    dimming_actuator._refresh_state_from_output(
-        output={
+    dimming_actuator._refresh_state_from_datapoint(
+        datapoint={
             "pairingID": 257,
             "value": DimmingActuatorForcedPosition.forced_on.value,
         },

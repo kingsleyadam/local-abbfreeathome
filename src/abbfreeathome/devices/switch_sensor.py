@@ -5,7 +5,7 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .base import Base
+from .real_base import RealBase
 
 
 class SwitchSensorState(enum.Enum):
@@ -26,10 +26,10 @@ class DimmingSensorState(enum.Enum):
     longpress_down_release = "0"
 
 
-class SwitchSensor(Base):
+class SwitchSensor(RealBase):
     """Free@Home SwitchSensor Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_RELATIVE_SET_VALUE_CONTROL,
         Pairing.AL_SWITCH_ON_OFF,
     ]
@@ -75,15 +75,15 @@ class SwitchSensor(Base):
         """Get the switch state."""
         return self._switch_sensor_state.name
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_SWITCH_ON_OFF.value:
+        if datapoint.get("pairingID") == Pairing.AL_SWITCH_ON_OFF.value:
             try:
-                self._switch_sensor_state = SwitchSensorState(output.get("value"))
+                self._switch_sensor_state = SwitchSensorState(datapoint.get("value"))
             except ValueError:
                 self._switch_sensor_state = SwitchSensorState.unknown
 
@@ -100,18 +100,18 @@ class DimmingSensor(SwitchSensor):
         """Get the dimming state."""
         return self._dimming_sensor_state.name
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if super()._refresh_state_from_output(output):
+        if super()._refresh_state_from_datapoint(datapoint):
             return True
 
-        if output.get("pairingID") == Pairing.AL_RELATIVE_SET_VALUE_CONTROL.value:
+        if datapoint.get("pairingID") == Pairing.AL_RELATIVE_SET_VALUE_CONTROL.value:
             try:
-                self._dimming_sensor_state = DimmingSensorState(output.get("value"))
+                self._dimming_sensor_state = DimmingSensorState(datapoint.get("value"))
             except ValueError:
                 self._dimming_sensor_state = DimmingSensorState.unknown
 

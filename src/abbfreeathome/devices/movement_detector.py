@@ -4,13 +4,13 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .base import Base
+from .real_base import RealBase
 
 
-class MovementDetector(Base):
-    """Free@Home SwitchActuator Class."""
+class MovementDetector(RealBase):
+    """Free@Home MovementDetector Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_BRIGHTNESS_LEVEL,
         Pairing.AL_TIMED_MOVEMENT,
     ]
@@ -28,7 +28,7 @@ class MovementDetector(Base):
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
-        """Initialize the Free@Home SwitchActuator class."""
+        """Initialize the Free@Home MovementDetector class."""
         self._state: bool | None = None
         self._brightness: float | None = None
 
@@ -55,16 +55,16 @@ class MovementDetector(Base):
         """Get the brightness level of the sensor."""
         return self._brightness
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_TIMED_MOVEMENT.value:
-            self._state = output.get("value") == "1"
+        if datapoint.get("pairingID") == Pairing.AL_TIMED_MOVEMENT.value:
+            self._state = datapoint.get("value") == "1"
             return True
-        if output.get("pairingID") == Pairing.AL_BRIGHTNESS_LEVEL.value:
-            self._brightness = float(output.get("value"))
+        if datapoint.get("pairingID") == Pairing.AL_BRIGHTNESS_LEVEL.value:
+            self._brightness = float(datapoint.get("value"))
             return True
         return False
