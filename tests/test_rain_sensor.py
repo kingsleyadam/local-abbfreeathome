@@ -62,16 +62,16 @@ async def test_refresh_state(rain_sensor):
     )
 
 
-def test_refresh_state_from_output(rain_sensor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(rain_sensor):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    rain_sensor._refresh_state_from_output(
-        output={"pairingID": 39, "value": "1"},
+    rain_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 39, "value": "1"},
     )
     assert rain_sensor.state is True
 
     # Check output that does NOT affect the state.
-    rain_sensor._refresh_state_from_output(
-        output={"pairingID": 4, "value": "1"},
+    rain_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 4, "value": "1"},
     )
     assert rain_sensor.state is True

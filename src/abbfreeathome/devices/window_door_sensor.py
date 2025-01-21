@@ -24,7 +24,7 @@ class WindowDoorSensorPosition(enum.Enum):
 class WindowDoorSensor(Base):
     """Free@Home WindowDoorSensor Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_WINDOW_DOOR,
     ]
 
@@ -41,7 +41,7 @@ class WindowDoorSensor(Base):
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
-        """Initialize the Free@Home SwitchSensor class."""
+        """Initialize the Free@Home WindowDoorSensor class."""
         self._state: bool | None = None
         self._position: WindowDoorSensorPosition = WindowDoorSensorPosition.unknown
 
@@ -68,18 +68,18 @@ class WindowDoorSensor(Base):
         """Get the sensor position."""
         return self._position.name
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_WINDOW_DOOR.value:
-            self._state = output.get("value") == "1"
+        if datapoint.get("pairingID") == Pairing.AL_WINDOW_DOOR.value:
+            self._state = datapoint.get("value") == "1"
             return True
-        if output.get("pairingID") == Pairing.AL_WINDOW_DOOR_POSITION.value:
+        if datapoint.get("pairingID") == Pairing.AL_WINDOW_DOOR_POSITION.value:
             try:
-                self._position = WindowDoorSensorPosition(output.get("value"))
+                self._position = WindowDoorSensorPosition(datapoint.get("value"))
             except ValueError:
                 self._position = WindowDoorSensorPosition.unknown
             return True

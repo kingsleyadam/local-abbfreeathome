@@ -55,16 +55,16 @@ async def test_refresh_state(smoke_detector):
     )
 
 
-def test_refresh_state_from_output(smoke_detector):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(smoke_detector):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    smoke_detector._refresh_state_from_output(
-        output={"pairingID": 707, "value": "1"},
+    smoke_detector._refresh_state_from_datapoint(
+        datapoint={"pairingID": 707, "value": "1"},
     )
     assert smoke_detector.state is True
 
     # Check output that does NOT affect the state.
-    smoke_detector._refresh_state_from_output(
-        output={"pairingID": 4, "value": "1"},
+    smoke_detector._refresh_state_from_datapoint(
+        datapoint={"pairingID": 4, "value": "1"},
     )
     assert smoke_detector.state is True

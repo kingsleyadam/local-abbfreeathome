@@ -63,22 +63,22 @@ async def test_refresh_state(temperature_sensor):
     )
 
 
-def test_refresh_state_from_output(temperature_sensor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(temperature_sensor):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    temperature_sensor._refresh_state_from_output(
-        output={"pairingID": 1024, "value": "20.1"},
+    temperature_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1024, "value": "20.1"},
     )
     assert temperature_sensor.state == 20.1
 
     # Check output that affects the state.
-    temperature_sensor._refresh_state_from_output(
-        output={"pairingID": 38, "value": "1"},
+    temperature_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 38, "value": "1"},
     )
     assert temperature_sensor.alarm is True
 
     # Check output that does NOT affect the state.
-    temperature_sensor._refresh_state_from_output(
-        output={"pairingID": 4, "value": "1"},
+    temperature_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 4, "value": "1"},
     )
     assert temperature_sensor.state == 20.1

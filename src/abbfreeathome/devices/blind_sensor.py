@@ -21,7 +21,7 @@ class BlindSensorState(enum.Enum):
 class BlindSensor(Base):
     """Free@Home BlindSensor Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_MOVE_UP_DOWN,
         Pairing.AL_STOP_STEP_UP_DOWN,
     ]
@@ -72,22 +72,22 @@ class BlindSensor(Base):
         """Get the move state property."""
         return self._move_state.name
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_STOP_STEP_UP_DOWN.value:
+        if datapoint.get("pairingID") == Pairing.AL_STOP_STEP_UP_DOWN.value:
             """
             Stops the sunblind and to step it up/down
 
             0 means up was pressed
             1 means down was pressed
             """
-            if output.get("value") == "0":
+            if datapoint.get("value") == "0":
                 self._step_state = BlindSensorState.step_up
-            elif output.get("value") == "1":
+            elif datapoint.get("value") == "1":
                 self._step_state = BlindSensorState.step_down
             else:
                 self._step_state = BlindSensorState.unknown
@@ -95,16 +95,16 @@ class BlindSensor(Base):
             self._state = self._step_state
             return True
 
-        if output.get("pairingID") == Pairing.AL_MOVE_UP_DOWN.value:
+        if datapoint.get("pairingID") == Pairing.AL_MOVE_UP_DOWN.value:
             """
             Moves sunblind up (0) and down (1)
 
             0 means up was pressed
             1 means down was pressed
             """
-            if output.get("value") == "0":
+            if datapoint.get("value") == "0":
                 self._move_state = BlindSensorState.move_up
-            elif output.get("value") == "1":
+            elif datapoint.get("value") == "1":
                 self._move_state = BlindSensorState.move_down
             else:
                 self._move_state = BlindSensorState.unknown

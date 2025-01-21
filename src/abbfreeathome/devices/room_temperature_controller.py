@@ -10,7 +10,7 @@ from .base import Base
 class RoomTemperatureController(Base):
     """Free@Home RoomTemperatureController Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_SET_POINT_TEMPERATURE,
         Pairing.AL_STATE_INDICATION,
         Pairing.AL_MEASURED_TEMPERATURE,
@@ -115,19 +115,19 @@ class RoomTemperatureController(Base):
         await self._set_temperature_datapoint(str(value))
         self._target_temperature = value
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_SET_POINT_TEMPERATURE.value:
-            self._target_temperature = float(output.get("value"))
+        if datapoint.get("pairingID") == Pairing.AL_SET_POINT_TEMPERATURE.value:
+            self._target_temperature = float(datapoint.get("value"))
             return True
-        if output.get("pairingID") == Pairing.AL_CONTROLLER_ON_OFF.value:
-            self._state = output.get("value") == "1"
+        if datapoint.get("pairingID") == Pairing.AL_CONTROLLER_ON_OFF.value:
+            self._state = datapoint.get("value") == "1"
             return True
-        if output.get("pairingID") == Pairing.AL_STATE_INDICATION.value:
+        if datapoint.get("pairingID") == Pairing.AL_STATE_INDICATION.value:
             """
             This returns a integer bitwise-ORed with the following masks:
             0x01 - comfort mode                 (65)
@@ -141,15 +141,15 @@ class RoomTemperatureController(Base):
 
             At the moment only 0x04 (eco mode) is needed
             """
-            self._state_indication = int(output.get("value"))
-            self._eco_mode = int(output.get("value")) & 0x04 == 0x04
+            self._state_indication = int(datapoint.get("value"))
+            self._eco_mode = int(datapoint.get("value")) & 0x04 == 0x04
             return True
-        if output.get("pairingID") == Pairing.AL_MEASURED_TEMPERATURE.value:
-            self._current_temperature = float(output.get("value"))
+        if datapoint.get("pairingID") == Pairing.AL_MEASURED_TEMPERATURE.value:
+            self._current_temperature = float(datapoint.get("value"))
             return True
-        if output.get("pairingID") == Pairing.AL_HEATING_DEMAND.value:
+        if datapoint.get("pairingID") == Pairing.AL_HEATING_DEMAND.value:
             try:
-                self._valve = int(float(output.get("value")))
+                self._valve = int(float(datapoint.get("value")))
             except ValueError:
                 self._valve = None
             return True

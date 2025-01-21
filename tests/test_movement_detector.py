@@ -80,22 +80,22 @@ async def test_refresh_state(movement_detector_indoor):
     )
 
 
-def test_refresh_state_from_output(movement_detector_indoor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(movement_detector_indoor):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    movement_detector_indoor._refresh_state_from_output(
-        output={"pairingID": 6, "value": "1"},
+    movement_detector_indoor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 6, "value": "1"},
     )
     assert movement_detector_indoor.state is True
 
     # Check output that affects the state.
-    movement_detector_indoor._refresh_state_from_output(
-        output={"pairingID": 1027, "value": "52.3"},
+    movement_detector_indoor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1027, "value": "52.3"},
     )
     assert movement_detector_indoor.brightness == 52.3
 
     # Check output that does NOT affect the state.
-    movement_detector_indoor._refresh_state_from_output(
-        output={"pairingID": 6, "value": "0"},
+    movement_detector_indoor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 6, "value": "0"},
     )
     assert movement_detector_indoor.brightness == 52.3

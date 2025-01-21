@@ -55,16 +55,16 @@ async def test_refresh_state(carbon_monoxide_sensor):
     )
 
 
-def test_refresh_state_from_output(carbon_monoxide_sensor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(carbon_monoxide_sensor):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    carbon_monoxide_sensor._refresh_state_from_output(
-        output={"pairingID": 708, "value": "1"},
+    carbon_monoxide_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 708, "value": "1"},
     )
     assert carbon_monoxide_sensor.state is True
 
     # Check output that does NOT affect the state.
-    carbon_monoxide_sensor._refresh_state_from_output(
-        output={"pairingID": 4, "value": "1"},
+    carbon_monoxide_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 4, "value": "1"},
     )
     assert carbon_monoxide_sensor.state is True

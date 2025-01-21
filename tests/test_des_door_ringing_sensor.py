@@ -36,17 +36,17 @@ def des_door_ringing_sensor(mock_api):
     )
 
 
-def test_refresh_state_from_output(des_door_ringing_sensor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(des_door_ringing_sensor):
+    """Test the _refresh_state_from_datapoint function."""
     assert (
-        des_door_ringing_sensor._refresh_state_from_output(
-            output={"pairingID": 2, "value": "1"},
+        des_door_ringing_sensor._refresh_state_from_datapoint(
+            datapoint={"pairingID": 2, "value": "1"},
         )
         is True
     )
     assert (
-        des_door_ringing_sensor._refresh_state_from_output(
-            output={"pairingID": 4, "value": "1"},
+        des_door_ringing_sensor._refresh_state_from_datapoint(
+            datapoint={"pairingID": 4, "value": "1"},
         )
         is False
     )

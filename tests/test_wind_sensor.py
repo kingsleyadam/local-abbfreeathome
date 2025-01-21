@@ -66,28 +66,28 @@ async def test_refresh_state(wind_sensor):
     )
 
 
-def test_refresh_state_from_output(wind_sensor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(wind_sensor):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    wind_sensor._refresh_state_from_output(
-        output={"pairingID": 1028, "value": "20.1"},
+    wind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1028, "value": "20.1"},
     )
     assert wind_sensor.state == 20.1
 
     # Check output that affects the state.
-    wind_sensor._refresh_state_from_output(
-        output={"pairingID": 37, "value": "1"},
+    wind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 37, "value": "1"},
     )
     assert wind_sensor.alarm is True
 
     # Check output that affects the state.
-    wind_sensor._refresh_state_from_output(
-        output={"pairingID": 1025, "value": "2"},
+    wind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1025, "value": "2"},
     )
     assert wind_sensor.force == 2
 
     # Check output that does NOT affect the state.
-    wind_sensor._refresh_state_from_output(
-        output={"pairingID": 4, "value": "1"},
+    wind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 4, "value": "1"},
     )
     assert wind_sensor.state == 20.1

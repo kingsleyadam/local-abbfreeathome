@@ -56,30 +56,30 @@ async def test_refresh_state(blind_sensor):
     )
 
 
-def test_refresh_state_from_output(blind_sensor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(blind_sensor):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    blind_sensor._refresh_state_from_output(
-        output={"pairingID": 33, "value": "1"},
+    blind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 33, "value": "1"},
     )
     assert blind_sensor.state == BlindSensorState.step_down.name
     assert blind_sensor.step_state == BlindSensorState.step_down.name
 
-    blind_sensor._refresh_state_from_output(
-        output={"pairingID": 32, "value": "1"},
+    blind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 32, "value": "1"},
     )
     assert blind_sensor.state == BlindSensorState.move_down.name
     assert blind_sensor.move_state == BlindSensorState.move_down.name
 
     # Test unknown values
-    blind_sensor._refresh_state_from_output(
-        output={"pairingID": 32, "value": "INVALID"},
+    blind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 32, "value": "INVALID"},
     )
     assert blind_sensor.state == BlindSensorState.unknown.name
     assert blind_sensor.move_state == BlindSensorState.unknown.name
 
-    blind_sensor._refresh_state_from_output(
-        output={"pairingID": 33, "value": "INVALID"},
+    blind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 33, "value": "INVALID"},
     )
     assert blind_sensor.state == BlindSensorState.unknown.name
     assert blind_sensor.step_state == BlindSensorState.unknown.name

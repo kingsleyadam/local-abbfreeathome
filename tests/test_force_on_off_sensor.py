@@ -58,30 +58,30 @@ async def test_refresh_state(force_on_off_sensor):
     )
 
 
-def test_refresh_state_from_output(force_on_off_sensor):
-    """Test the _refresh_state_from_output function."""
+def test_refresh_state_from_datapoint(force_on_off_sensor):
+    """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
-    force_on_off_sensor._refresh_state_from_output(
-        output={"pairingID": 3, "value": "0"},
+    force_on_off_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 3, "value": "0"},
     )
     assert force_on_off_sensor.state == ForceOnOffSensorState.off.name
 
-    force_on_off_sensor._refresh_state_from_output(
-        output={"pairingID": 3, "value": "1"},
+    force_on_off_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 3, "value": "1"},
     )
     assert force_on_off_sensor.state == ForceOnOffSensorState.off.name
 
-    force_on_off_sensor._refresh_state_from_output(
-        output={"pairingID": 3, "value": "2"},
+    force_on_off_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 3, "value": "2"},
     )
     assert force_on_off_sensor.state == ForceOnOffSensorState.on.name
 
-    force_on_off_sensor._refresh_state_from_output(
-        output={"pairingID": 3, "value": "3"},
+    force_on_off_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 3, "value": "3"},
     )
     assert force_on_off_sensor.state == ForceOnOffSensorState.on.name
 
-    force_on_off_sensor._refresh_state_from_output(
-        output={"pairingID": 3, "value": "INVALID"},
+    force_on_off_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 3, "value": "INVALID"},
     )
     assert force_on_off_sensor.state == ForceOnOffSensorState.unknown.name

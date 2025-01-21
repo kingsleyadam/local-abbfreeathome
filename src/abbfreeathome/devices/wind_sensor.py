@@ -10,7 +10,7 @@ from .base import Base
 class WindSensor(Base):
     """Free@Home WindSensor Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_WIND_SPEED,
         Pairing.AL_WIND_ALARM,
         Pairing.AL_WIND_FORCE,
@@ -62,19 +62,19 @@ class WindSensor(Base):
         """Get the force state of the sensor."""
         return self._force
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_WIND_SPEED.value:
-            self._state = float(output.get("value"))
+        if datapoint.get("pairingID") == Pairing.AL_WIND_SPEED.value:
+            self._state = float(datapoint.get("value"))
             return True
-        if output.get("pairingID") == Pairing.AL_WIND_ALARM.value:
-            self._alarm = output.get("value") == "1"
+        if datapoint.get("pairingID") == Pairing.AL_WIND_ALARM.value:
+            self._alarm = datapoint.get("value") == "1"
             return True
-        if output.get("pairingID") == Pairing.AL_WIND_FORCE.value:
-            self._force = int(output.get("value"))
+        if datapoint.get("pairingID") == Pairing.AL_WIND_FORCE.value:
+            self._force = int(datapoint.get("value"))
             return True
         return False

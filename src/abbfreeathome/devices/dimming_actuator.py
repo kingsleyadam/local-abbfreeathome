@@ -20,7 +20,7 @@ class DimmingActuatorForcedPosition(enum.Enum):
 class DimmingActuator(Base):
     """Free@Home DimmingActuator Class."""
 
-    _state_refresh_output_pairings: list[Pairing] = [
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_INFO_FORCE,
         Pairing.AL_INFO_ON_OFF,
         Pairing.AL_INFO_ACTUAL_DIMMING_VALUE,
@@ -113,22 +113,22 @@ class DimmingActuator(Base):
 
         self._forced_position = _position
 
-    def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        if output.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
-            self._state = output.get("value") == "1"
+        if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
+            self._state = datapoint.get("value") == "1"
             return True
-        if output.get("pairingID") == Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value:
-            self._brightness = int(float(output.get("value")))
+        if datapoint.get("pairingID") == Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value:
+            self._brightness = int(float(datapoint.get("value")))
             return True
-        if output.get("pairingID") == Pairing.AL_INFO_FORCE.value:
+        if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
                 self._forced_position = DimmingActuatorForcedPosition(
-                    output.get("value")
+                    datapoint.get("value")
                 )
             except ValueError:
                 self._forced_position = DimmingActuatorForcedPosition.unknown
