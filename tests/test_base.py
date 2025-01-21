@@ -89,3 +89,9 @@ def test_remove_callback(base_instance):
     base_instance.register_callback(callback)
     base_instance.remove_callback(callback)
     assert callback not in base_instance._callbacks
+
+
+def test_update_device(base_instance):
+    """Test when input-datapoint is provided."""
+
+    base_instance.update_device("AL_SWITCH_ON_OFF/idp0000", "1")

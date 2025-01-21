@@ -5,7 +5,7 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .real_base import RealBase
+from .base import Base
 
 
 class SwitchSensorState(enum.Enum):
@@ -26,7 +26,7 @@ class DimmingSensorState(enum.Enum):
     longpress_down_release = "0"
 
 
-class SwitchSensor(RealBase):
+class SwitchSensor(Base):
     """Free@Home SwitchSensor Class."""
 
     _state_refresh_pairings: list[Pairing] = [

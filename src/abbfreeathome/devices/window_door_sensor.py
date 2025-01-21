@@ -5,7 +5,7 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .real_base import RealBase
+from .base import Base
 
 
 class WindowDoorSensorPosition(enum.Enum):
@@ -21,7 +21,7 @@ class WindowDoorSensorPosition(enum.Enum):
     open = "100"
 
 
-class WindowDoorSensor(RealBase):
+class WindowDoorSensor(Base):
     """Free@Home WindowDoorSensor Class."""
 
     _state_refresh_pairings: list[Pairing] = [

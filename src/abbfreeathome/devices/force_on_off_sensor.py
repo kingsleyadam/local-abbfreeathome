@@ -5,7 +5,7 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .real_base import RealBase
+from .base import Base
 
 
 class ForceOnOffSensorState(enum.Enum):
@@ -16,7 +16,7 @@ class ForceOnOffSensorState(enum.Enum):
     on = "1"
 
 
-class ForceOnOffSensor(RealBase):
+class ForceOnOffSensor(Base):
     """Free@Home ForceOnOffSensor Class."""
 
     _state_refresh_pairings: list[Pairing] = [

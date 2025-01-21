@@ -4,10 +4,10 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .real_base import RealBase
+from .base import Base
 
 
-class DesDoorRingingSensor(RealBase):
+class DesDoorRingingSensor(Base):
     """Free@Home DesDoorRingingSensor Class."""
 
     _state_refresh_pairings: list[Pairing] = [

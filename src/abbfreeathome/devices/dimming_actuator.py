@@ -5,7 +5,7 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .real_base import RealBase
+from .base import Base
 
 
 class DimmingActuatorForcedPosition(enum.Enum):
@@ -17,7 +17,7 @@ class DimmingActuatorForcedPosition(enum.Enum):
     forced_off = "5"
 
 
-class DimmingActuator(RealBase):
+class DimmingActuator(Base):
     """Free@Home DimmingActuator Class."""
 
     _state_refresh_pairings: list[Pairing] = [

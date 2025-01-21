@@ -5,7 +5,7 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .real_base import RealBase
+from .base import Base
 
 
 class CoverActuatorForcedPosition(enum.Enum):
@@ -27,7 +27,7 @@ class CoverActuatorState(enum.Enum):
     closing = "3"
 
 
-class CoverActuator(RealBase):
+class CoverActuator(Base):
     """Free@Home CoverActuator Class."""
 
     _state_refresh_pairings: list[Pairing] = [

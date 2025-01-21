@@ -5,7 +5,7 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from .real_base import RealBase
+from .base import Base
 
 
 class BlindSensorState(enum.Enum):
@@ -18,7 +18,7 @@ class BlindSensorState(enum.Enum):
     move_down = "3"
 
 
-class BlindSensor(RealBase):
+class BlindSensor(Base):
     """Free@Home BlindSensor Class."""
 
     _state_refresh_pairings: list[Pairing] = [
