@@ -54,8 +54,10 @@ class FreeAtHome:
         """Get the list of devices by function."""
         _devices = []
         for _device_key, _device in (await self.get_config()).get("devices").items():
+            is_virtual = False
             if _device_key[0:4] == "6000":
                 _device["interface"] = "VD"
+                is_virtual = True
 
             # Filter by interface if provided
             if self._interfaces and _device.get("interface") not in [
@@ -103,6 +105,7 @@ class FreeAtHome:
                             "inputs": _channel.get("inputs"),
                             "outputs": _channel.get("outputs"),
                             "parameters": _channel.get("parameters"),
+                            "virtual": is_virtual,
                         }
                     )
 
@@ -138,8 +141,14 @@ class FreeAtHome:
     async def load_devices(self):
         """Load all of the devices into the devices object."""
         self.clear_devices()
-        for _function, _device_class in self._get_function_to_device_mapping().items():
-            await self._load_devices_by_function(_function, _device_class)
+        for (
+            _function,
+            _device_classes,
+        ) in self._get_function_to_device_mapping().items():
+            _device_classes = (
+                _device_classes if type(_device_classes) is list else [_device_classes]
+            )
+            await self._load_devices_by_function(_function, _device_classes)
 
     def unload_device_by_device_serial(self, device_serial: str):
         """Unload all devices by device serial id."""
@@ -150,9 +159,26 @@ class FreeAtHome:
         ]:
             self._devices.pop(key)
 
-    async def _load_devices_by_function(self, function: Function, device_class: Base):
+    async def _load_devices_by_function(
+        self, function: Function, device_classes: list[Base]
+    ):
         _devices = await self.get_devices_by_function(function)
         for _device in _devices:
+            device_class = None
+            for specific_class in device_classes:
+                if _device.get("virtual") and specific_class.__name__[0:7] == "Virtual":
+                    device_class = specific_class
+                    break
+                if (
+                    _device.get("virtual") is False
+                    and specific_class.__name__[0:7] != "Virtual"
+                ):
+                    device_class = specific_class
+                    break
+
+            if device_class is None:
+                continue
+
             self._devices[f"{_device.get('device_id')}/{_device.get('channel_id')}"] = (
                 device_class(
                     device_id=_device.get("device_id"),
@@ -186,7 +212,7 @@ class FreeAtHome:
             except KeyError:
                 continue
 
-    def _get_function_to_device_mapping(self) -> dict[Function, Base]:
+    def _get_function_to_device_mapping(self) -> dict[Function, Base | list[Base]]:
         return (
             FUNCTION_DEVICE_MAPPING
             if not self._device_classes
