@@ -24,6 +24,7 @@ from .devices.switch_actuator import SwitchActuator
 from .devices.switch_sensor import DimmingSensor, SwitchSensor
 from .devices.temperature_sensor import TemperatureSensor
 from .devices.trigger import Trigger
+from .devices.virtual.virtual_window_door_sensor import VirtualWindowDoorSensor
 from .devices.wind_sensor import WindSensor
 from .devices.window_door_sensor import WindowDoorSensor
 
@@ -93,5 +94,5 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_TRIGGER: Trigger,
     Function.FID_WIND_SENSOR: WindSensor,
     Function.FID_WINDOW_DOOR_POSITION_SENSOR: WindowDoorSensor,
-    Function.FID_WINDOW_DOOR_SENSOR: WindowDoorSensor,
+    Function.FID_WINDOW_DOOR_SENSOR: [WindowDoorSensor, VirtualWindowDoorSensor],
 }
