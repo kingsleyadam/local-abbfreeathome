@@ -67,12 +67,12 @@ class VirtualSwitchActuator(VirtualBase):
         """Get the forced state of the switch."""
         return self._forced_position.name
 
-    async def set_on(self):
+    async def turn_on(self):
         """Turn on the switch."""
         await self._set_switching_datapoint("1")
         self._state = True
 
-    async def set_off(self):
+    async def turn_off(self):
         """Turn off the switch."""
         await self._set_switching_datapoint("0")
         self._state = False

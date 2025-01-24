@@ -53,9 +53,9 @@ async def test_initial_state(virtual_switch_actuator):
 
 
 @pytest.mark.asyncio
-async def test_set_on(virtual_switch_actuator):
+async def test_turn_on(virtual_switch_actuator):
     """Test to turning on of the switch."""
-    await virtual_switch_actuator.set_on()
+    await virtual_switch_actuator.turn_on()
     assert virtual_switch_actuator.state is True
     virtual_switch_actuator._api.set_datapoint.assert_called_with(
         device_id="60004F56EA24",
@@ -66,9 +66,9 @@ async def test_set_on(virtual_switch_actuator):
 
 
 @pytest.mark.asyncio
-async def test_set_off(virtual_switch_actuator):
+async def test_turn_off(virtual_switch_actuator):
     """Test to turning off of the switch."""
-    await virtual_switch_actuator.set_off()
+    await virtual_switch_actuator.turn_off()
     assert virtual_switch_actuator.state is False
     virtual_switch_actuator._api.set_datapoint.assert_called_with(
         device_id="60004F56EA24",

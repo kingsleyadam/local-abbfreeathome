@@ -38,9 +38,9 @@ def virtual_window_door_sensor(mock_api):
 
 
 @pytest.mark.asyncio
-async def test_set_on(virtual_window_door_sensor):
+async def test_turn_on(virtual_window_door_sensor):
     """Test to activate the sensor."""
-    await virtual_window_door_sensor.set_on()
+    await virtual_window_door_sensor.turn_on()
     virtual_window_door_sensor._api.set_datapoint.assert_called_with(
         device_id="60002AE2F1BE",
         channel_id="ch0000",
@@ -51,9 +51,9 @@ async def test_set_on(virtual_window_door_sensor):
 
 
 @pytest.mark.asyncio
-async def test_set_off(virtual_window_door_sensor):
+async def test_turn_off(virtual_window_door_sensor):
     """Test to deactivate the sensor."""
-    await virtual_window_door_sensor.set_off()
+    await virtual_window_door_sensor.turn_off()
     virtual_window_door_sensor._api.set_datapoint.assert_called_with(
         device_id="60002AE2F1BE",
         channel_id="ch0000",

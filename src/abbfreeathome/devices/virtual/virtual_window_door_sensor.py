@@ -44,13 +44,13 @@ class VirtualWindowDoorSensor(VirtualBase):
         """Get the sensor state."""
         return self._state
 
-    async def set_on(self):
-        """Activate the sensor."""
+    async def turn_on(self):
+        """Turn on the sensor."""
         await self._set_sensor_datapoint("1")
         self._state = True
 
-    async def set_off(self):
-        """Deactivate the sensor."""
+    async def turn_off(self):
+        """Turn off the sensor."""
         await self._set_sensor_datapoint("0")
         self._state = False
 
