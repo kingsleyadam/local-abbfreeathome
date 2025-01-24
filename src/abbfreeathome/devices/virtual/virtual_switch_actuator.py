@@ -13,8 +13,8 @@ class VirtualSwitchActuatorForcedPosition(enum.Enum):
 
     unknown = None
     deactivated = "0"
-    forced_on = "4"
-    forced_off = "5"
+    forced_on = "3"
+    forced_off = "2"
 
 
 class VirtualSwitchActuator(VirtualBase):
@@ -87,9 +87,9 @@ class VirtualSwitchActuator(VirtualBase):
         if _position == VirtualSwitchActuatorForcedPosition.deactivated:
             await self._set_force_datapoint("0")
         elif _position == VirtualSwitchActuatorForcedPosition.forced_on:
-            await self._set_force_datapoint("3")
+            await self._set_force_datapoint("4")
         elif _position == VirtualSwitchActuatorForcedPosition.forced_off:
-            await self._set_force_datapoint("2")
+            await self._set_force_datapoint("5")
 
         self._forced_position = _position
 
