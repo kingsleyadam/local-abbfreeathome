@@ -24,6 +24,7 @@ from .devices.switch_actuator import SwitchActuator
 from .devices.switch_sensor import DimmingSensor, SwitchSensor
 from .devices.temperature_sensor import TemperatureSensor
 from .devices.trigger import Trigger
+from .devices.virtual.virtual_switch_actuator import VirtualSwitchActuator
 from .devices.virtual.virtual_window_door_sensor import VirtualWindowDoorSensor
 from .devices.wind_sensor import WindSensor
 from .devices.window_door_sensor import WindowDoorSensor
@@ -86,7 +87,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     ),
     Function.FID_SHUTTER_ACTUATOR: ShutterActuator,
     Function.FID_SMOKE_DETECTOR: SmokeDetector,
-    Function.FID_SWITCH_ACTUATOR: SwitchActuator,
+    Function.FID_SWITCH_ACTUATOR: [SwitchActuator, VirtualSwitchActuator],
     Function.FID_E_CONTACT_SWITCH_ACTUATOR_TYPE0: SwitchActuator,
     Function.FID_E_CONTACT_SWITCH_ACTUATOR_TYPE1: SwitchActuator,
     Function.FID_E_CONTACT_SWITCH_ACTUATOR_TYPE2: SwitchActuator,
