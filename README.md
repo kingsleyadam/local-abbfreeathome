@@ -186,8 +186,6 @@ You can run a few tests to ensure everything is working as it should.
 1. In Visual Studio Code, Navigate to the `Testing` tab on the left and click `Run Tests` (Double Play Icon). This should run all Python Unit Tests. You can also run `Run Tests With Coverage` to get the code coverage results.
 2. In a new terminal window you can run `python3 -m build` to build and package up the python code.
 
-> Note: When you open a new terminal window the virtual environment should be activated, if it's not then you'll have to active it `. ./.venv/bin/activate`.
-
 ## Examples
 
 Below are a number of examples on how to use the library. These examples use the above directory and virtual environment.
