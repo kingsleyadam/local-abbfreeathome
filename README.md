@@ -162,6 +162,30 @@ Replace `python3.12` with your Python bash alias, double check which directory y
 
 Create any number of python files using the examples below (or your own code) to interact with the api.
 
+## Development
+
+The easiest way to develop is in Visual Studio and the use of DevContainers. It'll also ensure you're following the same code formatting and linting standards as everyone else. It'll also get your local environment setup with all the tools required in minutes.
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/)
+- [Visual Studio Code](https://code.visualstudio.com/)
+- [Git](https://git-scm.com/)
+
+### Getting Started
+
+1. If you don't have access to this repository, start by forking the repo into your own account.
+2. Open up Visual Studio Code, navigate to the [Command Palette](https://code.visualstudio.com/docs/getstarted/userinterface#_command-palette) and search for `Dev Containers: Clone Repository in Container Volume`.
+3. You'll be prompted to enter the GitHub Repository URL. This will your forked repo url (unless you have access to this repo).
+4. The dev container image will be built, once this is complete you'll be ready to develop!
+
+### Tests
+
+You can run a few tests to ensure everything is working as it should.
+
+1. In Visual Studio Code, Navigate to the `Testing` tab on the left and click `Run Tests` (Double Play Icon). This should run all Python Unit Tests. You can also run `Run Tests With Coverage` to get the code coverage results.
+2. In a new terminal window you can run `python3 -m build` to build and package up the python code.
+
 ## Examples
 
 Below are a number of examples on how to use the library. These examples use the above directory and virtual environment.
