@@ -1,28 +1,36 @@
 """Free@Home Virtual SwitchActuator class."""
 
-import enum
+# import enum
+import logging
 from typing import Any
 
 from ...api import FreeAtHomeApi
 from ...bin.pairing import Pairing
-from .virtual_base import VirtualBase
+from ..base import Base
+
+_LOGGER = logging.getLogger(__name__)
 
 
-class VirtualSwitchActuatorForcedPosition(enum.Enum):
-    """An Enum class for the force states."""
+# class VirtualSwitchActuatorForcedPosition(enum.Enum):
+#    """An Enum class for the force states."""
 
-    unknown = None
-    deactivated = "0"
-    forced_on = "3"
-    forced_off = "2"
+#    unknown = None
+#    deactivated = "0"
+#    forced_on = "3"
+#    forced_off = "2"
 
 
-class VirtualSwitchActuator(VirtualBase):
+class VirtualSwitchActuator(Base):
     """Free@Home Virtual SwitchActuator Class."""
 
     _state_refresh_pairings: list[Pairing] = [
+        Pairing.AL_INFO_ON_OFF,
+        #        Pairing.AL_INFO_FORCE,
+    ]
+
+    _input_refresh_pairings: list[Pairing] = [
         Pairing.AL_SWITCH_ON_OFF,
-        Pairing.AL_FORCED,
+        #        Pairing.AL_FORCED,
     ]
 
     def __init__(
@@ -40,9 +48,13 @@ class VirtualSwitchActuator(VirtualBase):
     ):
         """Initialize the Free@Home Virtual SwitchActuator class."""
         self._state: bool | None = None
-        self._forced_position: VirtualSwitchActuatorForcedPosition = (
-            VirtualSwitchActuatorForcedPosition.unknown
-        )
+        #        self._forced_position: VirtualSwitchActuatorForcedPosition = (
+        #            VirtualSwitchActuatorForcedPosition.unknown
+        #        )
+        self._requested_state: bool | None = None
+        #        self._requested_forced_position: VirtualSwitchActuatorForcedPosition = (
+        #            VirtualSwitchActuatorForcedPosition.unknown
+        #        )
 
         super().__init__(
             device_id,
@@ -63,9 +75,19 @@ class VirtualSwitchActuator(VirtualBase):
         return self._state
 
     @property
-    def forced_position(self) -> str | None:
-        """Get the forced state of the switch."""
-        return self._forced_position.name
+    def requested_state(self) -> bool | None:
+        """Get the requested state of the switch."""
+        return self._requested_state
+
+    #    @property
+    #    def forced_position(self) -> str | None:
+    #        """Get the forced state of the switch."""
+    #        return self._forced_position.name
+
+    #    @property
+    #    def requested_forced_position(self) -> str | None:
+    #        """Get the requested forced state of the switch."""
+    #        return self._requested_forced_position.name
 
     async def turn_on(self):
         """Turn on the switch."""
@@ -77,39 +99,52 @@ class VirtualSwitchActuator(VirtualBase):
         await self._set_switching_datapoint("0")
         self._state = False
 
-    async def set_forced_position(self, forced_position_name: str):
-        """Set the forced-option on the switch."""
-        try:
-            _position = VirtualSwitchActuatorForcedPosition[forced_position_name]
-        except KeyError:
-            _position = VirtualSwitchActuatorForcedPosition.unknown
-
-        if _position == VirtualSwitchActuatorForcedPosition.deactivated:
-            await self._set_force_datapoint("0")
-        elif _position == VirtualSwitchActuatorForcedPosition.forced_on:
-            await self._set_force_datapoint("4")
-        elif _position == VirtualSwitchActuatorForcedPosition.forced_off:
-            await self._set_force_datapoint("5")
-
-        self._forced_position = _position
+    #    async def set_forced_position(self, forced_position_name: str):
+    #        """Set the forced-option on the switch."""
+    #        try:
+    #            _position = VirtualSwitchActuatorForcedPosition[forced_position_name]
+    #        except KeyError:
+    #            _position = VirtualSwitchActuatorForcedPosition.unknown
+    #
+    #        if _position == VirtualSwitchActuatorForcedPosition.deactivated:
+    #            await self._set_force_datapoint("0")
+    #        elif _position == VirtualSwitchActuatorForcedPosition.forced_on:
+    #            await self._set_force_datapoint("4")
+    #        elif _position == VirtualSwitchActuatorForcedPosition.forced_off:
+    #            await self._set_force_datapoint("5")
+    #
+    #        self._forced_position = _position
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
         """
-        Refresh the state of the device from a given input.
+        Refresh the state of the device from a given input and output.
 
         This will return whether the state was refreshed as a boolean value.
         """
         if datapoint.get("pairingID") == Pairing.AL_SWITCH_ON_OFF.value:
+            self._requested_state = datapoint.get("value") == "1"
+            return True
+        #        if datapoint.get("pairingID") == Pairing.AL_FORCED.value:
+        #            try:
+        #                self._requested_forced_position = VirtualSwitchActuatorForcedPosition(
+        #                    datapoint.get("value")
+        #                )
+        #            except ValueError:
+        #                self._requested_forced_position = (
+        #                    VirtualSwitchActuatorForcedPosition.unknown
+        #                )
+        #            return True
+        if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
             return True
-        if datapoint.get("pairingID") == Pairing.AL_FORCED.value:
-            try:
-                self._forced_position = VirtualSwitchActuatorForcedPosition(
-                    datapoint.get("value")
-                )
-            except ValueError:
-                self._forced_position = VirtualSwitchActuatorForcedPosition.unknown
-            return True
+        #        if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
+        #            try:
+        #                self._forced_position = VirtualSwitchActuatorForcedPosition(
+        #                    datapoint.get("value")
+        #                )
+        #            except ValueError:
+        #                self._forced_position = VirtualSwitchActuatorForcedPosition.unknown
+        #            return True
         return False
 
     async def _set_switching_datapoint(self, value: str):
@@ -124,14 +159,91 @@ class VirtualSwitchActuator(VirtualBase):
             value=value,
         )
 
-    async def _set_force_datapoint(self, value: str):
-        """Set the force datapoint on the api."""
-        _force_output_id, _force_output_value = self.get_output_by_pairing(
-            pairing=Pairing.AL_INFO_FORCE
+    #    async def _set_force_datapoint(self, value: str):
+    #        """Set the force datapoint on the api."""
+    #        _force_output_id, _force_output_value = self.get_output_by_pairing(
+    #            pairing=Pairing.AL_INFO_FORCE
+    #        )
+    #        return await self._api.set_datapoint(
+    #            device_id=self.device_id,
+    #            channel_id=self.channel_id,
+    #            datapoint=_force_output_id,
+    #            value=value,
+    #        )
+
+    def update_device(self, datapoint_key: str, datapoint_value: str):
+        """Update the device state."""
+        _LOGGER.info(
+            "%s received updated data: %s: %s",
+            self.channel_name,
+            datapoint_key,
+            datapoint_value,
         )
-        return await self._api.set_datapoint(
-            device_id=self.device_id,
-            channel_id=self.channel_id,
-            datapoint=_force_output_id,
-            value=value,
-        )
+        _refreshed = None
+        _io_key = datapoint_key.split("/")[-1]
+
+        if _io_key in self._outputs:
+            self._outputs[_io_key]["value"] = datapoint_value
+            _refreshed = self._refresh_state_from_datapoint(
+                datapoint=self._outputs[_io_key]
+            )
+
+        if _io_key in self._inputs:
+            self._inputs[_io_key]["value"] = datapoint_value
+            _refreshed = self._refresh_state_from_datapoint(
+                datapoint=self._inputs[_io_key]
+            )
+
+        if _refreshed and self._callbacks:
+            for callback in self._callbacks:
+                callback()
+
+    async def refresh_state(self):
+        """Refresh the state of the device from the api."""
+        for _pairing in self._state_refresh_pairings:
+            _datapoint_id, _datapoint_value = self.get_output_by_pairing(
+                pairing=_pairing
+            )
+
+            _datapoint = (
+                await self._api.get_datapoint(
+                    device_id=self.device_id,
+                    channel_id=self.channel_id,
+                    datapoint=_datapoint_id,
+                )
+            )[0]
+
+            self._refresh_state_from_datapoint(
+                datapoint={
+                    "pairingID": _pairing.value,
+                    "value": _datapoint,
+                }
+            )
+
+        for _pairing in self._input_refresh_pairings:
+            _datapoint_id, _datapoint_value = self.get_input_by_pairing(
+                pairing=_pairing
+            )
+
+            _datapoint = (
+                await self._api.get_datapoint(
+                    device_id=self.device_id,
+                    channel_id=self.channel_id,
+                    datapoint=_datapoint_id,
+                )
+            )[0]
+
+            self._refresh_state_from_datapoint(
+                datapoint={
+                    "pairingID": _pairing.value,
+                    "value": _datapoint,
+                }
+            )
+
+    def _refresh_state_from_datapoints(self):
+        """Refresh the state of the device from the datapoints."""
+        for _datapoint in self._outputs.values():
+            self._refresh_state_from_datapoint(_datapoint)
+
+        for _datapoint in self._inputs.values():
+            self._refresh_state_from_datapoint(_datapoint)

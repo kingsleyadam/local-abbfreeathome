@@ -4,11 +4,15 @@ from typing import Any
 
 from ...api import FreeAtHomeApi
 from ...bin.pairing import Pairing
-from .virtual_base import VirtualBase
+from ..base import Base
 
 
-class VirtualWindowDoorSensor(VirtualBase):
+class VirtualWindowDoorSensor(Base):
     """Free@Home Virtual WindowDoorSensor Class."""
+
+    _state_refresh_pairings: list[Pairing] = [
+        Pairing.AL_WINDOW_DOOR,
+    ]
 
     def __init__(
         self,
@@ -53,6 +57,18 @@ class VirtualWindowDoorSensor(VirtualBase):
         """Turn off the sensor."""
         await self._set_sensor_datapoint("0")
         self._state = False
+
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+        """
+        Refresh the state of the device from a given output.
+
+        This will return whether the state was refreshed as a boolean value.
+        """
+        if datapoint.get("pairingID") == Pairing.AL_WINDOW_DOOR.value:
+            self._state = datapoint.get("value") == "1"
+            return True
+
+        return False
 
     async def _set_sensor_datapoint(self, value: str):
         """Set the sensor datapoint on the api."""
