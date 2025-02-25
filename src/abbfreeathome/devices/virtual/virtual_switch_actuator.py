@@ -52,9 +52,9 @@ class VirtualSwitchActuator(Base):
         #            VirtualSwitchActuatorForcedPosition.unknown
         #        )
         self._requested_state: bool | None = None
-        #        self._requested_forced_position: VirtualSwitchActuatorForcedPosition = (
-        #            VirtualSwitchActuatorForcedPosition.unknown
-        #        )
+        # self._requested_forced_position: VirtualSwitchActuatorForcedPosition = (
+        #     VirtualSwitchActuatorForcedPosition.unknown
+        # )
 
         super().__init__(
             device_id,
@@ -124,27 +124,27 @@ class VirtualSwitchActuator(Base):
         if datapoint.get("pairingID") == Pairing.AL_SWITCH_ON_OFF.value:
             self._requested_state = datapoint.get("value") == "1"
             return True
-        #        if datapoint.get("pairingID") == Pairing.AL_FORCED.value:
-        #            try:
-        #                self._requested_forced_position = VirtualSwitchActuatorForcedPosition(
-        #                    datapoint.get("value")
-        #                )
-        #            except ValueError:
-        #                self._requested_forced_position = (
-        #                    VirtualSwitchActuatorForcedPosition.unknown
-        #                )
-        #            return True
+        # if datapoint.get("pairingID") == Pairing.AL_FORCED.value:
+        #     try:
+        #         self._requested_forced_position = VirtualSwitchActuatorForcedPosition(
+        #             datapoint.get("value")
+        #         )
+        #     except ValueError:
+        #         self._requested_forced_position = (
+        #             VirtualSwitchActuatorForcedPosition.unknown
+        #         )
+        #     return True
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
             return True
-        #        if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
-        #            try:
-        #                self._forced_position = VirtualSwitchActuatorForcedPosition(
-        #                    datapoint.get("value")
-        #                )
-        #            except ValueError:
-        #                self._forced_position = VirtualSwitchActuatorForcedPosition.unknown
-        #            return True
+        # if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
+        #     try:
+        #         self._forced_position = VirtualSwitchActuatorForcedPosition(
+        #             datapoint.get("value")
+        #         )
+        #     except ValueError:
+        #         self._forced_position = VirtualSwitchActuatorForcedPosition.unknown
+        #     return True
         return False
 
     async def _set_switching_datapoint(self, value: str):
@@ -171,79 +171,79 @@ class VirtualSwitchActuator(Base):
     #            value=value,
     #        )
 
-    def update_device(self, datapoint_key: str, datapoint_value: str):
-        """Update the device state."""
-        _LOGGER.info(
-            "%s received updated data: %s: %s",
-            self.channel_name,
-            datapoint_key,
-            datapoint_value,
-        )
-        _refreshed = None
-        _io_key = datapoint_key.split("/")[-1]
+    # def update_device(self, datapoint_key: str, datapoint_value: str):
+    #     """Update the device state."""
+    #     _LOGGER.info(
+    #         "%s received updated data: %s: %s",
+    #         self.channel_name,
+    #         datapoint_key,
+    #         datapoint_value,
+    #     )
+    #     _refreshed = None
+    #     _io_key = datapoint_key.split("/")[-1]
 
-        if _io_key in self._outputs:
-            self._outputs[_io_key]["value"] = datapoint_value
-            _refreshed = self._refresh_state_from_datapoint(
-                datapoint=self._outputs[_io_key]
-            )
+    #     if _io_key in self._outputs:
+    #         self._outputs[_io_key]["value"] = datapoint_value
+    #         _refreshed = self._refresh_state_from_datapoint(
+    #             datapoint=self._outputs[_io_key]
+    #         )
 
-        if _io_key in self._inputs:
-            self._inputs[_io_key]["value"] = datapoint_value
-            _refreshed = self._refresh_state_from_datapoint(
-                datapoint=self._inputs[_io_key]
-            )
+    #     if _io_key in self._inputs:
+    #         self._inputs[_io_key]["value"] = datapoint_value
+    #         _refreshed = self._refresh_state_from_datapoint(
+    #             datapoint=self._inputs[_io_key]
+    #         )
 
-        if _refreshed and self._callbacks:
-            for callback in self._callbacks:
-                callback()
+    #     if _refreshed and self._callbacks:
+    #         for callback in self._callbacks:
+    #             callback()
 
-    async def refresh_state(self):
-        """Refresh the state of the device from the api."""
-        for _pairing in self._state_refresh_pairings:
-            _datapoint_id, _datapoint_value = self.get_output_by_pairing(
-                pairing=_pairing
-            )
+    # async def refresh_state(self):
+    #     """Refresh the state of the device from the api."""
+    #     for _pairing in self._state_refresh_pairings:
+    #         _datapoint_id, _datapoint_value = self.get_output_by_pairing(
+    #             pairing=_pairing
+    #         )
 
-            _datapoint = (
-                await self._api.get_datapoint(
-                    device_id=self.device_id,
-                    channel_id=self.channel_id,
-                    datapoint=_datapoint_id,
-                )
-            )[0]
+    #         _datapoint = (
+    #             await self._api.get_datapoint(
+    #                 device_id=self.device_id,
+    #                 channel_id=self.channel_id,
+    #                 datapoint=_datapoint_id,
+    #             )
+    #         )[0]
 
-            self._refresh_state_from_datapoint(
-                datapoint={
-                    "pairingID": _pairing.value,
-                    "value": _datapoint,
-                }
-            )
+    #         self._refresh_state_from_datapoint(
+    #             datapoint={
+    #                 "pairingID": _pairing.value,
+    #                 "value": _datapoint,
+    #             }
+    #         )
 
-        for _pairing in self._input_refresh_pairings:
-            _datapoint_id, _datapoint_value = self.get_input_by_pairing(
-                pairing=_pairing
-            )
+    #     for _pairing in self._input_refresh_pairings:
+    #         _datapoint_id, _datapoint_value = self.get_input_by_pairing(
+    #             pairing=_pairing
+    #         )
 
-            _datapoint = (
-                await self._api.get_datapoint(
-                    device_id=self.device_id,
-                    channel_id=self.channel_id,
-                    datapoint=_datapoint_id,
-                )
-            )[0]
+    #         _datapoint = (
+    #             await self._api.get_datapoint(
+    #                 device_id=self.device_id,
+    #                 channel_id=self.channel_id,
+    #                 datapoint=_datapoint_id,
+    #             )
+    #         )[0]
 
-            self._refresh_state_from_datapoint(
-                datapoint={
-                    "pairingID": _pairing.value,
-                    "value": _datapoint,
-                }
-            )
+    #         self._refresh_state_from_datapoint(
+    #             datapoint={
+    #                 "pairingID": _pairing.value,
+    #                 "value": _datapoint,
+    #             }
+    #         )
 
-    def _refresh_state_from_datapoints(self):
-        """Refresh the state of the device from the datapoints."""
-        for _datapoint in self._outputs.values():
-            self._refresh_state_from_datapoint(_datapoint)
+    # def _refresh_state_from_datapoints(self):
+    #     """Refresh the state of the device from the datapoints."""
+    #     for _datapoint in self._outputs.values():
+    #         self._refresh_state_from_datapoint(_datapoint)
 
-        for _datapoint in self._inputs.values():
-            self._refresh_state_from_datapoint(_datapoint)
+    #     for _datapoint in self._inputs.values():
+    #         self._refresh_state_from_datapoint(_datapoint)
