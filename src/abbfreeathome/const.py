@@ -74,6 +74,9 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITHOUT_FAN: (
         RoomTemperatureController
     ),
+    Function.FID_PANEL_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITHOUT_FAN: (
+        RoomTemperatureController
+    ),
     Function.FID_SHUTTER_ACTUATOR: ShutterActuator,
     Function.FID_SMOKE_DETECTOR: SmokeDetector,
     Function.FID_SWITCH_ACTUATOR: SwitchActuator,
