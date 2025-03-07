@@ -9,6 +9,9 @@ from src.abbfreeathome.bin.function import Function
 from src.abbfreeathome.bin.interface import Interface
 from src.abbfreeathome.devices.switch_actuator import SwitchActuator
 from src.abbfreeathome.devices.switch_sensor import SwitchSensor
+from src.abbfreeathome.devices.virtual.virtual_switch_actuator import (
+    VirtualSwitchActuator,
+)
 from src.abbfreeathome.freeathome import FreeAtHome
 
 
@@ -288,6 +291,41 @@ def api_mock():
                 },
                 "parameters": {},
             },
+            # this is a virtual device with no device-class associated
+            "6000123456789": {
+                "deviceReboots": "0",
+                "floor": "01",
+                "room": "01",
+                "displayName": "Virtual Area Rocker",
+                "unresponsive": False,
+                "unresponsiveCounter": 0,
+                "defect": False,
+                "channels": {
+                    "ch0000": {
+                        "floor": "01",
+                        "room": "01",
+                        "displayName": "Virtual Area Rocker",
+                        "functionID": "0",
+                        "inputs": {
+                            "idp0000": {"pairingID": 256, "value": "0"},
+                            "idp0001": {"pairingID": 18, "value": "0"},
+                            "idp0002": {"pairingID": 273, "value": "0"},
+                            "idp0004": {"pairingID": 261, "value": "0"},
+                            "idp0005": {"pairingID": 278, "value": "0"},
+                        },
+                        "outputs": {
+                            "odp0000": {"pairingID": 1, "value": "0"},
+                            "odp0006": {"pairingID": 4, "value": "0"},
+                        },
+                        "parameters": {
+                            "par0002": "50",
+                            "par0001": "50",
+                            "par0007": "1",
+                        },
+                    },
+                },
+                "parameters": {"par00ed": "1"},
+            },
         },
     }
     return api
@@ -459,7 +497,7 @@ async def test_load_devices_with_virtuals(freeathome_virtuals):
     # Check a single virtual device
     device_key = "60005D808C54/ch0000"
     assert device_key in devices
-    assert isinstance(devices[device_key], SwitchActuator)
+    assert isinstance(devices[device_key], VirtualSwitchActuator)
     assert devices[device_key].device_name == "Sleepmode"
     assert devices[device_key].channel_name == "Sleepmode"
     assert devices[device_key].floor_name == "Ground Floor"
