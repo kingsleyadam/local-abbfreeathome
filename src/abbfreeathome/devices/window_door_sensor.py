@@ -27,6 +27,10 @@ class WindowDoorSensor(Base):
     _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_WINDOW_DOOR,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+        "position",
+    ]
 
     def __init__(
         self,
@@ -68,7 +72,7 @@ class WindowDoorSensor(Base):
         """Get the sensor position."""
         return self._position.name
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -76,11 +80,11 @@ class WindowDoorSensor(Base):
         """
         if datapoint.get("pairingID") == Pairing.AL_WINDOW_DOOR.value:
             self._state = datapoint.get("value") == "1"
-            return True
+            return "state"
         if datapoint.get("pairingID") == Pairing.AL_WINDOW_DOOR_POSITION.value:
             try:
                 self._position = WindowDoorSensorPosition(datapoint.get("value"))
             except ValueError:
                 self._position = WindowDoorSensorPosition.unknown
-            return True
-        return False
+            return "position"
+        return None

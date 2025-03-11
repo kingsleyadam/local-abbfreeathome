@@ -142,7 +142,9 @@ def test_update_device(switch_actuator):
         pass
 
     # Ensure callback is registered to test callback code.
-    switch_actuator.register_callback(test_callback)
+    switch_actuator.register_callback(
+        callback_attribute="state", callback=test_callback
+    )
 
     switch_actuator.update_device("AL_INFO_ON_OFF/odp0000", "1")
     assert switch_actuator.state is True
@@ -151,5 +153,5 @@ def test_update_device(switch_actuator):
     assert switch_actuator.state is False
 
     # Test scenario where websocket sends update not relevant to the state.
-    switch_actuator.update_device("AL_INFO_ON_OFF/odp0001", "1")
+    switch_actuator.update_device("AL_INFO_ON_OFF/odp0004", "1")
     assert switch_actuator.state is False

@@ -188,7 +188,9 @@ def test_update_device(dimming_actuator):
         pass
 
     # Ensure callback is registered to test callback code.
-    dimming_actuator.register_callback(test_callback)
+    dimming_actuator.register_callback(
+        callback_attribute="state", callback=test_callback
+    )
 
     dimming_actuator.update_device("AL_INFO_ON_OFF/odp0000", "1")
     assert dimming_actuator.state is True
@@ -197,5 +199,5 @@ def test_update_device(dimming_actuator):
     assert dimming_actuator.state is False
 
     # Test scenario where websocket sends update not relevant to the state.
-    dimming_actuator.update_device("AL_INFO_ON_OFF/odp0001", "1")
+    dimming_actuator.update_device("AL_INFO_ON_OFF/odp0004", "1")
     assert dimming_actuator.state is False

@@ -205,7 +205,9 @@ def test_update_device(room_temperature_controller):
         pass
 
     # Ensure callback is registered to test callback code
-    room_temperature_controller.register_callback(test_callback)
+    room_temperature_controller.register_callback(
+        callback_attribute="state", callback=test_callback
+    )
 
     room_temperature_controller.update_device("AL_CONTROLLER_ON_OFF/odp0008", "0")
     assert room_temperature_controller.state is False

@@ -25,6 +25,11 @@ class DimmingActuator(Base):
         Pairing.AL_INFO_ON_OFF,
         Pairing.AL_INFO_ACTUAL_DIMMING_VALUE,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+        "brightness",
+        "forced_position",
+    ]
 
     def __init__(
         self,
@@ -113,7 +118,7 @@ class DimmingActuator(Base):
 
         self._forced_position = _position
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -121,10 +126,10 @@ class DimmingActuator(Base):
         """
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
-            return True
+            return "state"
         if datapoint.get("pairingID") == Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value:
             self._brightness = int(float(datapoint.get("value")))
-            return True
+            return "brightness"
         if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
                 self._forced_position = DimmingActuatorForcedPosition(
@@ -132,8 +137,8 @@ class DimmingActuator(Base):
                 )
             except ValueError:
                 self._forced_position = DimmingActuatorForcedPosition.unknown
-            return True
-        return False
+            return "forced_position"
+        return None
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""

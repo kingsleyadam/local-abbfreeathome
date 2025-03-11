@@ -13,6 +13,9 @@ class DesDoorRingingSensor(Base):
     _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_TIMED_START_STOP,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+    ]
 
     def __init__(
         self,
@@ -41,10 +44,12 @@ class DesDoorRingingSensor(Base):
             room_name,
         )
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
-        return datapoint.get("pairingID") == Pairing.AL_TIMED_START_STOP.value
+        if datapoint.get("pairingID") == Pairing.AL_TIMED_START_STOP.value:
+            return "state"
+        return None

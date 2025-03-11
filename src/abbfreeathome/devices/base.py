@@ -6,7 +6,7 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from ..exceptions import InvalidDeviceChannelPairing
+from ..exceptions import InvalidDeviceChannelPairing, UnknownCallbackAttributeException
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -15,6 +15,7 @@ class Base:
     """Free@Home Base Class."""
 
     _state_refresh_pairings: list[Pairing] = []
+    _callback_attributes: list[str] = []
 
     def __init__(
         self,
@@ -40,7 +41,7 @@ class Base:
         self._parameters = parameters
         self._floor_name = floor_name
         self._room_name = room_name
-        self._callbacks = set()
+        self._callbacks = {}
 
         # Set the initial state of the device
         self._refresh_state_from_datapoints()
@@ -108,26 +109,40 @@ class Base:
             datapoint_key,
             datapoint_value,
         )
-        _refreshed = None
+        _callback_attribute = None
         _io_key = datapoint_key.split("/")[-1]
 
         if _io_key in self._outputs:
             self._outputs[_io_key]["value"] = datapoint_value
-            _refreshed = self._refresh_state_from_datapoint(
+            _callback_attribute = self._refresh_state_from_datapoint(
                 datapoint=self._outputs[_io_key]
             )
 
-        if _refreshed and self._callbacks:
-            for callback in self._callbacks:
+        if _callback_attribute and self._callbacks[_callback_attribute]:
+            for callback in self._callbacks[_callback_attribute]:
                 callback()
 
-    def register_callback(self, callback: Callable[[], None]) -> None:
+    def register_callback(
+        self, callback_attribute: str, callback: Callable[[], None]
+    ) -> None:
         """Register callback, called when device changes state."""
-        self._callbacks.add(callback)
+        if callback_attribute in self._callback_attributes:
+            if callback_attribute not in self._callbacks:
+                self._callbacks[callback_attribute] = set()
 
-    def remove_callback(self, callback: Callable[[], None]) -> None:
+            self._callbacks[callback_attribute].add(callback)
+        else:
+            raise UnknownCallbackAttributeException(
+                unknown_attribute=callback_attribute,
+                known_attributes=",".join(self._callback_attributes),
+            )
+
+    def remove_callback(
+        self, callback_attribute: str, callback: Callable[[], None]
+    ) -> None:
         """Remove previously registered callback."""
-        self._callbacks.discard(callback)
+        if self._callbacks[callback_attribute]:
+            self._callbacks[callback_attribute].discard(callback)
 
     async def refresh_state(self):
         """Refresh the state of the device from the api."""
@@ -156,5 +171,5 @@ class Base:
         for _datapoint in self._outputs.values():
             self._refresh_state_from_datapoint(_datapoint)
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """Refresh the state of the device from a single datapoint."""

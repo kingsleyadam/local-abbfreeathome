@@ -13,6 +13,9 @@ class HeatingActuator(Base):
     _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_INFO_VALUE_HEATING,
     ]
+    _callback_attributes: list[str] = [
+        "position",
+    ]
 
     def __init__(
         self,
@@ -62,7 +65,7 @@ class HeatingActuator(Base):
         await self._set_position_datapoint(str(value))
         self._position = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -70,8 +73,8 @@ class HeatingActuator(Base):
         """
         if datapoint.get("pairingID") == Pairing.AL_INFO_VALUE_HEATING.value:
             self._position = int(float(datapoint.get("value")))
-            return True
-        return False
+            return "position"
+        return None
 
     async def _set_position_datapoint(self, value: str):
         """Set the position datapoint on the api."""

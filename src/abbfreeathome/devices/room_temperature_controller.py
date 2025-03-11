@@ -17,6 +17,13 @@ class RoomTemperatureController(Base):
         Pairing.AL_HEATING_DEMAND,
         Pairing.AL_CONTROLLER_ON_OFF,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+        "current_temperature",
+        "valve",
+        "target_temperature",
+        "eco_mode",
+    ]
 
     def __init__(
         self,
@@ -115,7 +122,7 @@ class RoomTemperatureController(Base):
         await self._set_temperature_datapoint(str(value))
         self._target_temperature = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -123,10 +130,10 @@ class RoomTemperatureController(Base):
         """
         if datapoint.get("pairingID") == Pairing.AL_SET_POINT_TEMPERATURE.value:
             self._target_temperature = float(datapoint.get("value"))
-            return True
+            return "target_temperature"
         if datapoint.get("pairingID") == Pairing.AL_CONTROLLER_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
-            return True
+            return "state"
         if datapoint.get("pairingID") == Pairing.AL_STATE_INDICATION.value:
             """
             This returns a integer bitwise-ORed with the following masks:
@@ -143,17 +150,17 @@ class RoomTemperatureController(Base):
             """
             self._state_indication = int(datapoint.get("value"))
             self._eco_mode = int(datapoint.get("value")) & 0x04 == 0x04
-            return True
+            return "eco_mode"
         if datapoint.get("pairingID") == Pairing.AL_MEASURED_TEMPERATURE.value:
             self._current_temperature = float(datapoint.get("value"))
-            return True
+            return "current_temperature"
         if datapoint.get("pairingID") == Pairing.AL_HEATING_DEMAND.value:
             try:
                 self._valve = int(float(datapoint.get("value")))
             except ValueError:
                 self._valve = None
-            return True
-        return False
+            return "valve"
+        return None
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""

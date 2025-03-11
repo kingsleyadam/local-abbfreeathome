@@ -13,6 +13,9 @@ class RainSensor(Base):
     _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_RAIN_ALARM,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+    ]
 
     def __init__(
         self,
@@ -48,7 +51,7 @@ class RainSensor(Base):
         """Get the rain alarm of the sensor."""
         return self._state
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -56,5 +59,5 @@ class RainSensor(Base):
         """
         if datapoint.get("pairingID") == Pairing.AL_RAIN_ALARM.value:
             self._state = datapoint.get("value") == "1"
-            return True
-        return False
+            return "state"
+        return None

@@ -14,6 +14,10 @@ class MovementDetector(Base):
         Pairing.AL_BRIGHTNESS_LEVEL,
         Pairing.AL_TIMED_MOVEMENT,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+        "brightness",
+    ]
 
     def __init__(
         self,
@@ -55,7 +59,7 @@ class MovementDetector(Base):
         """Get the brightness level of the sensor."""
         return self._brightness
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -63,8 +67,8 @@ class MovementDetector(Base):
         """
         if datapoint.get("pairingID") == Pairing.AL_TIMED_MOVEMENT.value:
             self._state = datapoint.get("value") == "1"
-            return True
+            return "state"
         if datapoint.get("pairingID") == Pairing.AL_BRIGHTNESS_LEVEL.value:
             self._brightness = float(datapoint.get("value"))
-            return True
-        return False
+            return "brightness"
+        return None

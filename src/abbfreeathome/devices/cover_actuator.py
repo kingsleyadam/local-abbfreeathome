@@ -36,6 +36,12 @@ class CoverActuator(Base):
         Pairing.AL_INFO_FORCE,
         Pairing.AL_CURRENT_ABSOLUTE_POSITION_SLATS_PERCENTAGE,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+        "forced_position",
+        "position",
+        "tilt_position",
+    ]
 
     def __init__(
         self,
@@ -130,7 +136,7 @@ class CoverActuator(Base):
         await self._set_position_datapoint(str(value))
         self._position = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -141,7 +147,7 @@ class CoverActuator(Base):
                 self._state = CoverActuatorState(datapoint.get("value"))
             except ValueError:
                 self._state = CoverActuatorState.unknown
-            return True
+            return "state"
         if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
                 self._forced_position = CoverActuatorForcedPosition(
@@ -149,20 +155,20 @@ class CoverActuator(Base):
                 )
             except ValueError:
                 self._forced_position = CoverActuatorForcedPosition.unknown
-            return True
+            return "forced_position"
         if (
             datapoint.get("pairingID")
             == Pairing.AL_CURRENT_ABSOLUTE_POSITION_BLINDS_PERCENTAGE.value
         ):
             self._position = int(float(datapoint.get("value")))
-            return True
+            return "position"
         if (
             datapoint.get("pairingID")
             == Pairing.AL_CURRENT_ABSOLUTE_POSITION_SLATS_PERCENTAGE.value
         ):
             self._tilt_position = int(float(datapoint.get("value")))
-            return True
-        return False
+            return "tilt_position"
+        return None
 
     async def _set_moving_datapoint(self, value: str):
         """Set the move_up_down datapoint on the api."""

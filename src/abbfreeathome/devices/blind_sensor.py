@@ -25,6 +25,9 @@ class BlindSensor(Base):
         Pairing.AL_MOVE_UP_DOWN,
         Pairing.AL_STOP_STEP_UP_DOWN,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+    ]
 
     def __init__(
         self,
@@ -72,7 +75,7 @@ class BlindSensor(Base):
         """Get the move state property."""
         return self._move_state.name
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -93,7 +96,7 @@ class BlindSensor(Base):
                 self._step_state = BlindSensorState.unknown
 
             self._state = self._step_state
-            return True
+            return "state"
 
         if datapoint.get("pairingID") == Pairing.AL_MOVE_UP_DOWN.value:
             """
@@ -110,5 +113,5 @@ class BlindSensor(Base):
                 self._move_state = BlindSensorState.unknown
 
             self._state = self._move_state
-            return True
-        return False
+            return "state"
+        return None
