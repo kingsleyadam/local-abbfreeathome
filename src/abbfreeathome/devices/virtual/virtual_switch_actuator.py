@@ -171,32 +171,32 @@ class VirtualSwitchActuator(Base):
     #            value=value,
     #        )
 
-    # def update_device(self, datapoint_key: str, datapoint_value: str):
-    #     """Update the device state."""
-    #     _LOGGER.info(
-    #         "%s received updated data: %s: %s",
-    #         self.channel_name,
-    #         datapoint_key,
-    #         datapoint_value,
-    #     )
-    #     _refreshed = None
-    #     _io_key = datapoint_key.split("/")[-1]
+    def update_device(self, datapoint_key: str, datapoint_value: str):
+        """Update the device state."""
+        _LOGGER.info(
+            "%s received updated data: %s: %s",
+            self.channel_name,
+            datapoint_key,
+            datapoint_value,
+        )
+        _refreshed = None
+        _io_key = datapoint_key.split("/")[-1]
 
-    #     if _io_key in self._outputs:
-    #         self._outputs[_io_key]["value"] = datapoint_value
-    #         _refreshed = self._refresh_state_from_datapoint(
-    #             datapoint=self._outputs[_io_key]
-    #         )
+        if _io_key in self._outputs:
+            self._outputs[_io_key]["value"] = datapoint_value
+            _refreshed = self._refresh_state_from_datapoint(
+                datapoint=self._outputs[_io_key]
+            )
 
-    #     if _io_key in self._inputs:
-    #         self._inputs[_io_key]["value"] = datapoint_value
-    #         _refreshed = self._refresh_state_from_datapoint(
-    #             datapoint=self._inputs[_io_key]
-    #         )
+        if _io_key in self._inputs:
+            self._inputs[_io_key]["value"] = datapoint_value
+            _refreshed = self._refresh_state_from_datapoint(
+                datapoint=self._inputs[_io_key]
+            )
 
-    #     if _refreshed and self._callbacks:
-    #         for callback in self._callbacks:
-    #             callback()
+        if _refreshed and self._callbacks:
+            for callback in self._callbacks:
+                callback()
 
     # async def refresh_state(self):
     #     """Refresh the state of the device from the api."""
