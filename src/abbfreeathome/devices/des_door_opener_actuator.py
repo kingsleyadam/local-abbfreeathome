@@ -13,6 +13,9 @@ class DesDoorOpenerActuator(Base):
     _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_INFO_ON_OFF,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+    ]
 
     def __init__(
         self,
@@ -58,7 +61,7 @@ class DesDoorOpenerActuator(Base):
         await self._set_switching_datapoint("1")
         self._state = True
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -66,8 +69,8 @@ class DesDoorOpenerActuator(Base):
         """
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
-            return True
-        return False
+            return "state"
+        return None
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""

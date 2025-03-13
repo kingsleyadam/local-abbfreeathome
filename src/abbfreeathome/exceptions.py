@@ -95,3 +95,18 @@ class SetDatapointFailureException(FreeAtHomeException):
             f"value: {value}"
         )
         super().__init__(self.message)
+
+
+class UnknownCallbackAttributeException(FreeAtHomeException):
+    """Raise an exception when an unknown callback-attribute should be registered."""
+
+    def __init__(self, unknown_attribute: str, known_attributes: str):
+        """Initialize the UnknownCallbackAttributeException class."""
+        self.message = (
+            f"Tried to register the callback-atrribute: "
+            f"{unknown_attribute}"
+            f", but only the callback-attributes '"
+            f"{known_attributes}"
+            f"' are known."
+        )
+        super().__init__(self.message)

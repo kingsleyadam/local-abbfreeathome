@@ -14,6 +14,10 @@ class TemperatureSensor(Base):
         Pairing.AL_OUTDOOR_TEMPERATURE,
         Pairing.AL_FROST_ALARM,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+        "alarm",
+    ]
 
     def __init__(
         self,
@@ -63,8 +67,8 @@ class TemperatureSensor(Base):
         """
         if datapoint.get("pairingID") == Pairing.AL_OUTDOOR_TEMPERATURE.value:
             self._state = float(datapoint.get("value"))
-            return True
+            return "state"
         if datapoint.get("pairingID") == Pairing.AL_FROST_ALARM.value:
             self._alarm = datapoint.get("value") == "1"
-            return True
-        return False
+            return "alarm"
+        return None

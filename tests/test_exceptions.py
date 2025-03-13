@@ -10,6 +10,7 @@ from src.abbfreeathome.exceptions import (
     InvalidDeviceChannelPairing,
     InvalidHostException,
     SetDatapointFailureException,
+    UnknownCallbackAttributeException,
     UserNotFoundException,
 )
 
@@ -80,4 +81,19 @@ def test_set_datapoint_failure_exception():
     assert str(excinfo.value) == (
         "Failed to set datapoint; "
         "device_id: device1; channel_id: channel1; datapoint: datapoint1; value: value1"
+    )
+
+
+def test_unknown_callback_attribute_exception():
+    """Test the unknown callback attribute exception."""
+    with pytest.raises(UnknownCallbackAttributeException) as excinfo:
+        raise UnknownCallbackAttributeException(
+            unknown_attribute="not_there", known_attributes="there"
+        )
+    assert str(excinfo.value) == (
+        "Tried to register the callback-atrribute: "
+        "not_there"
+        ", but only the callback-attributes '"
+        "there"
+        "' are known."
     )

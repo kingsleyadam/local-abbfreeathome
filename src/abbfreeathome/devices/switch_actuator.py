@@ -24,6 +24,10 @@ class SwitchActuator(Base):
         Pairing.AL_INFO_FORCE,
         Pairing.AL_INFO_ON_OFF,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+        "forced_position",
+    ]
 
     def __init__(
         self,
@@ -93,7 +97,7 @@ class SwitchActuator(Base):
 
         self._forced_position = _position
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -101,7 +105,7 @@ class SwitchActuator(Base):
         """
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
-            return True
+            return "state"
         if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
                 self._forced_position = SwitchActuatorForcedPosition(
@@ -109,8 +113,8 @@ class SwitchActuator(Base):
                 )
             except ValueError:
                 self._forced_position = SwitchActuatorForcedPosition.unknown
-            return True
-        return False
+            return "forced_position"
+        return None
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""

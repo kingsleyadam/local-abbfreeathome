@@ -281,7 +281,9 @@ async def websocket_test():
 
         # Add our very own callback
         for _switch in _free_at_home.get_devices_by_class(device_class=SwitchActuator):
-            _switch.register_callback(my_very_own_callback)
+            _switch.register_callback(
+                callback_attribute="state", callback=my_very_own_callback
+            )
 
         # Start listening for events.
         await _free_at_home.ws_listen()

@@ -14,6 +14,10 @@ class BrightnessSensor(Base):
         Pairing.AL_BRIGHTNESS_LEVEL,
         Pairing.AL_BRIGHTNESS_ALARM,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+        "alarm",
+    ]
 
     def __init__(
         self,
@@ -55,7 +59,7 @@ class BrightnessSensor(Base):
         """Get the alarm state of the sensor."""
         return self._alarm
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -63,8 +67,8 @@ class BrightnessSensor(Base):
         """
         if datapoint.get("pairingID") == Pairing.AL_BRIGHTNESS_LEVEL.value:
             self._state = float(datapoint.get("value"))
-            return True
+            return "state"
         if datapoint.get("pairingID") == Pairing.AL_BRIGHTNESS_ALARM.value:
             self._alarm = datapoint.get("value") == "1"
-            return True
-        return False
+            return "alarm"
+        return None

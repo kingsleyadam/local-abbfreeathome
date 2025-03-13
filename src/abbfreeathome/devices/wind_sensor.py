@@ -15,6 +15,11 @@ class WindSensor(Base):
         Pairing.AL_WIND_ALARM,
         Pairing.AL_WIND_FORCE,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+        "alarm",
+        "force",
+    ]
 
     def __init__(
         self,
@@ -62,7 +67,7 @@ class WindSensor(Base):
         """Get the force state of the sensor."""
         return self._force
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -70,11 +75,11 @@ class WindSensor(Base):
         """
         if datapoint.get("pairingID") == Pairing.AL_WIND_SPEED.value:
             self._state = float(datapoint.get("value"))
-            return True
+            return "state"
         if datapoint.get("pairingID") == Pairing.AL_WIND_ALARM.value:
             self._alarm = datapoint.get("value") == "1"
-            return True
+            return "alarm"
         if datapoint.get("pairingID") == Pairing.AL_WIND_FORCE.value:
             self._force = int(datapoint.get("value"))
-            return True
-        return False
+            return "force"
+        return None

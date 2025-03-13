@@ -7,7 +7,10 @@ import pytest
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.devices.base import Base
-from src.abbfreeathome.exceptions import InvalidDeviceChannelPairing
+from src.abbfreeathome.exceptions import (
+    InvalidDeviceChannelPairing,
+    UnknownCallbackAttributeException,
+)
 
 
 @pytest.fixture
@@ -32,7 +35,7 @@ def base_instance(mock_api):
     }
     parameters = {}
 
-    return Base(
+    instance = Base(
         device_id="ABB7F500E17A",
         device_name="Device Name",
         channel_id="ch0003",
@@ -44,6 +47,8 @@ def base_instance(mock_api):
         floor_name="Ground Floor",
         room_name="Study",
     )
+    instance._callback_attributes = ["test"]
+    return instance
 
 
 def test_initialization(base_instance):
@@ -79,16 +84,27 @@ def test_get_output_by_pairing(base_instance):
 def test_register_callback(base_instance):
     """Test register a callback."""
     callback = MagicMock()
-    base_instance.register_callback(callback)
-    assert callback in base_instance._callbacks
+    base_instance.register_callback(callback_attribute="test", callback=callback)
+    assert callback in base_instance._callbacks["test"]
+    with pytest.raises(UnknownCallbackAttributeException) as excinfo:
+        base_instance.register_callback(
+            callback_attribute="not_there", callback=callback
+        )
+    assert str(excinfo.value) == (
+        "Tried to register the callback-atrribute: "
+        "not_there"
+        ", but only the callback-attributes '"
+        "test"
+        "' are known."
+    )
 
 
 def test_remove_callback(base_instance):
     """Test removing a callback."""
     callback = MagicMock()
-    base_instance.register_callback(callback)
-    base_instance.remove_callback(callback)
-    assert callback not in base_instance._callbacks
+    base_instance.register_callback(callback_attribute="test", callback=callback)
+    base_instance.remove_callback(callback_attribute="test", callback=callback)
+    assert callback not in base_instance._callbacks["test"]
 
 
 def test_update_device(base_instance):

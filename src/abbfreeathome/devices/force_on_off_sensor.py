@@ -22,6 +22,9 @@ class ForceOnOffSensor(Base):
     _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_FORCED,
     ]
+    _callback_attributes: list[str] = [
+        "state",
+    ]
 
     def __init__(
         self,
@@ -57,7 +60,7 @@ class ForceOnOffSensor(Base):
         """Get the forceOnOff state."""
         return self._state.name
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the device from a given output.
 
@@ -80,5 +83,5 @@ class ForceOnOffSensor(Base):
                 self._state = ForceOnOffSensorState.off
             else:
                 self._state = ForceOnOffSensorState.unknown
-            return True
-        return False
+            return "state"
+        return None

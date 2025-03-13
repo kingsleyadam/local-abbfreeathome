@@ -42,11 +42,11 @@ def test_refresh_state_from_datapoint(des_door_ringing_sensor):
         des_door_ringing_sensor._refresh_state_from_datapoint(
             datapoint={"pairingID": 2, "value": "1"},
         )
-        is True
+        == "state"
     )
     assert (
         des_door_ringing_sensor._refresh_state_from_datapoint(
             datapoint={"pairingID": 4, "value": "1"},
         )
-        is False
+        is None
     )
