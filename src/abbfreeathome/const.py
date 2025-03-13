@@ -89,6 +89,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE1: SwitchSensor,
     Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE2: SwitchSensor,
     Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE3: SwitchSensor,
+    Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE4: SwitchSensor,
     Function.FID_SWITCH_SENSOR_ROCKER_TYPE0: SwitchSensor,
     Function.FID_SWITCH_SENSOR_ROCKER_TYPE1: SwitchSensor,
     Function.FID_SWITCH_SENSOR_ROCKER_TYPE2: SwitchSensor,
