@@ -31,6 +31,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_ATTIC_WINDOW_ACTUATOR: AtticWindowActuator,
     Function.FID_AWNING_ACTUATOR: AwningActuator,
     Function.FID_BLIND_ACTUATOR: BlindActuator,
+    Function.FID_BLIND_ACTUATOR_TYPE1: BlindActuator,
     Function.FID_BLIND_SENSOR: BlindSensor,
     Function.FID_BLIND_SENSOR_ROCKER_TYPE0: BlindSensor,
     Function.FID_BLIND_SENSOR_ROCKER_TYPE1: BlindSensor,
