@@ -24,6 +24,15 @@ from .devices.switch_actuator import SwitchActuator
 from .devices.switch_sensor import DimmingSensor, SwitchSensor
 from .devices.temperature_sensor import TemperatureSensor
 from .devices.trigger import Trigger
+from .devices.virtual.virtual_brightness_sensor import VirtualBrightnessSensor
+from .devices.virtual.virtual_energy_battery import VirtualEnergyBattery
+from .devices.virtual.virtual_energy_inverter import VirtualEnergyInverter
+from .devices.virtual.virtual_energy_two_way_meter import VirtualEnergyTwoWayMeter
+from .devices.virtual.virtual_rain_sensor import VirtualRainSensor
+from .devices.virtual.virtual_switch_actuator import VirtualSwitchActuator
+from .devices.virtual.virtual_temperature_sensor import VirtualTemperatureSensor
+from .devices.virtual.virtual_wind_sensor import VirtualWindSensor
+from .devices.virtual.virtual_window_door_sensor import VirtualWindowDoorSensor
 from .devices.wind_sensor import WindSensor
 from .devices.window_door_sensor import WindowDoorSensor
 
@@ -31,12 +40,6 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_ATTIC_WINDOW_ACTUATOR: AtticWindowActuator,
     Function.FID_AWNING_ACTUATOR: AwningActuator,
     Function.FID_BLIND_ACTUATOR: BlindActuator,
-    Function.FID_BLINDS_ACTUATOR_TYPE0: BlindActuator,
-    Function.FID_BLINDS_ACTUATOR_TYPE1: BlindActuator,
-    Function.FID_BLINDS_ACTUATOR_TYPE2: BlindActuator,
-    Function.FID_BLINDS_ACTUATOR_TYPE3: BlindActuator,
-    Function.FID_BLINDS_ACTUATOR_TYPE5: BlindActuator,
-    Function.FID_BLINDS_ACTUATOR_TYPE8: BlindActuator,
     Function.FID_BLIND_SENSOR: BlindSensor,
     Function.FID_BLIND_SENSOR_ROCKER_TYPE0: BlindSensor,
     Function.FID_BLIND_SENSOR_ROCKER_TYPE1: BlindSensor,
@@ -45,7 +48,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_BLIND_SENSOR_PUSHBUTTON_TYPE1: BlindSensor,
     Function.FID_BLIND_SENSOR_PUSHBUTTON_TYPE2: BlindSensor,
     Function.FID_BLIND_SENSOR_PUSHBUTTON_TYPE3: BlindSensor,
-    Function.FID_BRIGHTNESS_SENSOR: BrightnessSensor,
+    Function.FID_BRIGHTNESS_SENSOR: [BrightnessSensor, VirtualBrightnessSensor],
     Function.FID_CARBON_MONOXIDE_SENSOR: CarbonMonoxideSensor,
     Function.FID_DES_DOOR_OPENER_ACTUATOR: DesDoorOpenerActuator,
     Function.FID_DES_DOOR_RINGING_SENSOR: DesDoorRingingSensor,
@@ -72,11 +75,14 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_DIMMING_SENSOR_ROCKER_TYPE5: DimmingSensor,
     Function.FID_DIMMING_SENSOR_ROCKER_TYPE6: DimmingSensor,
     Function.FID_DIMMING_SENSOR_ROCKER_TYPE7: DimmingSensor,
+    Function.FID_ENERGY_BATTERY: VirtualEnergyBattery,
+    Function.FID_ENERGY_INVERTER: VirtualEnergyInverter,
+    Function.FID_ENERGY_TWO_WAY_METER: VirtualEnergyTwoWayMeter,
     Function.FID_FORCE_ON_OFF_SENSOR: ForceOnOffSensor,
     Function.FID_HEATING_ACTUATOR: HeatingActuator,
     Function.FID_MOVEMENT_DETECTOR: MovementDetector,
     Function.FID_MOVEMENT_DETECTOR_TYPE7: MovementDetector,
-    Function.FID_RAIN_SENSOR: RainSensor,
+    Function.FID_RAIN_SENSOR: [RainSensor, VirtualRainSensor],
     Function.FID_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITHOUT_FAN: (
         RoomTemperatureController
     ),
@@ -85,7 +91,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     ),
     Function.FID_SHUTTER_ACTUATOR: ShutterActuator,
     Function.FID_SMOKE_DETECTOR: SmokeDetector,
-    Function.FID_SWITCH_ACTUATOR: SwitchActuator,
+    Function.FID_SWITCH_ACTUATOR: [SwitchActuator, VirtualSwitchActuator],
     Function.FID_E_CONTACT_SWITCH_ACTUATOR_TYPE0: SwitchActuator,
     Function.FID_E_CONTACT_SWITCH_ACTUATOR_TYPE1: SwitchActuator,
     Function.FID_E_CONTACT_SWITCH_ACTUATOR_TYPE2: SwitchActuator,
@@ -95,13 +101,12 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE1: SwitchSensor,
     Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE2: SwitchSensor,
     Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE3: SwitchSensor,
-    Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE4: SwitchSensor,
     Function.FID_SWITCH_SENSOR_ROCKER_TYPE0: SwitchSensor,
     Function.FID_SWITCH_SENSOR_ROCKER_TYPE1: SwitchSensor,
     Function.FID_SWITCH_SENSOR_ROCKER_TYPE2: SwitchSensor,
-    Function.FID_TEMPERATURE_SENSOR: TemperatureSensor,
+    Function.FID_TEMPERATURE_SENSOR: [TemperatureSensor, VirtualTemperatureSensor],
     Function.FID_TRIGGER: Trigger,
-    Function.FID_WIND_SENSOR: WindSensor,
+    Function.FID_WIND_SENSOR: [WindSensor, VirtualWindSensor],
     Function.FID_WINDOW_DOOR_POSITION_SENSOR: WindowDoorSensor,
-    Function.FID_WINDOW_DOOR_SENSOR: WindowDoorSensor,
+    Function.FID_WINDOW_DOOR_SENSOR: [WindowDoorSensor, VirtualWindowDoorSensor],
 }
