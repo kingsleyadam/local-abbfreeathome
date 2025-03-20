@@ -22,6 +22,7 @@ def virtual_window_door_sensor(mock_api):
     inputs = {}
     outputs = {
         "odp000c": {"pairingID": 53, "value": "0"},
+        "odp000d": {"pairingID": 4, "value": "0"},
     }
     parameters = {}
 
@@ -60,4 +61,26 @@ async def test_turn_off(virtual_window_door_sensor):
         datapoint="odp000c",
         value="0",
     )
+    assert virtual_window_door_sensor.state is False
+
+
+def test_update_device(virtual_window_door_sensor):
+    """Test updating the device state."""
+
+    def test_callback():
+        pass
+
+    # Ensure callback is registered to test callback code.
+    virtual_window_door_sensor.register_callback(
+        callback_attribute="state", callback=test_callback
+    )
+
+    virtual_window_door_sensor.update_device("AL_SWITCH_ON_OFF/odp000c", "1")
+    assert virtual_window_door_sensor.state is True
+
+    virtual_window_door_sensor.update_device("AL_SWITCH_ON_OFF/odp000c", "0")
+    assert virtual_window_door_sensor.state is False
+
+    # Test scenario where websocket sends update not relevant to the state.
+    virtual_window_door_sensor.update_device("AL_SWITCH_ON_OFF/odp000d", "1")
     assert virtual_window_door_sensor.state is False

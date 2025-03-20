@@ -66,8 +66,8 @@ class VirtualBrightnessSensor(Base):
         The brightness has to be greater or equal to 0.
         """
 
-        value = max(0, value)
-        await self._set_brightness_datapoint(str(int(value)))
+        value = int(max(0, value))
+        await self._set_brightness_datapoint(str(value))
         self._brightness = value
 
     async def turn_on(self):

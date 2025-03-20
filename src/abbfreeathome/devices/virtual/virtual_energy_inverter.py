@@ -78,9 +78,8 @@ class VirtualEnergyInverter(Base):
 
         The energy has to be greater or equal to 0.
         """
-
-        value = max(0, value)
-        await self._set_imported_today_datapoint(str(int(value)))
+        value = int(max(0, value))
+        await self._set_imported_today_datapoint(str(value))
         self._imported_today = value
 
     async def set_imported_total(self, value: int):
@@ -89,9 +88,8 @@ class VirtualEnergyInverter(Base):
 
         The energy has to be greater or equal to 0.
         """
-
-        value = max(0, value)
-        await self._set_imported_total_datapoint(str(int(value)))
+        value = int(max(0, value))
+        await self._set_imported_total_datapoint(str(value))
         self._imported_total = value
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:

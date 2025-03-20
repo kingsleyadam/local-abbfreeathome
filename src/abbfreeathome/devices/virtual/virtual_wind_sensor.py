@@ -94,10 +94,11 @@ class VirtualWindSensor(Base):
 
         The force has to be between 0 and 12 (beaufort)
         """
+        value = int(value)
         value = max(0, value)
         value = min(value, 12)
 
-        await self._set_force_datapoint(str(int(value)))
+        await self._set_force_datapoint(str(value))
         self._force = value
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:

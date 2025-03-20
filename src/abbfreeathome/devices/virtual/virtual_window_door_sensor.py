@@ -53,7 +53,7 @@ class VirtualWindowDoorSensor(Base):
 
     async def turn_on(self):
         """Turn on the sensor."""
-        await self._set_sensor_datapoint("1")
+        await self._set_switching_datapoint("1")
         self._state = True
 
     async def turn_off(self):

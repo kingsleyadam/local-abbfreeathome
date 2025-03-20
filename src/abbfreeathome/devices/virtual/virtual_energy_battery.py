@@ -102,10 +102,10 @@ class VirtualEnergyBattery(Base):
 
         The soc has to be between 0 and 100.
         """
-
+        value = int(value)
         value = max(0, value)
         value = min(value, 100)
-        await self._set_soc_datapoint(str(int(value)))
+        await self._set_soc_datapoint(str(value))
         self._soc = value
 
     async def set_imported_today(self, value: int):
@@ -114,9 +114,8 @@ class VirtualEnergyBattery(Base):
 
         The energy has to be greater or equal to 0.
         """
-
-        value = max(0, value)
-        await self._set_imported_today_datapoint(str(int(value)))
+        value = int(max(0, value))
+        await self._set_imported_today_datapoint(str(value))
         self._imported_today = value
 
     async def set_exported_today(self, value: int):
@@ -125,9 +124,8 @@ class VirtualEnergyBattery(Base):
 
         The energy has to be greater or equal to 0.
         """
-
-        value = max(0, value)
-        await self._set_exported_today_datapoint(str(int(value)))
+        value = int(max(0, value))
+        await self._set_exported_today_datapoint(str(value))
         self._exported_today = value
 
     async def set_imported_total(self, value: int):
@@ -136,9 +134,8 @@ class VirtualEnergyBattery(Base):
 
         The energy has to be greater or equal to 0.
         """
-
-        value = max(0, value)
-        await self._set_imported_total_datapoint(str(int(value)))
+        value = int(max(0, value))
+        await self._set_imported_total_datapoint(str(value))
         self._imported_total = value
 
     async def set_exported_total(self, value: int):
@@ -147,9 +144,8 @@ class VirtualEnergyBattery(Base):
 
         The energy has to be greater or equal to 0.
         """
-
-        value = max(0, value)
-        await self._set_exported_total_datapoint(str(int(value)))
+        value = int(max(0, value))
+        await self._set_exported_total_datapoint(str(value))
         self._exported_total = value
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:  # noqa: PLR0911
