@@ -3,6 +3,7 @@
 import pytest
 
 from src.abbfreeathome.exceptions import (
+    BadRequestException,
     ConnectionTimeoutException,
     ForbiddenAuthException,
     InvalidApiResponseException,
@@ -97,3 +98,10 @@ def test_unknown_callback_attribute_exception():
         "there"
         "' are known."
     )
+
+
+def test_bad_request_exception():
+    """Test the bad request exception."""
+    with pytest.raises(BadRequestException) as excinfo:
+        raise BadRequestException(data="testdata")
+    assert str(excinfo.value) == ("Bad Request with data: testdata")

@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import Callable
 import inspect
+import json
 import logging
 import os
 from typing import Any
@@ -19,8 +20,10 @@ from aiohttp.helpers import BasicAuth
 from aiohttp.http import WSMsgType
 import backoff
 from packaging.version import Version
+import voluptuous as vol
 
 from .exceptions import (
+    BadRequestException,
     ClientConnectionError,
     ConnectionTimeoutException,
     ForbiddenAuthException,
@@ -139,6 +142,22 @@ class FreeAtHomeApi:
     _client_session: ClientSession = None
     _close_client_session: bool = False
     _ws_response: ClientWebSocketResponse = None
+    virtualdevice_main_schema: vol.Schema = vol.Schema(
+        {
+            vol.Required("type"): str,
+        }
+    )
+    virtualdevice_properties_schema: vol.Schema = vol.Schema(
+        {
+            vol.Required("ttl"): vol.All(
+                vol.Coerce(int),
+                vol.Any(vol.Range(min=-1, max=0), vol.Range(min=180, max=86400)),
+            ),
+            vol.Optional("displayname"): str,
+            vol.Inclusive("flavor", "flavor_capabilities"): str,
+            vol.Inclusive("capabilities", "flavor_capabilities"): [int],
+        }
+    )
 
     def __init__(
         self,
@@ -220,6 +239,26 @@ class FreeAtHomeApi:
 
         return True
 
+    async def virtualdevice(self, serial: str, data: dict[str, Any]):
+        """Create or modify a virtualdevice in the api."""
+        _schema = self.virtualdevice_main_schema.extend(
+            {vol.Required("properties"): self.virtualdevice_properties_schema}
+        )
+        try:
+            _schema(data)
+        except vol.MultipleInvalid as e:
+            raise vol.error.Invalid(e) from e
+
+        data["properties"]["ttl"] = str(data["properties"]["ttl"])
+        _response = await self._request(
+            path=f"/api/rest/virtualdevice/{self._sysap_uuid}/{serial}",
+            method="put",
+            data=json.dumps(data),
+        )
+
+        _key, _items = list(_response[self._sysap_uuid]["devices"].items())[0]
+        return {serial: _key}
+
     def _get_client_session(self) -> ClientSession:
         """Get the ClientSession aiohttp object."""
         if self._client_session is None:
@@ -266,6 +305,8 @@ class FreeAtHomeApi:
         except AioHttpClientConnectionError as e:
             raise ClientConnectionError(self._host) from e
         except AioHttpClientResponseError as e:
+            if e.status == 400:
+                raise BadRequestException(data) from e
             if e.status == 401:
                 raise InvalidCredentialsException(self._auth.login) from e
             if e.status == 403:

@@ -2,6 +2,7 @@ aiohttp!=3.11.0
 aioresponses
 backoff
 build
+json
 packaging
 pre-commit
 pytest
@@ -9,3 +10,4 @@ pytest-asyncio
 pytest-cov
 pytest-env
 ruff
+voluptuous
