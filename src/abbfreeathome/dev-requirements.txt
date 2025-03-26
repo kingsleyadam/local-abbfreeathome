@@ -2,7 +2,6 @@ aiohttp!=3.11.0
 aioresponses
 backoff
 build
-json
 packaging
 pre-commit
 pytest
