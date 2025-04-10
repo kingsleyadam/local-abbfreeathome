@@ -40,8 +40,9 @@
         },
         "python.testing.unittestEnabled": false,
         "python.testing.pytestEnabled": true,
+        "pylint.enabled": false,
         "gitblame.statusBarMessageFormat": "Modified By ${author.name} (${time.ago})",
-        "gitblame.inlineMessageFormat": "Modified By ${author.name} (${time.ago})",
+        "gitblame.inlineMessageFormat": "Modified By ${author.name} (${time.ago})"
       }
     }
   },
