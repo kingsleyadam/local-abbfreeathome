@@ -39,6 +39,24 @@ API_VERSION = "v1"
 # API Requests Configuration
 DEFAULT_FREEATHOME_MAX_REQUEST_TRIES = 5
 
+VIRTUAL_DEVICE_ROOT_SCHEMA = vol.Schema(
+    {
+        vol.Required("type"): str,
+    }
+)
+
+VIRTUAL_DEVICE_PROPERTIES_SCHEMA = vol.Schema(
+    {
+        vol.Required("ttl"): vol.All(
+            vol.Coerce(int),
+            vol.Any(vol.Range(min=-1, max=0), vol.Range(min=180, max=86400)),
+        ),
+        vol.Optional("displayname"): str,
+        vol.Inclusive("flavor", "flavor_capabilities"): str,
+        vol.Inclusive("capabilities", "flavor_capabilities"): [int],
+    }
+)
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -142,22 +160,6 @@ class FreeAtHomeApi:
     _client_session: ClientSession = None
     _close_client_session: bool = False
     _ws_response: ClientWebSocketResponse = None
-    virtualdevice_main_schema: vol.Schema = vol.Schema(
-        {
-            vol.Required("type"): str,
-        }
-    )
-    virtualdevice_properties_schema: vol.Schema = vol.Schema(
-        {
-            vol.Required("ttl"): vol.All(
-                vol.Coerce(int),
-                vol.Any(vol.Range(min=-1, max=0), vol.Range(min=180, max=86400)),
-            ),
-            vol.Optional("displayname"): str,
-            vol.Inclusive("flavor", "flavor_capabilities"): str,
-            vol.Inclusive("capabilities", "flavor_capabilities"): [int],
-        }
-    )
 
     def __init__(
         self,
@@ -241,14 +243,10 @@ class FreeAtHomeApi:
 
     async def virtualdevice(self, serial: str, data: dict[str, Any]):
         """Create or modify a virtualdevice in the api."""
-        _schema = self.virtualdevice_main_schema.extend(
-            {vol.Required("properties"): self.virtualdevice_properties_schema}
+        _schema = VIRTUAL_DEVICE_ROOT_SCHEMA.extend(
+            {vol.Required("properties"): VIRTUAL_DEVICE_PROPERTIES_SCHEMA}
         )
-        try:
-            _schema(data)
-        except vol.MultipleInvalid as e:
-            raise vol.error.Invalid(e) from e
-
+        _schema(data)
         data["properties"]["ttl"] = str(data["properties"]["ttl"])
         _response = await self._request(
             path=f"/api/rest/virtualdevice/{self._sysap_uuid}/{serial}",
