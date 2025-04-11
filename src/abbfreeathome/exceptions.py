@@ -110,3 +110,12 @@ class UnknownCallbackAttributeException(FreeAtHomeException):
             f"' are known."
         )
         super().__init__(self.message)
+
+
+class BadRequestException(FreeAtHomeException):
+    """Raise an exception for bad requests."""
+
+    def __init__(self, data: str) -> None:
+        """Initialze the BadRequestException class."""
+        self.message = f"Bad Request with data: {data}"
+        super().__init__(self.message)

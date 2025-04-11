@@ -24,6 +24,15 @@ from .devices.switch_actuator import SwitchActuator
 from .devices.switch_sensor import DimmingSensor, SwitchSensor
 from .devices.temperature_sensor import TemperatureSensor
 from .devices.trigger import Trigger
+from .devices.virtual.virtual_brightness_sensor import VirtualBrightnessSensor
+from .devices.virtual.virtual_energy_battery import VirtualEnergyBattery
+from .devices.virtual.virtual_energy_inverter import VirtualEnergyInverter
+from .devices.virtual.virtual_energy_two_way_meter import VirtualEnergyTwoWayMeter
+from .devices.virtual.virtual_rain_sensor import VirtualRainSensor
+from .devices.virtual.virtual_switch_actuator import VirtualSwitchActuator
+from .devices.virtual.virtual_temperature_sensor import VirtualTemperatureSensor
+from .devices.virtual.virtual_wind_sensor import VirtualWindSensor
+from .devices.virtual.virtual_window_door_sensor import VirtualWindowDoorSensor
 from .devices.wind_sensor import WindSensor
 from .devices.window_door_sensor import WindowDoorSensor
 
@@ -104,4 +113,16 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_WIND_SENSOR: WindSensor,
     Function.FID_WINDOW_DOOR_POSITION_SENSOR: WindowDoorSensor,
     Function.FID_WINDOW_DOOR_SENSOR: WindowDoorSensor,
+}
+
+FUNCTION_VIRTUAL_DEVICE_MAPPING: dict[Function, Base] = {
+    Function.FID_BRIGHTNESS_SENSOR: VirtualBrightnessSensor,
+    Function.FID_ENERGY_BATTERY: VirtualEnergyBattery,
+    Function.FID_ENERGY_INVERTER: VirtualEnergyInverter,
+    Function.FID_ENERGY_TWO_WAY_METER: VirtualEnergyTwoWayMeter,
+    Function.FID_RAIN_SENSOR: VirtualRainSensor,
+    Function.FID_SWITCH_ACTUATOR: VirtualSwitchActuator,
+    Function.FID_TEMPERATURE_SENSOR: VirtualTemperatureSensor,
+    Function.FID_WIND_SENSOR: VirtualWindSensor,
+    Function.FID_WINDOW_DOOR_SENSOR: VirtualWindowDoorSensor,
 }

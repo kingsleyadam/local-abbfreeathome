@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import Callable
 import inspect
+import json
 import logging
 import os
 from typing import Any
@@ -19,8 +20,10 @@ from aiohttp.helpers import BasicAuth
 from aiohttp.http import WSMsgType
 import backoff
 from packaging.version import Version
+import voluptuous as vol
 
 from .exceptions import (
+    BadRequestException,
     ClientConnectionError,
     ConnectionTimeoutException,
     ForbiddenAuthException,
@@ -35,6 +38,24 @@ API_VERSION = "v1"
 
 # API Requests Configuration
 DEFAULT_FREEATHOME_MAX_REQUEST_TRIES = 5
+
+VIRTUAL_DEVICE_ROOT_SCHEMA = vol.Schema(
+    {
+        vol.Required("type"): str,
+    }
+)
+
+VIRTUAL_DEVICE_PROPERTIES_SCHEMA = vol.Schema(
+    {
+        vol.Required("ttl"): vol.All(
+            vol.Coerce(int),
+            vol.Any(vol.Range(min=-1, max=0), vol.Range(min=180, max=86400)),
+        ),
+        vol.Optional("displayname"): str,
+        vol.Inclusive("flavor", "flavor_capabilities"): str,
+        vol.Inclusive("capabilities", "flavor_capabilities"): [int],
+    }
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -220,6 +241,22 @@ class FreeAtHomeApi:
 
         return True
 
+    async def virtualdevice(self, serial: str, data: dict[str, Any]):
+        """Create or modify a virtualdevice in the api."""
+        _schema = VIRTUAL_DEVICE_ROOT_SCHEMA.extend(
+            {vol.Required("properties"): VIRTUAL_DEVICE_PROPERTIES_SCHEMA}
+        )
+        _schema(data)
+        data["properties"]["ttl"] = str(data["properties"]["ttl"])
+        _response = await self._request(
+            path=f"/api/rest/virtualdevice/{self._sysap_uuid}/{serial}",
+            method="put",
+            data=json.dumps(data),
+        )
+
+        _key, _items = list(_response[self._sysap_uuid]["devices"].items())[0]
+        return {serial: _key}
+
     def _get_client_session(self) -> ClientSession:
         """Get the ClientSession aiohttp object."""
         if self._client_session is None:
@@ -266,6 +303,8 @@ class FreeAtHomeApi:
         except AioHttpClientConnectionError as e:
             raise ClientConnectionError(self._host) from e
         except AioHttpClientResponseError as e:
+            if e.status == 400:
+                raise BadRequestException(data) from e
             if e.status == 401:
                 raise InvalidCredentialsException(self._auth.login) from e
             if e.status == 403:

@@ -5,9 +5,11 @@ from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 import aiohttp
 from aioresponses import aioresponses
 import pytest
+import voluptuous as vol
 
 from src.abbfreeathome.api import FreeAtHomeApi, FreeAtHomeSettings
 from src.abbfreeathome.exceptions import (
+    BadRequestException,
     ClientConnectionError,
     ConnectionTimeoutException,
     ForbiddenAuthException,
@@ -255,6 +257,24 @@ async def test_set_datapoint(api):
             "device_id", "channel_id", "datapoint", "value"
         )
         assert result is True
+
+
+@pytest.mark.asyncio
+async def test_virtualdevice(api):
+    """Test the virtualdevice function."""
+    with patch.object(api, "_request", return_value=Mock()) as mock_request:
+        mock_request.return_value = {
+            "00000000-0000-0000-0000-000000000000": {
+                "devices": {"6000AAAAAAAA": {"serial": "test"}}
+            }
+        }
+        result = await api.virtualdevice(
+            serial="test", data={"type": "testing", "properties": {"ttl": 0}}
+        )
+        assert result == {"test": "6000AAAAAAAA"}
+
+    with pytest.raises(vol.error.Invalid):
+        result = await api.virtualdevice(serial="test", data={"type": "testing"})
 
 
 @pytest.mark.asyncio
@@ -523,4 +543,14 @@ async def test_request_invalid_api_response(api):
         m.get(f"{api._host}/fhapi/v1/test", status=500)
 
         with pytest.raises(InvalidApiResponseException):
+            await api._request("/test")
+
+
+@pytest.mark.asyncio
+async def test_request_bad_request(api):
+    """Test the _request function for bad request api response."""
+    with aioresponses() as m:
+        m.get(f"{api._host}/fhapi/v1/test", status=400)
+
+        with pytest.raises(BadRequestException):
             await api._request("/test")
