@@ -210,22 +210,18 @@ class FreeAtHome:
     def _get_function_to_device_mapping(
         self, virtual_device: bool = False
     ) -> dict[Function, Base]:
-        if virtual_device:
-            return (
-                FUNCTION_VIRTUAL_DEVICE_MAPPING
-                if not self._device_classes
-                else {
-                    key: value
-                    for key, value in FUNCTION_VIRTUAL_DEVICE_MAPPING.items()
-                    if value in self._device_classes
-                }
-            )
+        _device_mapping = (
+            FUNCTION_VIRTUAL_DEVICE_MAPPING
+            if virtual_device
+            else FUNCTION_DEVICE_MAPPING
+        )
+
         return (
-            FUNCTION_DEVICE_MAPPING
+            _device_mapping
             if not self._device_classes
             else {
                 key: value
-                for key, value in FUNCTION_DEVICE_MAPPING.items()
+                for key, value in _device_mapping.items()
                 if value in self._device_classes
             }
         )
