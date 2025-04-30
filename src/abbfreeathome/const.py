@@ -89,6 +89,9 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITHOUT_FAN: (
         RoomTemperatureController
     ),
+    Function.FID_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITHOUT_FAN_TYPE1: (
+        RoomTemperatureController
+    ),
     Function.FID_PANEL_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITHOUT_FAN: (
         RoomTemperatureController
     ),
