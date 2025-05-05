@@ -6,7 +6,12 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
-from ..exceptions import InvalidDeviceChannelPairing, UnknownCallbackAttributeException
+from ..bin.parameter import Parameter
+from ..exceptions import (
+    InvalidDeviceChannelPairing,
+    InvalidDeviceChannelParameter,
+    UnknownCallbackAttributeException,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -99,6 +104,17 @@ class Base:
 
         raise InvalidDeviceChannelPairing(
             self.device_id, self.channel_id, pairing.value
+        )
+
+    def get_parameter_by_id(self, parameter: Parameter) -> tuple[str, Any]:
+        """Get the parameter by id."""
+        for _parameter_id, _parameter_value in self._parameters.items():
+            _parameter_id_int = int(_parameter_id.lstrip("par"), 16)
+            if _parameter_id_int == parameter.value:
+                return _parameter_id, _parameter_value
+
+        raise InvalidDeviceChannelParameter(
+            self.device_id, self.channel_id, parameter.name
         )
 
     def update_device(self, datapoint_key: str, datapoint_value: str):
