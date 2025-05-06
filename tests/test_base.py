@@ -86,16 +86,16 @@ def test_get_output_by_pairing(base_instance):
         base_instance.get_output_by_pairing(Pairing.AL_HSV)
 
 
-def test_get_parameter_by_id(base_instance):
-    """Test the get_parameter_by_id function."""
-    parameter_id, value = base_instance.get_parameter_by_id(
+def test_get_device_parameter(base_instance):
+    """Test the get_device_parameter function."""
+    parameter_id, value = base_instance.get_device_parameter(
         Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_COOLEST
     )
     assert parameter_id == "par00f5"
     assert value == "6500"
 
     with pytest.raises(InvalidDeviceChannelParameter):
-        base_instance.get_parameter_by_id(Parameter.PID_DIMMER_SWITCH_ON_MODE)
+        base_instance.get_device_parameter(Parameter.PID_DIMMER_SWITCH_ON_MODE)
 
 
 def test_register_callback(base_instance):

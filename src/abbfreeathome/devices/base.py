@@ -106,8 +106,8 @@ class Base:
             self.device_id, self.channel_id, pairing.value
         )
 
-    def get_parameter_by_id(self, parameter: Parameter) -> tuple[str, Any]:
-        """Get the parameter by id."""
+    def get_device_parameter(self, parameter: Parameter) -> tuple[str, Any]:
+        """Get the channel parameter value by its name."""
         for _parameter_id, _parameter_value in self._parameters.items():
             _parameter_id_int = int(_parameter_id.lstrip("par"), 16)
             if _parameter_id_int == parameter.value:
