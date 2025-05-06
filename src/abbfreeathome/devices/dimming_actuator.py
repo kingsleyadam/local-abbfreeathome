@@ -51,7 +51,6 @@ class DimmingActuator(Base):
         self._forced_position: DimmingActuatorForcedPosition = (
             DimmingActuatorForcedPosition.unknown
         )
-        self._color_temperature: int | None = None
 
         super().__init__(
             device_id,
@@ -140,9 +139,6 @@ class DimmingActuator(Base):
             except ValueError:
                 self._forced_position = DimmingActuatorForcedPosition.unknown
             return "forced_position"
-        if datapoint.get("pairingID") == Pairing.AL_INFO_COLOR_TEMPERATURE.value:
-            self._color_temperature = int(float(datapoint.get("value")))
-            return "color_temperature"
         return None
 
     async def _set_switching_datapoint(self, value: str):
@@ -198,6 +194,35 @@ class ColorTemperatureActuator(DimmingActuator):
         "color_temperature",
     ]
 
+    def __init__(
+        self,
+        device_id: str,
+        device_name: str,
+        channel_id: str,
+        channel_name: str,
+        inputs: dict[str, dict[str, Any]],
+        outputs: dict[str, dict[str, Any]],
+        parameters: dict[str, dict[str, Any]],
+        api: FreeAtHomeApi,
+        floor_name: str | None = None,
+        room_name: str | None = None,
+    ) -> None:
+        """Initialize the Free@Home ColorTemperatureActuator class."""
+        self._color_temperature: int | None = None
+
+        super().__init__(
+            device_id,
+            device_name,
+            channel_id,
+            channel_name,
+            inputs,
+            outputs,
+            parameters,
+            api,
+            floor_name,
+            room_name,
+        )
+
     @property
     def color_temperature_coolest(self) -> int | None:
         """Get the coolest color temperature of the light."""
@@ -233,6 +258,17 @@ class ColorTemperatureActuator(DimmingActuator):
         value = min(value, 100)
         await self._set_color_temperature_datapoint(str(value))
         self._color_temperature = value
+
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+        """
+        Refresh the state of the device from a given output.
+
+        This will return whether the state was refreshed as a boolean value.
+        """
+        if datapoint.get("pairingID") == Pairing.AL_INFO_COLOR_TEMPERATURE.value:
+            self._color_temperature = int(float(datapoint.get("value")))
+            return "color_temperature"
+        return super()._refresh_state_from_datapoint(datapoint)
 
     async def _set_color_temperature_datapoint(self, value: str):
         """Set the color temperature on the api."""
