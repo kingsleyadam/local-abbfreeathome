@@ -6,6 +6,7 @@ import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.devices.dimming_actuator import (
+    ColorTemperatureActuator,
     DimmingActuator,
     DimmingActuatorForcedPosition,
 )
@@ -35,6 +36,39 @@ def dimming_actuator(mock_api):
 
     return DimmingActuator(
         device_id="ABB70139AF8A",
+        device_name="Device Name",
+        channel_id="ch0000",
+        channel_name="Channel Name",
+        inputs=inputs,
+        outputs=outputs,
+        parameters=parameters,
+        api=mock_api,
+    )
+
+
+@pytest.fixture
+def colortemperature_actuator(mock_api):
+    """Set up the instance for testing the ColorTemperatureActuator device."""
+    inputs = {
+        "idp0000": {"pairingID": 1, "value": "0"},
+        "idp0002": {"pairingID": 17, "value": "50"},
+        "idp0004": {"pairingID": 3, "value": "0"},
+        "idp0008": {"pairingID": 22, "value": "50"},
+    }
+    outputs = {
+        "odp0000": {"pairingID": 256, "value": "0"},
+        "odp0001": {"pairingID": 272, "value": "50"},
+        "odp0002": {"pairingID": 273, "value": "0"},
+        "odp0003": {"pairingID": 257, "value": "0"},
+        "odp0004": {"pairingID": 280, "value": "50"},
+    }
+    parameters = {
+        "par00f5": "6500",
+        "par00f6": "2700",
+    }
+
+    return ColorTemperatureActuator(
+        device_id="ABB7026310B7",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",
@@ -201,3 +235,26 @@ def test_update_device(dimming_actuator):
     # Test scenario where websocket sends update not relevant to the state.
     dimming_actuator.update_device("AL_INFO_ON_OFF/odp0004", "1")
     assert dimming_actuator.state is False
+
+
+@pytest.mark.asyncio
+async def test_set_color_temperature(colortemperature_actuator):
+    """Test to set the color temperature of the ColorTemperatureActuator."""
+    await colortemperature_actuator.set_color_temperature(50)
+    assert colortemperature_actuator.color_temperature == 50
+    await colortemperature_actuator.set_color_temperature(-1)
+    assert colortemperature_actuator.color_temperature == 0
+    await colortemperature_actuator.set_color_temperature(110)
+    assert colortemperature_actuator.color_temperature == 100
+
+
+def test_color_temperature_coolest(colortemperature_actuator):
+    """Test to get the coolest color temperature."""
+    _temp = colortemperature_actuator.color_temperature_coolest
+    assert _temp == 6500
+
+
+def test_color_temperature_warmest(colortemperature_actuator):
+    """Test to get the warmest color temperature."""
+    _temp = colortemperature_actuator.color_temperature_warmest
+    assert _temp == 2700

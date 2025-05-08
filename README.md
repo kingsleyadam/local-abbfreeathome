@@ -24,37 +24,38 @@ Copy the username listed within that window (usually `installer`) to be used whe
 ## Device Implementation
 
 The current devices implemented within the library.
-| Name                      | Primary Functions                                                                                                                  | Properties                                                                                    |
+| Name | Primary Functions | Properties |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| BlindSensor               |                                                                                                                                    | `state`, `step_state`, `move_state`                                                           |
-| BrightnessSensor          |                                                                                                                                    | `state`, `alarm`                                                                              |
-| CarbonMonoxideSensor      |                                                                                                                                    | `state`                                                                                       |
-| CoverActuator             | `open()`,`close()`, `stop()`, `set_forced_position()`, `set_position()`, `set_tilt_position()`                                     | `state`, `forced_position`, `position`, `tilt_position`                                       |
-| DesDoorOpenerActuator     | `lock()`, `unlock()`                                                                                                               | `state`                                                                                       |
-| DesDoorRingingSensor      |                                                                                                                                    |                                                                                               |
-| DimmingActuator           | `turn_on()`, `turn_off()`, `set_brightness()`, `set_forced_position()`                                                             | `state`, `brightness`, `forced_position`                                                      |
-| ForceOnOffSensor          |                                                                                                                                    | `state`                                                                                       |
-| HeatingActuator           | `set_position()`                                                                                                                   | `position`                                                                                    |
-| MovementDetector          |                                                                                                                                    | `state`, `brightness`                                                                         |
-| RainSensor                |                                                                                                                                    | `state`                                                                                       |
-| RoomTemperatureController | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()`                                                            | `state`, `current_temperature`, `valve`, `target_temperature`, `state_indication`, `eco_mode` |
-| SmokeDetector             |                                                                                                                                    | `state`                                                                                       |
-| SwitchActuator            | `turn_on()`, `turn_off()`, `set_forced_position()`                                                                                 | `state`, `forced_position`                                                                    |
-| SwitchSensor              |                                                                                                                                    | `state`                                                                                       |
-| TemperatureSensor         |                                                                                                                                    | `state`, `alarm`                                                                              |
-| Trigger                   | `press()`                                                                                                                          |                                                                                               |
-| WindSensor                |                                                                                                                                    | `state`, `alarm`, `force`                                                                     |
-| WindowDoorSensor          |                                                                                                                                    | `state`, `position`                                                                           |
-| **Virtual Devices:**      |                                                                                                                                    |                                                                                               |
-| BrightnessSensor          | `turn_on()`, `turn_off()`, `set_brightness()`                                                                                      | `brightness`, `alarm`                                                                         |
-| EnergyBattery             | `set_battery_power()`, `set_soc()`, `set_imported_today()`, `set_exported_today()`, `set_imported_total()`, `set_exported_total()` | `battery`, `soc`, `imported_today`, `exported_today`, `imported_total` `exported_total`       |
-| EnergyInverter            | `set_current_power()`, `set_imported_today()`, `set_imported_total()`                                                              | `current_power`, `imported_today`, `imported_total`                                           |
-| EnergyTwoWayMeter         | `set_current_power()`, `set_imported_today()`, `set_exported_today()`, `set_imported_total()`, `set_exported_total()`              | `current_power`, `imported_today`, `exported_today`, `imported_total` `exported_total`        |
-| RainSensor                | `turn_on()`, `turn_off()`                                                                                                          | `alarm`                                                                                       |
-| SwitchActuator            | `turn_on()`, `turn_off()`                                                                                                          | `state`, `requested_state`                                                                    |
-| TemperatureSensor         | `turn_on()`, `turn_off()`, `set_temperature()`                                                                                     | `temperature`, `alarm`                                                                        |
-| WindSensor                | `turn_on()`, `turn_off()`, `set_speed()`, `set_force()`                                                                            | `speed`, `force`, `alarm`                                                                     |
-| WindowDoorSensor          | `turn_on()`, `turn_off()`                                                                                                          | `state`                                                                                       |
+| BlindSensor | | `state`, `step_state`, `move_state` |
+| BrightnessSensor | | `state`, `alarm` |
+| CarbonMonoxideSensor | | `state` |
+| ColorTemperatureActuator | `turn_on()`, `turn_off()`, `set_brightness()`, `set_forced_position()`, `set_color_temperature()` | `state`, `brightness`, `forced_position`, `color_temperature`, `color_temperature_coolest`, `color_temperature_warmest` |
+| CoverActuator | `open()`,`close()`, `stop()`, `set_forced_position()`, `set_position()`, `set_tilt_position()` | `state`, `forced_position`, `position`, `tilt_position` |
+| DesDoorOpenerActuator | `lock()`, `unlock()` | `state` |
+| DesDoorRingingSensor | | |
+| DimmingActuator | `turn_on()`, `turn_off()`, `set_brightness()`, `set_forced_position()` | `state`, `brightness`, `forced_position` |
+| ForceOnOffSensor | | `state` |
+| HeatingActuator | `set_position()` | `position` |
+| MovementDetector | | `state`, `brightness` |
+| RainSensor | | `state` |
+| RoomTemperatureController | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `valve`, `target_temperature`, `state_indication`, `eco_mode` |
+| SmokeDetector | | `state` |
+| SwitchActuator | `turn_on()`, `turn_off()`, `set_forced_position()` | `state`, `forced_position` |
+| SwitchSensor | | `state` |
+| TemperatureSensor | | `state`, `alarm` |
+| Trigger | `press()` | |
+| WindSensor | | `state`, `alarm`, `force` |
+| WindowDoorSensor | | `state`, `position` |
+| **Virtual Devices:** | | |
+| BrightnessSensor | `turn_on()`, `turn_off()`, `set_brightness()` | `brightness`, `alarm` |
+| EnergyBattery | `set_battery_power()`, `set_soc()`, `set_imported_today()`, `set_exported_today()`, `set_imported_total()`, `set_exported_total()` | `battery`, `soc`, `imported_today`, `exported_today`, `imported_total` `exported_total` |
+| EnergyInverter | `set_current_power()`, `set_imported_today()`, `set_imported_total()` | `current_power`, `imported_today`, `imported_total` |
+| EnergyTwoWayMeter | `set_current_power()`, `set_imported_today()`, `set_exported_today()`, `set_imported_total()`, `set_exported_total()` | `current_power`, `imported_today`, `exported_today`, `imported_total` `exported_total` |
+| RainSensor | `turn_on()`, `turn_off()` | `alarm` |
+| SwitchActuator | `turn_on()`, `turn_off()` | `state`, `requested_state` |
+| TemperatureSensor | `turn_on()`, `turn_off()`, `set_temperature()` | `temperature`, `alarm` |
+| WindSensor | `turn_on()`, `turn_off()`, `set_speed()`, `set_force()` | `speed`, `force`, `alarm` |
+| WindowDoorSensor | `turn_on()`, `turn_off()` | `state` |
 
 ## FreeAtHome Class Structure and API Interaction
 
