@@ -17,3 +17,4 @@ class Interface(enum.Enum):
     HUE = "hue"
     SONOS = "sonos"
     VIRTUAL_DEVICE = "VD"
+    SMOKEALARM = "smokealarm"
