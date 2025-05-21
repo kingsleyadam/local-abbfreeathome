@@ -249,8 +249,8 @@ class ColorTemperatureActuator(DimmingActuator):
         Set the color temperature of the light.
 
         The color temperature has to be between 0 and 100
-        0 is the coolest setting
-        100 is the warmest setting
+        0 is the warmest setting
+        100 is the coolest setting
         Just as an information: HA uses Kelvin to define the color temperature,
         so in HA we need to transform Kelvin to this value-range.
         """
