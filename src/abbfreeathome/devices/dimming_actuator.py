@@ -5,6 +5,7 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
+from ..bin.parameter import Parameter
 from .base import Base
 
 
@@ -173,5 +174,110 @@ class DimmingActuator(Base):
             device_id=self.device_id,
             channel_id=self.channel_id,
             datapoint=_force_input_id,
+            value=value,
+        )
+
+
+class ColorTemperatureActuator(DimmingActuator):
+    """Free@Home ColorTemperatureActuator Class."""
+
+    _state_refresh_pairings: list[Pairing] = [
+        Pairing.AL_INFO_FORCE,
+        Pairing.AL_INFO_ON_OFF,
+        Pairing.AL_INFO_ACTUAL_DIMMING_VALUE,
+        Pairing.AL_INFO_COLOR_TEMPERATURE,
+    ]
+    _callback_attributes: list[str] = [
+        "state",
+        "brightness",
+        "forced_position",
+        "color_temperature",
+    ]
+
+    def __init__(
+        self,
+        device_id: str,
+        device_name: str,
+        channel_id: str,
+        channel_name: str,
+        inputs: dict[str, dict[str, Any]],
+        outputs: dict[str, dict[str, Any]],
+        parameters: dict[str, dict[str, Any]],
+        api: FreeAtHomeApi,
+        floor_name: str | None = None,
+        room_name: str | None = None,
+    ) -> None:
+        """Initialize the Free@Home ColorTemperatureActuator class."""
+        self._color_temperature: int | None = None
+
+        super().__init__(
+            device_id,
+            device_name,
+            channel_id,
+            channel_name,
+            inputs,
+            outputs,
+            parameters,
+            api,
+            floor_name,
+            room_name,
+        )
+
+    @property
+    def color_temperature_coolest(self) -> int | None:
+        """Get the coolest color temperature of the light."""
+        _id, _value = self.get_device_parameter(
+            parameter=Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_COOLEST
+        )
+        return int(_value)
+
+    @property
+    def color_temperature_warmest(self) -> int | None:
+        """Get the warmest color temperature of the light."""
+        _id, _value = self.get_device_parameter(
+            parameter=Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_WARMEST
+        )
+        return int(_value)
+
+    @property
+    def color_temperature(self) -> int | None:
+        """Get the color temperature of the light."""
+        return self._color_temperature
+
+    async def set_color_temperature(self, value: int):
+        """
+        Set the color temperature of the light.
+
+        The color temperature has to be between 0 and 100
+        0 is the warmest setting
+        100 is the coolest setting
+        Just as an information: HA uses Kelvin to define the color temperature,
+        so in HA we need to transform Kelvin to this value-range.
+        """
+        value = max(0, value)
+        value = min(value, 100)
+        await self._set_color_temperature_datapoint(str(value))
+        self._color_temperature = value
+
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+        """
+        Refresh the state of the device from a given output.
+
+        This will return whether the state was refreshed as a boolean value.
+        """
+        if datapoint.get("pairingID") == Pairing.AL_INFO_COLOR_TEMPERATURE.value:
+            self._color_temperature = int(float(datapoint.get("value")))
+            return "color_temperature"
+        return super()._refresh_state_from_datapoint(datapoint)
+
+    async def _set_color_temperature_datapoint(self, value: str):
+        """Set the color temperature on the api."""
+        _color_temp_id, _color_temp_value = self.get_input_by_pairing(
+            pairing=Pairing.AL_COLOR_TEMPERATURE
+        )
+        return await self._api.set_datapoint(
+            device_id=self._device_id,
+            channel_id=self.channel_id,
+            datapoint=_color_temp_id,
             value=value,
         )

@@ -73,6 +73,19 @@ class InvalidDeviceChannelPairing(FreeAtHomeException):
         super().__init__(self.message)
 
 
+class InvalidDeviceChannelParameter(FreeAtHomeException):
+    """Raise an exception for an invalid parameter id."""
+
+    def __init__(self, device_id: str, channel_id: str, parameter_value: int) -> None:
+        """Initialze the InvalidDeviceChannelParameter class."""
+        self.message = (
+            f"Could not find parameter id for "
+            f"device: {device_id}; channel: {channel_id}; "
+            f"parameter id: {parameter_value}"
+        )
+        super().__init__(self.message)
+
+
 class UserNotFoundException(FreeAtHomeException):
     """Raise an exception if a user is not found."""
 

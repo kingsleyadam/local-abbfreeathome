@@ -9,6 +9,7 @@ from src.abbfreeathome.exceptions import (
     InvalidApiResponseException,
     InvalidCredentialsException,
     InvalidDeviceChannelPairing,
+    InvalidDeviceChannelParameter,
     InvalidHostException,
     SetDatapointFailureException,
     UnknownCallbackAttributeException,
@@ -105,3 +106,13 @@ def test_bad_request_exception():
     with pytest.raises(BadRequestException) as excinfo:
         raise BadRequestException(data="testdata")
     assert str(excinfo.value) == ("Bad Request with data: testdata")
+
+
+def test_invalid_device_channel_parameter():
+    """Test invalid device channel exception."""
+    with pytest.raises(InvalidDeviceChannelParameter) as excinfo:
+        raise InvalidDeviceChannelParameter("device1", "channel1", 123)
+    assert str(excinfo.value) == (
+        "Could not find parameter id for "
+        "device: device1; channel: channel1; parameter id: 123"
+    )
