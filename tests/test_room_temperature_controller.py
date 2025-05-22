@@ -26,11 +26,12 @@ def room_temperature_controller(mock_api):
         "idp0016": {"pairingID": 320, "value": "0"},
     }
     outputs = {
+        "odp0000": {"pairingID": 48, "value": "0"},
+        "odp0001": {"pairingID": 50, "value": "0"},
         "odp0006": {"pairingID": 51, "value": "20"},
         "odp0008": {"pairingID": 56, "value": "1"},
         "odp0009": {"pairingID": 54, "value": "65"},
         "odp0010": {"pairingID": 304, "value": "21.34"},
-        "odp0013": {"pairingID": 333, "value": "0"},
     }
     parameters = {}
 
@@ -168,23 +169,41 @@ async def test_refresh_state_from_datapoint(
     )
     assert room_temperature_controller.current_temperature == 22.56
 
-    # Check output that reports an empty string for valve
+    # Check output that reports an empty string for heating
     room_temperature_controller._refresh_state_from_datapoint(
-        datapoint={"pairingID": 333, "value": ""}
+        datapoint={"pairingID": 48, "value": ""}
     )
-    assert room_temperature_controller.valve is None
+    assert room_temperature_controller.heating == 0
 
-    # Check output that affects the valve
+    # Check output that affects the heating
     room_temperature_controller._refresh_state_from_datapoint(
-        datapoint={"pairingID": 333, "value": "57"}
+        datapoint={"pairingID": 48, "value": "57"}
     )
-    assert room_temperature_controller.valve == 57
+    assert room_temperature_controller.heating == 57
 
-    # Check output that affects the valve with a float value
+    # Check output that affects the heating with a float value
     room_temperature_controller._refresh_state_from_datapoint(
-        datapoint={"pairingID": 333, "value": "5.7"}
+        datapoint={"pairingID": 48, "value": "5.7"}
     )
-    assert room_temperature_controller.valve == 5
+    assert room_temperature_controller.heating == 5
+
+    # Check output that reports an empty string for cooling
+    room_temperature_controller._refresh_state_from_datapoint(
+        datapoint={"pairingID": 50, "value": ""}
+    )
+    assert room_temperature_controller.cooling == 0
+
+    # Check output that affects the cooling
+    room_temperature_controller._refresh_state_from_datapoint(
+        datapoint={"pairingID": 50, "value": "57"}
+    )
+    assert room_temperature_controller.cooling == 57
+
+    # Check output that affects the cooling with a float value
+    room_temperature_controller._refresh_state_from_datapoint(
+        datapoint={"pairingID": 50, "value": "5.7"}
+    )
+    assert room_temperature_controller.cooling == 5
 
     # Check output that does NOT affects the RTC
     room_temperature_controller._refresh_state_from_datapoint(
@@ -195,7 +214,8 @@ async def test_refresh_state_from_datapoint(
     assert room_temperature_controller.eco_mode is True
     assert room_temperature_controller.state_indication == 68
     assert room_temperature_controller.current_temperature == 22.56
-    assert room_temperature_controller.valve == 5
+    assert room_temperature_controller.heating == 5
+    assert room_temperature_controller.cooling == 5
 
 
 def test_update_device(room_temperature_controller):
