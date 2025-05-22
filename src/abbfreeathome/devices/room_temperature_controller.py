@@ -130,7 +130,7 @@ class RoomTemperatureController(Base):
         await self._set_temperature_datapoint(str(value))
         self._target_temperature = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:  # noqa: PLR0911
         """
         Refresh the state of the device from a given output.
 
