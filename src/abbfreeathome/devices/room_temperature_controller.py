@@ -14,13 +14,15 @@ class RoomTemperatureController(Base):
         Pairing.AL_SET_POINT_TEMPERATURE,
         Pairing.AL_STATE_INDICATION,
         Pairing.AL_MEASURED_TEMPERATURE,
-        Pairing.AL_HEATING_DEMAND,
+        Pairing.AL_ACTUATING_VALUE_HEATING,
+        Pairing.AL_ACTUATING_VALUE_COOLING,
         Pairing.AL_CONTROLLER_ON_OFF,
     ]
     _callback_attributes: list[str] = [
         "state",
         "current_temperature",
-        "valve",
+        "heating",
+        "cooling",
         "target_temperature",
         "eco_mode",
     ]
@@ -41,7 +43,8 @@ class RoomTemperatureController(Base):
         """Initialize the Free@Home RoomTemperatureController class."""
         self._state: bool | None = None
         self._current_temperature: float | None = None
-        self._valve: int | None = None
+        self._heating: int | None = 0
+        self._cooling: int | None = 0
         self._target_temperature: float | None = None
         self._state_indication: int | None = None
         self._eco_mode: bool | None = None
@@ -70,9 +73,14 @@ class RoomTemperatureController(Base):
         return self._current_temperature
 
     @property
-    def valve(self) -> int | None:
-        """Get the status of the valve."""
-        return self._valve
+    def heating(self) -> int | None:
+        """Get the status of the heating."""
+        return self._heating
+
+    @property
+    def cooling(self) -> int | None:
+        """Get the status of the cooling."""
+        return self._cooling
 
     @property
     def target_temperature(self) -> float | None:
@@ -122,7 +130,7 @@ class RoomTemperatureController(Base):
         await self._set_temperature_datapoint(str(value))
         self._target_temperature = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:  # noqa: PLR0911
         """
         Refresh the state of the device from a given output.
 
@@ -154,12 +162,18 @@ class RoomTemperatureController(Base):
         if datapoint.get("pairingID") == Pairing.AL_MEASURED_TEMPERATURE.value:
             self._current_temperature = float(datapoint.get("value"))
             return "current_temperature"
-        if datapoint.get("pairingID") == Pairing.AL_HEATING_DEMAND.value:
+        if datapoint.get("pairingID") == Pairing.AL_ACTUATING_VALUE_HEATING.value:
             try:
-                self._valve = int(float(datapoint.get("value")))
+                self._heating = int(float(datapoint.get("value")))
             except ValueError:
-                self._valve = None
-            return "valve"
+                self._heating = 0
+            return "heating"
+        if datapoint.get("pairingID") == Pairing.AL_ACTUATING_VALUE_COOLING.value:
+            try:
+                self._cooling = int(float(datapoint.get("value")))
+            except ValueError:
+                self._cooling = 0
+            return "cooling"
         return None
 
     async def _set_switching_datapoint(self, value: str):
