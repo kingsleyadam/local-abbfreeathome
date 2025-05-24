@@ -245,58 +245,58 @@ async def test_set_tilt_position(shutter_actuator):
 
 
 @pytest.mark.asyncio
-async def test_refresh_state_from_datapoint(cover_actuator):
+async def test_refresh_state_from_datapoint(shutter_actuator):
     """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state
-    cover_actuator._refresh_state_from_datapoint(
+    shutter_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 288, "value": "1"},
     )
-    assert cover_actuator.state == CoverActuatorState.partly_opened.name
+    assert shutter_actuator.state == CoverActuatorState.partly_opened.name
 
-    cover_actuator._refresh_state_from_datapoint(
+    shutter_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 288, "value": "4"},
     )
-    assert cover_actuator.state == CoverActuatorState.unknown.name
+    assert shutter_actuator.state == CoverActuatorState.unknown.name
 
     # Check output that affects the forced position
-    cover_actuator._refresh_state_from_datapoint(
+    shutter_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 257, "value": "2"}
     )
     assert (
-        cover_actuator.forced_position == CoverActuatorForcedPosition.forced_open.name
+        shutter_actuator.forced_position == CoverActuatorForcedPosition.forced_open.name
     )
 
-    cover_actuator._refresh_state_from_datapoint(
+    shutter_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 257, "value": "4"}
     )
-    assert cover_actuator.forced_position == CoverActuatorForcedPosition.unknown.name
+    assert shutter_actuator.forced_position == CoverActuatorForcedPosition.unknown.name
 
     # Check output that affects the position
-    cover_actuator._refresh_state_from_datapoint(
+    shutter_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 289, "value": "35"}
     )
-    assert cover_actuator.position == 35
+    assert shutter_actuator.position == 35
 
     # Check output that affects the position with a float value
-    cover_actuator._refresh_state_from_datapoint(
+    shutter_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 289, "value": "2.35294"}
     )
-    assert cover_actuator.position == 2
+    assert shutter_actuator.position == 2
 
     # Check output that affects the tilt
-    cover_actuator._refresh_state_from_datapoint(
+    shutter_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 290, "value": "45"}
     )
-    assert cover_actuator._tilt_position == 45
+    assert shutter_actuator._tilt_position == 45
 
     # Check output that affects the tile with a float value
-    cover_actuator._refresh_state_from_datapoint(
+    shutter_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 290, "value": "4.9"}
     )
-    assert cover_actuator._tilt_position == 4
+    assert shutter_actuator._tilt_position == 4
 
     # Check output that does NOT affects the RTC
-    cover_actuator._refresh_state_from_datapoint(
+    shutter_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 0, "value": "1"},
     )
-    assert cover_actuator.position == 2
+    assert shutter_actuator.position == 2
