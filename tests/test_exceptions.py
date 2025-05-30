@@ -27,10 +27,10 @@ def test_connection_timeout_exception():
 def test_forbidden_auth_exception():
     """Test forbidden auth exception."""
     with pytest.raises(ForbiddenAuthException) as excinfo:
-        raise ForbiddenAuthException("/api/path")
+        raise ForbiddenAuthException(path="/api/path", status_code=403)
     assert (
         str(excinfo.value)
-        == "Request returned a forbidden (401) error message: /api/path"
+        == "Request returned a forbidden error message (status code: 403): /api/path"
     )
 
 
