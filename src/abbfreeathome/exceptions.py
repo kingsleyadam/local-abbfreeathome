@@ -26,9 +26,13 @@ class ConnectionTimeoutException(FreeAtHomeException):
 class ForbiddenAuthException(FreeAtHomeException):
     """Raise an exception if the connection returns a forbidden code."""
 
-    def __init__(self, path) -> None:
+    def __init__(self, path, status_code) -> None:
         """Initialze the ForbiddenAuthException class."""
-        self.message = f"Request returned a forbidden (401) error message: {path}"
+        self.message = (
+            "Request returned a forbidden error message "
+            f"(status code: {status_code}): "
+            f"{path}"
+        )
         super().__init__(self.message)
 
 

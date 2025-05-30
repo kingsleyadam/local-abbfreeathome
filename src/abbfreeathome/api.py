@@ -308,7 +308,7 @@ class FreeAtHomeApi:
             if e.status == 401:
                 raise InvalidCredentialsException(self._auth.login) from e
             if e.status == 403:
-                raise ForbiddenAuthException(path) from e
+                raise ForbiddenAuthException(path, e.status) from e
             if e.status == 502:
                 raise ConnectionTimeoutException(self._host) from e
             raise InvalidApiResponseException(e.status) from e
