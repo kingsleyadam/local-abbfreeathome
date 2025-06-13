@@ -22,7 +22,9 @@ def mock_api():
 @pytest.fixture
 def switch_sensor(mock_api):
     """Set up the switch-sensor instance for testing the SwitchSensor device."""
-    inputs = {}
+    inputs = {
+        "idp0000": {"pairingID": 256, "value": "0"},
+    }
     outputs = {
         "odp0000": {"pairingID": 1, "value": "0"},
         "odp0001": {"pairingID": 16, "value": ""},
@@ -72,15 +74,41 @@ async def test_initial_state(switch_sensor):
 
 
 @pytest.mark.asyncio
+async def test_turn_on(switch_sensor):
+    """Test to turning on the led of the sensor."""
+    await switch_sensor.turn_on()
+    assert switch_sensor.led is True
+    switch_sensor._api.set_datapoint.assert_called_with(
+        device_id="ABB700D9C0A4",
+        channel_id="ch0000",
+        datapoint="idp0000",
+        value="1",
+    )
+
+
+@pytest.mark.asyncio
+async def test_turn_off(switch_sensor):
+    """Test to turning on the led of the sensor."""
+    await switch_sensor.turn_off()
+    assert switch_sensor.led is False
+    switch_sensor._api.set_datapoint.assert_called_with(
+        device_id="ABB700D9C0A4",
+        channel_id="ch0000",
+        datapoint="idp0000",
+        value="0",
+    )
+
+
+@pytest.mark.asyncio
 async def test_refresh_state(switch_sensor):
     """Test refreshing the state of the switch-sensor."""
     switch_sensor._api.get_datapoint.return_value = ["1"]
     await switch_sensor.refresh_state()
-    assert switch_sensor.state == SwitchSensorState.on.name
+    assert switch_sensor.led is True
     switch_sensor._api.get_datapoint.assert_called_with(
         device_id="ABB700D9C0A4",
         channel_id="ch0000",
-        datapoint="odp0000",
+        datapoint="idp0000",
     )
 
 
@@ -139,3 +167,18 @@ def test_refresh_state_from_datapoint_dimming(dimming_sensor):
     )
     assert dimming_sensor.state == DimmingSensorState.longpress_up_release.name
     assert dimming_sensor.dimming_state == DimmingSensorState.longpress_up_release.name
+
+
+def test_update_device(switch_sensor):
+    """Test updating the device state."""
+
+    def test_callback():
+        pass
+
+    switch_sensor.register_callback(callback_attribute="led", callback=test_callback)
+
+    switch_sensor.update_device("AL_INFO_ON_OFF/idp0000", "1")
+    assert switch_sensor.led is True
+
+    switch_sensor.update_device("AL_INFO_ON_OFF/idp0000", "0")
+    assert switch_sensor.led is False
