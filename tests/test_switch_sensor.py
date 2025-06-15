@@ -74,9 +74,9 @@ async def test_initial_state(switch_sensor):
 
 
 @pytest.mark.asyncio
-async def test_turn_on(switch_sensor):
+async def test_turn_on_led(switch_sensor):
     """Test to turning on the led of the sensor."""
-    await switch_sensor.turn_on()
+    await switch_sensor.turn_on_led()
     assert switch_sensor.led is True
     switch_sensor._api.set_datapoint.assert_called_with(
         device_id="ABB700D9C0A4",
@@ -87,9 +87,9 @@ async def test_turn_on(switch_sensor):
 
 
 @pytest.mark.asyncio
-async def test_turn_off(switch_sensor):
+async def test_turn_off_led(switch_sensor):
     """Test to turning on the led of the sensor."""
-    await switch_sensor.turn_off()
+    await switch_sensor.turn_off_led()
     assert switch_sensor.led is False
     switch_sensor._api.set_datapoint.assert_called_with(
         device_id="ABB700D9C0A4",

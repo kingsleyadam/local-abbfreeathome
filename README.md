@@ -34,6 +34,7 @@ The current devices implemented within the library.
 | DesDoorOpenerActuator | `lock()`, `unlock()` | `state` |
 | DesDoorRingingSensor | | |
 | DimmingActuator | `turn_on()`, `turn_off()`, `set_brightness()`, `set_forced_position()` | `state`, `brightness`, `forced_position` |
+| DimmingSensor\* | `turn_on_led()`, `turn_off_led()` | `state` |
 | ForceOnOffSensor | | `state` |
 | HeatingActuator | `set_position()` | `position` |
 | MovementDetector | | `state`, `brightness` |
@@ -41,7 +42,7 @@ The current devices implemented within the library.
 | RoomTemperatureController | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `valve`, `target_temperature`, `state_indication`, `eco_mode` |
 | SmokeDetector | | `state` |
 | SwitchActuator | `turn_on()`, `turn_off()`, `set_forced_position()` | `state`, `forced_position` |
-| SwitchSensor\* | `turn_on()`, `turn_off()` | `state` |
+| SwitchSensor\* | `turn_on_led()`, `turn_off_led()` | `state` |
 | TemperatureSensor | | `state`, `alarm` |
 | Trigger | `press()` | |
 | WindSensor | | `state`, `alarm`, `force` |
@@ -57,7 +58,7 @@ The current devices implemented within the library.
 | WindSensor | `turn_on()`, `turn_off()`, `set_speed()`, `set_force()` | `speed`, `force`, `alarm` |
 | WindowDoorSensor | `turn_on()`, `turn_off()` | `state` |
 
-\*SwitchSensor: `turn_on()`and `turn_off()` refers to the LED of the sensor. It only has an effect when the "LED mode" is set to "Status Indication".
+\*DimmingSensor and SwitchSensor: `turn_on_led()`and `turn_off_led()` refers to the LED of the sensor. It only has an effect when the "LED mode" is set to "Status Indication".
 
 ## FreeAtHome Class Structure and API Interaction
 

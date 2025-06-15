@@ -86,12 +86,12 @@ class SwitchSensor(Base):
         """Get the led-state of the sensor."""
         return self._led
 
-    async def turn_on(self):
+    async def turn_on_led(self):
         """Turn on the led of the sensor."""
         await self._set_led_datapoint("1")
         self._led = True
 
-    async def turn_off(self):
+    async def turn_off_led(self):
         """Turn off the led of the sensor."""
         await self._set_led_datapoint("0")
         self._led = False
