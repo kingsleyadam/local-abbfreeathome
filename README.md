@@ -57,7 +57,7 @@ The current devices implemented within the library.
 | WindSensor | `turn_on()`, `turn_off()`, `set_speed()`, `set_force()` | `speed`, `force`, `alarm` |
 | WindowDoorSensor | `turn_on()`, `turn_off()` | `state` |
 
-\*SwitchSensor: `turn_on()`and `turn_off()` refers to the LED of the sensor. It only has an effect when the "LED mode" is set to "Status Display".
+\*SwitchSensor: `turn_on()`and `turn_off()` refers to the LED of the sensor. It only has an effect when the "LED mode" is set to "Status Indication".
 
 ## FreeAtHome Class Structure and API Interaction
 
