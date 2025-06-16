@@ -5,7 +5,9 @@ from typing import Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
+from ..bin.parameter import Parameter
 from .base import Base
+from ..exceptions import InvalidDeviceChannelParameter
 
 
 class SwitchSensorState(enum.Enum):
@@ -111,8 +113,18 @@ class SwitchSensor(Base):
             self._state = self._switch_sensor_state
             return "state"
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
-            self._led = datapoint.get("value") == "1"
-            return "led"
+            try:
+                _value = int(
+                    self.get_device_parameter(
+                        parameter=Parameter.PID_LED_OPERATION_MODE
+                    )[1]
+                )
+            except InvalidDeviceChannelParameter:
+                return None
+
+            if _value == 2:
+                self._led = datapoint.get("value") == "1"
+                return "led"
         return None
 
     async def _set_led_datapoint(self, value: str):
