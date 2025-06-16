@@ -114,17 +114,14 @@ class SwitchSensor(Base):
             return "state"
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             try:
-                _value = int(
-                    self.get_device_parameter(
-                        parameter=Parameter.PID_LED_OPERATION_MODE
-                    )[1]
+                _, _parameter_value = self.get_device_parameter(
+                    parameter=Parameter.PID_LED_OPERATION_MODE
                 )
+                if _parameter_value == "2":
+                    self._led = datapoint.get("value") == "1"
+                    return "led"
             except InvalidDeviceChannelParameter:
                 return None
-
-            if _value == 2:
-                self._led = datapoint.get("value") == "1"
-                return "led"
         return None
 
     async def _set_led_datapoint(self, value: str):
