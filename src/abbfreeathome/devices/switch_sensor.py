@@ -6,8 +6,8 @@ from typing import Any
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from ..bin.parameter import Parameter
-from .base import Base
 from ..exceptions import InvalidDeviceChannelParameter
+from .base import Base
 
 
 class SwitchSensorState(enum.Enum):
