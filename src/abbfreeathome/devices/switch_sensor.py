@@ -117,7 +117,7 @@ class SwitchSensor(Base):
                 _, _parameter_value = self.get_device_parameter(
                     parameter=Parameter.PID_LED_OPERATION_MODE
                 )
-                if _parameter_value == 2:
+                if _parameter_value == "2":
                     self._led = datapoint.get("value") == "1"
                     return "led"
             except InvalidDeviceChannelParameter:
