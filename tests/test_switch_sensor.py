@@ -31,7 +31,7 @@ def switch_sensor_with_led(mock_api):
         "odp0006": {"pairingID": 4, "value": ""},
     }
     parameters = {
-        "par0007": 2,
+        "par0007": "2",
     }
 
     return SwitchSensor(
@@ -58,7 +58,7 @@ def switch_sensor_without_led(mock_api):
         "odp0006": {"pairingID": 4, "value": ""},
     }
     parameters = {
-        "par0007": 1,
+        "par0007": "1",
     }
 
     return SwitchSensor(
