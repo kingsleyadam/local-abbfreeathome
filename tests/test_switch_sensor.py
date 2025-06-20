@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.switch_sensor import (
+from src.abbfreeathome.channels.switch_sensor import (
     DimmingSensor,
     DimmingSensorState,
     SwitchSensor,
@@ -221,10 +221,10 @@ def test_update_device_with_led(switch_sensor_with_led):
         callback_attribute="led", callback=test_callback
     )
 
-    switch_sensor_with_led.update_device("AL_INFO_ON_OFF/idp0000", "1")
+    switch_sensor_with_led.update_channel("AL_INFO_ON_OFF/idp0000", "1")
     assert switch_sensor_with_led.led is True
 
-    switch_sensor_with_led.update_device("AL_INFO_ON_OFF/idp0000", "0")
+    switch_sensor_with_led.update_channel("AL_INFO_ON_OFF/idp0000", "0")
     assert switch_sensor_with_led.led is False
 
 
@@ -238,8 +238,8 @@ def test_update_device_without_led(switch_sensor_without_led):
         callback_attribute="led", callback=test_callback
     )
 
-    switch_sensor_without_led.update_device("AL_INFO_ON_OFF/idp0000", "1")
+    switch_sensor_without_led.update_channel("AL_INFO_ON_OFF/idp0000", "1")
     assert switch_sensor_without_led.led is None
 
-    switch_sensor_without_led.update_device("AL_INFO_ON_OFF/idp0000", "0")
+    switch_sensor_without_led.update_channel("AL_INFO_ON_OFF/idp0000", "0")
     assert switch_sensor_without_led.led is None

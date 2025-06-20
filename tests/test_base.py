@@ -7,7 +7,7 @@ import pytest
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.bin.parameter import Parameter
-from src.abbfreeathome.devices.base import Base
+from src.abbfreeathome.channels.base import Base
 from src.abbfreeathome.exceptions import (
     InvalidDeviceChannelPairing,
     InvalidDeviceChannelParameter,
@@ -127,4 +127,4 @@ def test_remove_callback(base_instance):
 def test_update_device(base_instance):
     """Test when input-datapoint is provided."""
 
-    base_instance.update_device("AL_SWITCH_ON_OFF/idp0000", "1")
+    base_instance.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")

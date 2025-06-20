@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.blind_sensor import BlindSensor, BlindSensorState
+from src.abbfreeathome.channels.blind_sensor import BlindSensor, BlindSensorState
 
 
 @pytest.fixture

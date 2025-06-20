@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.trigger import Trigger
+from src.abbfreeathome.channels.trigger import Trigger
 
 
 @pytest.fixture

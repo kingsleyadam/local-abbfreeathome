@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.dimming_actuator import (
+from src.abbfreeathome.channels.dimming_actuator import (
     ColorTemperatureActuator,
     DimmingActuator,
     DimmingActuatorForcedPosition,
@@ -226,14 +226,14 @@ def test_update_device(dimming_actuator):
         callback_attribute="state", callback=test_callback
     )
 
-    dimming_actuator.update_device("AL_INFO_ON_OFF/odp0000", "1")
+    dimming_actuator.update_channel("AL_INFO_ON_OFF/odp0000", "1")
     assert dimming_actuator.state is True
 
-    dimming_actuator.update_device("AL_INFO_ON_OFF/odp0000", "0")
+    dimming_actuator.update_channel("AL_INFO_ON_OFF/odp0000", "0")
     assert dimming_actuator.state is False
 
     # Test scenario where websocket sends update not relevant to the state.
-    dimming_actuator.update_device("AL_INFO_ON_OFF/odp0004", "1")
+    dimming_actuator.update_channel("AL_INFO_ON_OFF/odp0004", "1")
     assert dimming_actuator.state is False
 
 

@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.des_door_opener_actuator import DesDoorOpenerActuator
+from src.abbfreeathome.channels.des_door_opener_actuator import DesDoorOpenerActuator
 
 
 @pytest.fixture

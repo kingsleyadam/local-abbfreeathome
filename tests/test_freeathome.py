@@ -7,9 +7,9 @@ import pytest
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.function import Function
 from src.abbfreeathome.bin.interface import Interface
-from src.abbfreeathome.devices.switch_actuator import SwitchActuator
-from src.abbfreeathome.devices.switch_sensor import SwitchSensor
-from src.abbfreeathome.devices.virtual.virtual_switch_actuator import (
+from src.abbfreeathome.channels.switch_actuator import SwitchActuator
+from src.abbfreeathome.channels.switch_sensor import SwitchSensor
+from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
     VirtualSwitchActuator,
 )
 from src.abbfreeathome.freeathome import FreeAtHome
@@ -386,7 +386,7 @@ async def test_get_config(freeathome, api_mock):
 @pytest.mark.asyncio
 async def test_get_devices_by_function(freeathome):
     """Test the get_devices_by_fuction function."""
-    devices = await freeathome.get_devices_by_function(Function.FID_SWITCH_ACTUATOR)
+    devices = await freeathome.get_channels_by_function(Function.FID_SWITCH_ACTUATOR)
     assert len(devices) == 2
     assert devices[0]["device_name"] == "Study Area Rocker"
     assert devices[0]["channel_name"] == "Study Area Light"
@@ -429,19 +429,19 @@ async def test_get_room_name(freeathome):
 @pytest.mark.asyncio
 async def test_get_device_by_class(freeathome):
     """Test the get_device_class function."""
-    await freeathome.load_devices()
+    await freeathome.load_channels()
 
-    devices = freeathome.get_devices_by_class(SwitchActuator)
+    devices = freeathome.get_channels_by_class(SwitchActuator)
     assert len(devices) == 2
 
 
 @pytest.mark.asyncio
 async def test_load_devices(freeathome):
     """Test the load_devices function."""
-    await freeathome.load_devices()
+    await freeathome.load_channels()
 
     # Get the dict of devices
-    devices = freeathome.get_devices()
+    devices = freeathome.get_channels()
 
     # Verify that the devices are loaded correctly
     assert len(devices) == 5
@@ -457,18 +457,18 @@ async def test_load_devices(freeathome):
     assert devices[device_key].is_virtual is False
 
     # Unload a single device and test it's been removed
-    freeathome.unload_device_by_device_serial(device_serial="ABB7F62F6C0B")
-    devices = freeathome.get_devices()
+    freeathome.unload_channel_by_channel_serial(channel_serial="ABB7F62F6C0B")
+    devices = freeathome.get_channels()
     assert len(devices) == 3
 
 
 @pytest.mark.asyncio
 async def test_load_devices_with_orphans(freeathome_orphans):
     """Test the load_devices function."""
-    await freeathome_orphans.load_devices()
+    await freeathome_orphans.load_channels()
 
     # Get the dict of devices
-    devices = freeathome_orphans.get_devices()
+    devices = freeathome_orphans.get_channels()
 
     # Verify that the devices are loaded correctly
     assert len(devices) == 7
@@ -486,10 +486,10 @@ async def test_load_devices_with_orphans(freeathome_orphans):
 @pytest.mark.asyncio
 async def test_load_devices_with_virtuals(freeathome_virtuals):
     """Test the load_devices function."""
-    await freeathome_virtuals.load_devices()
+    await freeathome_virtuals.load_channels()
 
     # Get the dict of devices
-    devices = freeathome_virtuals.get_devices()
+    devices = freeathome_virtuals.get_channels()
 
     # Verify that the devices are loaded correctly
     assert len(devices) == 2
@@ -518,16 +518,16 @@ async def test_ws_listen(freeathome, api_mock):
     "Test the ws_listen function."
     api_mock.ws_listen = AsyncMock()
     await freeathome.ws_listen()
-    api_mock.ws_listen.assert_called_once_with(callback=freeathome.update_device)
+    api_mock.ws_listen.assert_called_once_with(callback=freeathome.update)
 
 
 @pytest.mark.asyncio
 async def test_update_device(freeathome):
     """Test the update device function."""
     device = MagicMock()
-    freeathome._devices = {"ABB7F500E17A/ch0003": device}
+    freeathome._channels = {"ABB7F500E17A/ch0003": device}
     data = {
         "datapoints": {"ABB7F500E17A/ch0003/256": "0", "ABB7F500E17A/ch0001/0": "0"}
     }
-    await freeathome.update_device(data)
-    device.update_device.assert_called_once_with("ABB7F500E17A/ch0003/256", "0")
+    await freeathome.update(data)
+    device.update_channel.assert_called_once_with("ABB7F500E17A/ch0003/256", "0")

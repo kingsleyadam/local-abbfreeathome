@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.carbon_monoxide_sensor import CarbonMonoxideSensor
+from src.abbfreeathome.channels.carbon_monoxide_sensor import CarbonMonoxideSensor
 
 
 @pytest.fixture

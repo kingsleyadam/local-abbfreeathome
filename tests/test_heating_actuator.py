@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.heating_actuator import HeatingActuator
+from src.abbfreeathome.channels.heating_actuator import HeatingActuator
 
 
 @pytest.fixture

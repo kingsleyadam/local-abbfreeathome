@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.virtual.virtual_switch_actuator import (
+from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
     VirtualSwitchActuator,
 )
 
@@ -103,18 +103,18 @@ def test_update_device(virtual_switch_actuator):
         callback_attribute="requested_state", callback=test_callback
     )
 
-    virtual_switch_actuator.update_device("AL_SWITCH_ON_OFF/odp0000", "1")
+    virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/odp0000", "1")
     assert virtual_switch_actuator.state is True
 
-    virtual_switch_actuator.update_device("AL_SWITCH_ON_OFF/odp0000", "0")
+    virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/odp0000", "0")
     assert virtual_switch_actuator.state is False
 
-    virtual_switch_actuator.update_device("AL_SWITCH_ON_OFF/idp0000", "1")
+    virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")
     assert virtual_switch_actuator.requested_state is True
 
-    virtual_switch_actuator.update_device("AL_SWITCH_ON_OFF/idp0000", "0")
+    virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/idp0000", "0")
     assert virtual_switch_actuator.requested_state is False
 
     # Test scenario where websocket sends update not relevant to the state.
-    virtual_switch_actuator.update_device("AL_SWITCH_ON_OFF/idp0001", "1")
+    virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/idp0001", "1")
     assert virtual_switch_actuator.state is False

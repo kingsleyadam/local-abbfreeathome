@@ -136,9 +136,9 @@ class SwitchSensor(Base):
             value=value,
         )
 
-    def update_device(self, datapoint_key, datapoint_value):
+    def update_channel(self, datapoint_key, datapoint_value):
         """Update the device state."""
-        super().update_device(datapoint_key, datapoint_value)
+        super().update_channel(datapoint_key, datapoint_value)
         _callback_attribute = None
         _io_key = datapoint_key.split("/")[-1]
 
