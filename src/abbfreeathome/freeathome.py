@@ -4,7 +4,7 @@ from .api import FreeAtHomeApi
 from .bin.function import Function
 from .bin.interface import Interface
 from .channels.base import Base
-from .const import FUNCTION_DEVICE_MAPPING, FUNCTION_VIRTUAL_DEVICE_MAPPING
+from .const import FUNCTION_CHANNEL_MAPPING, FUNCTION_VIRTUAL_CHANNEL_MAPPING
 
 
 class FreeAtHome:
@@ -138,6 +138,10 @@ class FreeAtHome:
             .get("name")
         )
 
+    async def load(self):
+        """Load from the Free@Home api into the FreeAtHome class."""
+        await self.load_channels()
+
     async def load_channels(self):
         """Load all of the channels into the channels object."""
         self.clear_channels()
@@ -211,9 +215,9 @@ class FreeAtHome:
         self, virtual_channel: bool = False
     ) -> dict[Function, Base]:
         _channel_mapping = (
-            FUNCTION_VIRTUAL_DEVICE_MAPPING
+            FUNCTION_VIRTUAL_CHANNEL_MAPPING
             if virtual_channel
-            else FUNCTION_DEVICE_MAPPING
+            else FUNCTION_CHANNEL_MAPPING
         )
 
         return (

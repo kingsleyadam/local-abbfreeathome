@@ -36,7 +36,7 @@ from .channels.virtual.virtual_window_door_sensor import VirtualWindowDoorSensor
 from .channels.wind_sensor import WindSensor
 from .channels.window_door_sensor import WindowDoorSensor
 
-FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
+FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_ATTIC_WINDOW_ACTUATOR: AtticWindowActuator,
     Function.FID_AWNING_ACTUATOR: AwningActuator,
     Function.FID_BLIND_ACTUATOR: BlindActuator,
@@ -121,7 +121,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_WINDOW_DOOR_SENSOR: WindowDoorSensor,
 }
 
-FUNCTION_VIRTUAL_DEVICE_MAPPING: dict[Function, Base] = {
+FUNCTION_VIRTUAL_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_BRIGHTNESS_SENSOR: VirtualBrightnessSensor,
     Function.FID_ENERGY_BATTERY: VirtualEnergyBattery,
     Function.FID_ENERGY_INVERTER: VirtualEnergyInverter,
