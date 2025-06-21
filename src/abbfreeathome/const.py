@@ -55,6 +55,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_BLIND_SENSOR_PUSHBUTTON_TYPE1: BlindSensor,
     Function.FID_BLIND_SENSOR_PUSHBUTTON_TYPE2: BlindSensor,
     Function.FID_BLIND_SENSOR_PUSHBUTTON_TYPE3: BlindSensor,
+    Function.FID_BLIND_SENSOR_PUSHBUTTON_TYPE7: BlindSensor,
     Function.FID_BRIGHTNESS_SENSOR: BrightnessSensor,
     Function.FID_CARBON_MONOXIDE_SENSOR: CarbonMonoxideSensor,
     Function.FID_COLORTEMPERATURE_ACTUATOR: ColorTemperatureActuator,
