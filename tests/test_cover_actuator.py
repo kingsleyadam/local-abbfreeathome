@@ -137,6 +137,38 @@ async def test_stop(cover_actuator):
 
 
 @pytest.mark.asyncio
+async def test_stop_when_not_moving(cover_actuator):
+    """Test to stop the cover when it's not moving (should not call set_datapoint)."""
+    # Set the cover state to something other than opening or closing
+    cover_actuator._state = CoverActuatorState.opened
+
+    # Reset the mock to ensure clean state
+    cover_actuator._api.set_datapoint.reset_mock()
+
+    # Call stop - this should hit the else branch (102->exit) and not call set_datapoint
+    await cover_actuator.stop()
+
+    # Verify that set_datapoint was NOT called
+    cover_actuator._api.set_datapoint.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_stop_when_closed(cover_actuator):
+    """Test to stop the cover when it's in closed state (no set_datapoint call)."""
+    # Set the cover state to closed
+    cover_actuator._state = CoverActuatorState.unknown
+
+    # Reset the mock to ensure clean state
+    cover_actuator._api.set_datapoint.reset_mock()
+
+    # Call stop - this should hit the else branch and not call set_datapoint
+    await cover_actuator.stop()
+
+    # Verify that set_datapoint was NOT called
+    cover_actuator._api.set_datapoint.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_set_forced_position(cover_actuator):
     """Test to force a position of a cover."""
     await cover_actuator.set_forced_position(
