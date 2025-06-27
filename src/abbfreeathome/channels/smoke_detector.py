@@ -48,14 +48,14 @@ class SmokeDetector(Base):
 
     @property
     def state(self) -> bool | None:
-        """Get the device state."""
+        """Get the state of the sensor."""
         return self._state
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
-        Refresh the state of the device from a given output.
+        Refresh the state of the channel from a given output.
 
-        This will return whether the state was refreshed as a boolean value.
+        This will return the name of the attribute, which was refreshed or None.
         """
         if datapoint.get("pairingID") == Pairing.AL_FIRE_ALARM_ACTIVE.value:
             self._state = datapoint.get("value") == "1"

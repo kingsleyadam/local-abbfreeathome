@@ -229,7 +229,7 @@ class FreeAtHomeApi:
     async def set_datapoint(
         self, device_id: str, channel_id: str, datapoint: str, value: str
     ) -> bool:
-        """Set a specific datapoint in the api. This is used to control devices."""
+        """Set a specific datapoint in the api. This is used to control channels."""
         _response = await self._request(
             path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_id}.{channel_id}.{datapoint}",
             method="put",

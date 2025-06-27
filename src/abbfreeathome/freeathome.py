@@ -45,9 +45,9 @@ class FreeAtHome:
     def get_channels_by_class(self, channel_class: Base) -> list[Base]:
         """Get the list of channels by class."""
         return [
-            _device
-            for _device in self._channels.values()
-            if type(_device) is channel_class
+            _channel
+            for _channel in self._channels.values()
+            if type(_channel) is channel_class
         ]
 
     async def get_channels_by_function(self, function: Function) -> list[dict]:

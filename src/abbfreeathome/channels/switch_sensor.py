@@ -100,7 +100,7 @@ class SwitchSensor(Base):
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
-        Refresh the state of the device from a given output.
+        Refresh the state of the channel from a given output.
 
         This will return whether the state was refreshed as a boolean value.
         """
@@ -137,7 +137,7 @@ class SwitchSensor(Base):
         )
 
     def update_channel(self, datapoint_key, datapoint_value):
-        """Update the device state."""
+        """Update the channel state."""
         super().update_channel(datapoint_key, datapoint_value)
         _callback_attribute = None
         _io_key = datapoint_key.split("/")[-1]
@@ -153,7 +153,7 @@ class SwitchSensor(Base):
                 callback()
 
     async def refresh_state(self):
-        """Refresh the state of the device from the api."""
+        """Refresh the state of the channel from the api."""
         await super().refresh_state()
 
         for _pairing in self._input_state_refresh_pairings:
@@ -177,7 +177,7 @@ class SwitchSensor(Base):
             )
 
     def _refresh_state_from_datapoints(self):
-        """Refresh the state of the device from the datapoints."""
+        """Refresh the state of the channel from the datapoints."""
         super()._refresh_state_from_datapoints()
 
         for _datapoint in self._inputs.values():
@@ -229,9 +229,9 @@ class DimmingSensor(SwitchSensor):
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
-        Refresh the state of the device from a given output.
+        Refresh the state of the channel from a given output.
 
-        This will return whether the state was refreshed as a boolean value.
+        This will return the name of the attribute, which was refreshed or None.
         """
         _return_value = super()._refresh_state_from_datapoint(datapoint)
         if _return_value is not None:

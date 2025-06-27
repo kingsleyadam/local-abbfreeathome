@@ -48,7 +48,7 @@ class Base:
         self._room_name = room_name
         self._callbacks = {}
 
-        # Set the initial state of the device
+        # Set the initial state of the channel
         self._refresh_state_from_datapoints()
 
     @property
@@ -73,12 +73,12 @@ class Base:
 
     @property
     def floor_name(self) -> str | None:
-        """Get the floor name of the device."""
+        """Get the floor name."""
         return self._floor_name
 
     @property
     def room_name(self) -> str | None:
-        """Get the room name of the device."""
+        """Get the room name."""
         return self._room_name
 
     @property
@@ -118,7 +118,7 @@ class Base:
         )
 
     def update_channel(self, datapoint_key: str, datapoint_value: str):
-        """Update the device state."""
+        """Update the channel state."""
         _LOGGER.info(
             "%s received updated data: %s: %s",
             self.channel_name,
@@ -141,7 +141,7 @@ class Base:
     def register_callback(
         self, callback_attribute: str, callback: Callable[[], None]
     ) -> None:
-        """Register callback, called when device changes state."""
+        """Register callback, called when channel changes state."""
         if callback_attribute in self._callback_attributes:
             if callback_attribute not in self._callbacks:
                 self._callbacks[callback_attribute] = set()
@@ -161,7 +161,7 @@ class Base:
             self._callbacks[callback_attribute].discard(callback)
 
     async def refresh_state(self):
-        """Refresh the state of the device from the api."""
+        """Refresh the state of the channel from the api."""
         for _pairing in self._state_refresh_pairings:
             _datapoint_id, _datapoint_value = self.get_output_by_pairing(
                 pairing=_pairing
@@ -183,9 +183,9 @@ class Base:
             )
 
     def _refresh_state_from_datapoints(self):
-        """Refresh the state of the device from the datapoints."""
+        """Refresh the state of the channel from the datapoints."""
         for _datapoint in self._outputs.values():
             self._refresh_state_from_datapoint(_datapoint)
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
-        """Refresh the state of the device from a single datapoint."""
+        """Refresh the state of the channel from a single datapoint."""
