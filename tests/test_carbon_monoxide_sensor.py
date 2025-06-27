@@ -1,4 +1,4 @@
-"""Test class to test the CarbonMonoxideSensor device."""
+"""Test class to test the CarbonMonoxideSensor channel."""
 
 from unittest.mock import AsyncMock
 
@@ -16,7 +16,7 @@ def mock_api():
 
 @pytest.fixture
 def carbon_monoxide_sensor(mock_api):
-    """Set up the sensor instance for testing the CarbonMonoxideSensor device."""
+    """Set up the sensor instance for testing the CarbonMonoxideSensor channel."""
     inputs = {}
     outputs = {
         "odp0000": {"pairingID": 708, "value": "0"},

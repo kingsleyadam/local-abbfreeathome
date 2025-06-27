@@ -1,4 +1,4 @@
-"""Test class to test the SwitchSensor device."""
+"""Test class to test the SwitchSensor channel."""
 
 from unittest.mock import AsyncMock
 
@@ -21,7 +21,7 @@ def mock_api():
 
 @pytest.fixture
 def switch_sensor_with_led(mock_api):
-    """Set up the switch-sensor instance for testing the SwitchSensor device."""
+    """Set up the switch-sensor instance for testing the SwitchSensor channel."""
     inputs = {
         "idp0000": {"pairingID": 256, "value": "0"},
     }
@@ -48,7 +48,7 @@ def switch_sensor_with_led(mock_api):
 
 @pytest.fixture
 def switch_sensor_without_led(mock_api):
-    """Set up the switch-sensor instance for testing the SwitchSensor device."""
+    """Set up the switch-sensor instance for testing the SwitchSensor channel."""
     inputs = {
         "idp0000": {"pairingID": 256, "value": "0"},
     }
@@ -75,7 +75,7 @@ def switch_sensor_without_led(mock_api):
 
 @pytest.fixture
 def dimming_sensor(mock_api):
-    """Set up the dimming-sensor instance for testing the DimmingSensor device."""
+    """Set up the dimming-sensor instance for testing the DimmingSensor channel."""
     inputs = {}
     outputs = {
         "odp0000": {"pairingID": 1, "value": "0"},
@@ -117,7 +117,7 @@ async def test_turn_on_led(switch_sensor_with_led):
 
 @pytest.mark.asyncio
 async def test_turn_off_led(switch_sensor_with_led):
-    """Test to turning on the led of the sensor."""
+    """Test to turning off the led of the sensor."""
     await switch_sensor_with_led.turn_off_led()
     assert switch_sensor_with_led.led is False
     switch_sensor_with_led._api.set_datapoint.assert_called_with(
@@ -211,8 +211,8 @@ def test_refresh_state_from_datapoint_dimming(dimming_sensor):
     assert dimming_sensor.dimming_state == DimmingSensorState.longpress_up_release.name
 
 
-def test_update_device_with_led(switch_sensor_with_led):
-    """Test updating the device state."""
+def test_update_channel_with_led(switch_sensor_with_led):
+    """Test updating the channel state."""
 
     def test_callback():
         pass
@@ -228,8 +228,8 @@ def test_update_device_with_led(switch_sensor_with_led):
     assert switch_sensor_with_led.led is False
 
 
-def test_update_device_without_led(switch_sensor_without_led):
-    """Test updating the device state."""
+def test_update_channel_without_led(switch_sensor_without_led):
+    """Test updating the channel state."""
 
     def test_callback():
         pass

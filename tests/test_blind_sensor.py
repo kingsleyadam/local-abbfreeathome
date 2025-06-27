@@ -1,4 +1,4 @@
-"""Test class to test the BlindSensor device."""
+"""Test class to test the BlindSensor channel."""
 
 from unittest.mock import AsyncMock
 
@@ -16,7 +16,7 @@ def mock_api():
 
 @pytest.fixture
 def blind_sensor(mock_api):
-    """Set up the blind-sensor instance for testing the BlindSensor device."""
+    """Set up the blind-sensor instance for testing the BlindSensor channel."""
     inputs = {}
     outputs = {
         "odp0002": {"pairingID": 32, "value": "0"},  # AL_MOVE_UP_DOWN

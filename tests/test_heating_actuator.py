@@ -1,4 +1,4 @@
-"""Test class to test the HeatingActuator devices."""
+"""Test class to test the HeatingActuator channel."""
 
 from unittest.mock import AsyncMock
 
@@ -16,7 +16,7 @@ def mock_api():
 
 @pytest.fixture
 def heating_actuator(mock_api):
-    """Set up the heating actuator instance for testing the HeatingActuator device."""
+    """Set up the heating actuator instance for testing the HeatingActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 48, "value": "0"}  # AL_ACTUATING_VALUE_HEATING
     }

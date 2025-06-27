@@ -1,4 +1,4 @@
-"""Test class to test the ForceOnOffSensor device."""
+"""Test class to test the ForceOnOffSensor channel."""
 
 from unittest.mock import AsyncMock
 
@@ -19,7 +19,7 @@ def mock_api():
 
 @pytest.fixture
 def force_on_off_sensor(mock_api):
-    """Set up the force-on-off-sensor instance for testing the sensor device."""
+    """Set up the force-on-off-sensor instance for testing the sensor channel."""
     inputs = {}
     outputs = {
         "odp0005": {"pairingID": 3, "value": "1"},

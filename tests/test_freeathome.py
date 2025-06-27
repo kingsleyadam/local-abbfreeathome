@@ -384,14 +384,14 @@ async def test_get_config(freeathome, api_mock):
 
 
 @pytest.mark.asyncio
-async def test_get_devices_by_function(freeathome):
-    """Test the get_devices_by_fuction function."""
-    devices = await freeathome.get_channels_by_function(Function.FID_SWITCH_ACTUATOR)
-    assert len(devices) == 2
-    assert devices[0]["device_name"] == "Study Area Rocker"
-    assert devices[0]["channel_name"] == "Study Area Light"
-    assert devices[0]["floor_name"] == "Ground Floor"
-    assert devices[0]["room_name"] == "Living Room"
+async def test_get_channels_by_function(freeathome):
+    """Test the get_channels_by_fuction function."""
+    channels = await freeathome.get_channels_by_function(Function.FID_SWITCH_ACTUATOR)
+    assert len(channels) == 2
+    assert channels[0]["device_name"] == "Study Area Rocker"
+    assert channels[0]["channel_name"] == "Study Area Light"
+    assert channels[0]["floor_name"] == "Ground Floor"
+    assert channels[0]["room_name"] == "Living Room"
 
 
 @pytest.mark.asyncio
@@ -427,8 +427,8 @@ async def test_get_room_name(freeathome):
 
 
 @pytest.mark.asyncio
-async def test_get_device_by_class(freeathome):
-    """Test the get_device_class function."""
+async def test_get_channels_by_class(freeathome):
+    """Test the get_channels_by_class function."""
     await freeathome.load()
 
     devices = freeathome.get_channels_by_class(SwitchActuator)
@@ -436,73 +436,73 @@ async def test_get_device_by_class(freeathome):
 
 
 @pytest.mark.asyncio
-async def test_load_devices(freeathome):
-    """Test the load_devices function."""
+async def test_load(freeathome):
+    """Test the load function."""
     await freeathome.load()
 
-    # Get the dict of devices
-    devices = freeathome.get_channels()
+    # Get the dict of channels
+    channels = freeathome.get_channels()
 
-    # Verify that the devices are loaded correctly
-    assert len(devices) == 5
+    # Verify that the channels are loaded correctly
+    assert len(channels) == 5
 
-    # Check a single device
-    device_key = "ABB7F500E17A/ch0003"
-    assert device_key in devices
-    assert isinstance(devices[device_key], SwitchActuator)
-    assert devices[device_key].device_name == "Study Area Rocker"
-    assert devices[device_key].channel_name == "Study Area Light"
-    assert devices[device_key].floor_name == "Ground Floor"
-    assert devices[device_key].room_name == "Living Room"
-    assert devices[device_key].is_virtual is False
+    # Check a single channel
+    channel_key = "ABB7F500E17A/ch0003"
+    assert channel_key in channels
+    assert isinstance(channels[channel_key], SwitchActuator)
+    assert channels[channel_key].device_name == "Study Area Rocker"
+    assert channels[channel_key].channel_name == "Study Area Light"
+    assert channels[channel_key].floor_name == "Ground Floor"
+    assert channels[channel_key].room_name == "Living Room"
+    assert channels[channel_key].is_virtual is False
 
-    # Unload a single device and test it's been removed
+    # Unload a single channel and test it's been removed
     freeathome.unload_channel_by_channel_serial(channel_serial="ABB7F62F6C0B")
-    devices = freeathome.get_channels()
-    assert len(devices) == 3
+    channels = freeathome.get_channels()
+    assert len(channels) == 3
 
 
 @pytest.mark.asyncio
-async def test_load_devices_with_orphans(freeathome_orphans):
-    """Test the load_devices function."""
+async def test_load_with_orphans(freeathome_orphans):
+    """Test the load function."""
     await freeathome_orphans.load()
 
-    # Get the dict of devices
-    devices = freeathome_orphans.get_channels()
+    # Get the dict of channels
+    channels = freeathome_orphans.get_channels()
 
-    # Verify that the devices are loaded correctly
-    assert len(devices) == 7
+    # Verify that the channels are loaded correctly
+    assert len(channels) == 7
 
-    # Check a single orphan device
-    device_key = "ABB28CBC3651/ch0006"
-    assert device_key in devices
-    assert isinstance(devices[device_key], SwitchSensor)
-    assert devices[device_key].device_name == "Sensor/switch actuator"
-    assert devices[device_key].channel_name == "Sensor/switch actuator"
-    assert devices[device_key].floor_name is None
-    assert devices[device_key].room_name is None
+    # Check a single orphan channel
+    channel_key = "ABB28CBC3651/ch0006"
+    assert channel_key in channels
+    assert isinstance(channels[channel_key], SwitchSensor)
+    assert channels[channel_key].device_name == "Sensor/switch actuator"
+    assert channels[channel_key].channel_name == "Sensor/switch actuator"
+    assert channels[channel_key].floor_name is None
+    assert channels[channel_key].room_name is None
 
 
 @pytest.mark.asyncio
-async def test_load_devices_with_virtuals(freeathome_virtuals):
-    """Test the load_devices function."""
+async def test_load_with_virtuals(freeathome_virtuals):
+    """Test the load function."""
     await freeathome_virtuals.load()
 
-    # Get the dict of devices
-    devices = freeathome_virtuals.get_channels()
+    # Get the dict of channels
+    channels = freeathome_virtuals.get_channels()
 
-    # Verify that the devices are loaded correctly
-    assert len(devices) == 2
+    # Verify that the channels are loaded correctly
+    assert len(channels) == 2
 
-    # Check a single virtual device
-    device_key = "60005D808C54/ch0000"
-    assert device_key in devices
-    assert isinstance(devices[device_key], VirtualSwitchActuator)
-    assert devices[device_key].device_name == "Sleepmode"
-    assert devices[device_key].channel_name == "Sleepmode"
-    assert devices[device_key].floor_name == "Ground Floor"
-    assert devices[device_key].room_name == "Living Room"
-    assert devices[device_key].is_virtual is True
+    # Check a single virtual channel
+    channel_key = "60005D808C54/ch0000"
+    assert channel_key in channels
+    assert isinstance(channels[channel_key], VirtualSwitchActuator)
+    assert channels[channel_key].device_name == "Sleepmode"
+    assert channels[channel_key].channel_name == "Sleepmode"
+    assert channels[channel_key].floor_name == "Ground Floor"
+    assert channels[channel_key].room_name == "Living Room"
+    assert channels[channel_key].is_virtual is True
 
 
 @pytest.mark.asyncio
@@ -522,12 +522,12 @@ async def test_ws_listen(freeathome, api_mock):
 
 
 @pytest.mark.asyncio
-async def test_update_device(freeathome):
-    """Test the update device function."""
-    device = MagicMock()
-    freeathome._channels = {"ABB7F500E17A/ch0003": device}
+async def test_update(freeathome):
+    """Test the update function."""
+    channel = MagicMock()
+    freeathome._channels = {"ABB7F500E17A/ch0003": channel}
     data = {
         "datapoints": {"ABB7F500E17A/ch0003/256": "0", "ABB7F500E17A/ch0001/0": "0"}
     }
     await freeathome.update(data)
-    device.update_channel.assert_called_once_with("ABB7F500E17A/ch0003/256", "0")
+    channel.update_channel.assert_called_once_with("ABB7F500E17A/ch0003/256", "0")

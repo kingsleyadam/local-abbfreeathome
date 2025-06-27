@@ -1,4 +1,4 @@
-"""Test class to test the BrightnessSensor device."""
+"""Test class to test the BrightnessSensor channel."""
 
 from unittest.mock import AsyncMock
 
@@ -37,7 +37,7 @@ def mock_api():
 
 @pytest.fixture
 def brightness_sensor(mock_api):
-    """Set up the instance for testing the BrightnessSensor device."""
+    """Set up the instance for testing the BrightnessSensor channel."""
     return get_brightness_sensor(mock_api)
 
 
