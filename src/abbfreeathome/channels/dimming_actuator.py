@@ -226,7 +226,7 @@ class ColorTemperatureActuator(DimmingActuator):
     @property
     def color_temperature_coolest(self) -> int | None:
         """Get the coolest color temperature of the light."""
-        _id, _value = self.get_device_parameter(
+        _id, _value = self.get_channel_parameter(
             parameter=Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_COOLEST
         )
         return int(_value)
@@ -234,7 +234,7 @@ class ColorTemperatureActuator(DimmingActuator):
     @property
     def color_temperature_warmest(self) -> int | None:
         """Get the warmest color temperature of the light."""
-        _id, _value = self.get_device_parameter(
+        _id, _value = self.get_channel_parameter(
             parameter=Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_WARMEST
         )
         return int(_value)

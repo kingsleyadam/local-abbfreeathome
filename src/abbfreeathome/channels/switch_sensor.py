@@ -114,7 +114,7 @@ class SwitchSensor(Base):
             return "state"
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             try:
-                _, _parameter_value = self.get_device_parameter(
+                _, _parameter_value = self.get_channel_parameter(
                     parameter=Parameter.PID_LED_OPERATION_MODE
                 )
                 if _parameter_value == "2":
