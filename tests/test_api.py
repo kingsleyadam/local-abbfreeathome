@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 
 import aiohttp
+import aiohttp.client_exceptions
 from aioresponses import aioresponses
 import pytest
 import voluptuous as vol
@@ -82,6 +83,17 @@ async def test_load_success(settings):
                 "hardwareVersion": "54321",
             },
         }
+
+
+@pytest.mark.asyncio
+async def test_settings_load_invalid_url(settings):
+    """Test the setting load with an invalid url."""
+    with patch.object(settings, "_get_client_session") as mock_get_session:
+        mock_get_session.return_value.get.side_effect = (
+            aiohttp.client_exceptions.InvalidUrlClientError("bad url")
+        )
+        with pytest.raises(InvalidHostException):
+            await settings.load()
 
 
 @pytest.mark.asyncio
@@ -489,6 +501,23 @@ async def test_request_success_text(api):
 
 
 @pytest.mark.asyncio
+async def test_request_success_other_content_type(api):
+    """Test the _request function for other content types."""
+    with aioresponses() as m:
+        m.get(
+            f"{api._host}/fhapi/v1/test",
+            body="custom content",
+            status=200,
+            content_type="application/xml",
+        )
+
+        response = await api._request("test")
+
+        # Should return None for unsupported content types (the else branch)
+        assert response is None
+
+
+@pytest.mark.asyncio
 async def test_request_invalid_host(api):
     """Test the _request function for invalid host."""
     api._host = "192.168.1.1"
@@ -554,3 +583,212 @@ async def test_request_bad_request(api):
 
         with pytest.raises(BadRequestException):
             await api._request("/test")
+
+
+@pytest.mark.asyncio
+async def test_settings_get_client_session_creates_new_session(settings):
+    """Test _get_client_session creates a new session when none exists."""
+    # Ensure no existing session
+    settings._client_session = None
+    settings._close_client_session = False
+
+    # Call _get_client_session
+    session = settings._get_client_session()
+
+    # Verify a new session was created and close flag was set
+    assert session is not None
+    assert settings._client_session is session
+    assert settings._close_client_session is True
+
+    # Clean up properly
+    await settings.close_client_session()
+
+
+@pytest.mark.asyncio
+async def test_settings_get_client_session_returns_existing_session(settings):
+    """Test _get_client_session returns existing session when one exists."""
+    # Set an existing session
+    mock_session = AsyncMock(spec=aiohttp.ClientSession)
+    settings._client_session = mock_session
+    settings._close_client_session = False
+
+    # Call _get_client_session
+    session = settings._get_client_session()
+
+    # Verify existing session was returned and close flag wasn't changed
+    assert session is mock_session
+    assert settings._close_client_session is False
+
+
+@pytest.mark.asyncio
+async def test_get_client_session_creates_new_session(api):
+    """Test _get_client_session creates a new session when none exists."""
+    # Ensure no existing session
+    api._client_session = None
+    api._close_client_session = False
+
+    # Call _get_client_session
+    session = api._get_client_session()
+
+    # Verify a new session was created and close flag was set
+    assert session is not None
+    assert api._client_session is session
+    assert api._close_client_session is True
+
+    # Clean up properly
+    await api.close_client_session()
+
+
+@pytest.mark.asyncio
+async def test_get_client_session_returns_existing_session(api):
+    """Test _get_client_session returns existing session when one exists."""
+    # Set an existing session
+    mock_session = AsyncMock(spec=aiohttp.ClientSession)
+    api._client_session = mock_session
+    api._close_client_session = False
+
+    # Call _get_client_session
+    session = api._get_client_session()
+
+    # Verify existing session was returned and close flag wasn't changed
+    assert session is mock_session
+    assert api._close_client_session is False
+
+
+@pytest.mark.asyncio
+async def test_ws_receive_with_non_async_callback(api):
+    """Test the ws_receive function with non-async callback."""
+    callback = Mock()
+
+    with patch.object(
+        FreeAtHomeApi, "ws_connected", new_callable=PropertyMock
+    ) as mock_ws_connected:
+        mock_ws_connected.return_value = True
+        with patch.object(
+            FreeAtHomeApi, "_ws_response", new_callable=PropertyMock
+        ) as mock_ws_response:
+            mock_ws_response.return_value = Mock()
+            mock_ws_response.return_value.receive = AsyncMock(
+                return_value=Mock(
+                    type=aiohttp.WSMsgType.TEXT,
+                    json=Mock(return_value={api._sysap_uuid: "test_data"}),
+                )
+            )
+
+            await api.ws_receive(callback)
+            callback.assert_called_once_with("test_data")
+
+
+@pytest.mark.asyncio
+async def test_ws_receive_no_callback(api):
+    """Test the ws_receive function with no callback."""
+    with patch.object(
+        FreeAtHomeApi, "ws_connected", new_callable=PropertyMock
+    ) as mock_ws_connected:
+        mock_ws_connected.return_value = True
+        with patch.object(
+            FreeAtHomeApi, "_ws_response", new_callable=PropertyMock
+        ) as mock_ws_response:
+            mock_ws_response.return_value = Mock()
+            mock_ws_response.return_value.receive = AsyncMock(
+                return_value=Mock(
+                    type=aiohttp.WSMsgType.TEXT,
+                    json=Mock(return_value={api._sysap_uuid: "test_data"}),
+                )
+            )
+
+            # Should not raise any exception when no callback is provided
+            await api.ws_receive(None)
+
+
+@pytest.mark.asyncio
+async def test_ws_receive_closed_message_types(api):
+    """Test the ws_receive function for all closed message types."""
+    async_callback = AsyncMock()
+
+    # Test WSMsgType.CLOSED
+    with patch.object(
+        FreeAtHomeApi, "ws_connected", new_callable=PropertyMock
+    ) as mock_ws_connected:
+        mock_ws_connected.return_value = True
+        with patch.object(
+            FreeAtHomeApi, "_ws_response", new_callable=PropertyMock
+        ) as mock_ws_response:
+            mock_ws_response.return_value = Mock()
+            mock_ws_response.return_value.receive = AsyncMock(
+                return_value=Mock(type=aiohttp.WSMsgType.CLOSED)
+            )
+            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+                await api.ws_receive(async_callback)
+                async_callback.assert_not_called()
+                # Verify sleep is NOT called for CLOSED messages (unlike ERROR messages)
+                mock_sleep.assert_not_called()
+
+    # Test WSMsgType.CLOSING
+    with patch.object(
+        FreeAtHomeApi, "ws_connected", new_callable=PropertyMock
+    ) as mock_ws_connected:
+        mock_ws_connected.return_value = True
+        with patch.object(
+            FreeAtHomeApi, "_ws_response", new_callable=PropertyMock
+        ) as mock_ws_response:
+            mock_ws_response.return_value = Mock()
+            mock_ws_response.return_value.receive = AsyncMock(
+                return_value=Mock(type=aiohttp.WSMsgType.CLOSING)
+            )
+            with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+                await api.ws_receive(async_callback)
+                async_callback.assert_not_called()
+                # Verify sleep is NOT called for CLOSING messages
+                mock_sleep.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_ws_receive_close_message_simple(api):
+    """Test the ws_receive function for WSMsgType.CLOSE with simple test."""
+    # Set up the websocket as connected
+    api._ws_response = AsyncMock()
+    api._ws_response.closed = False
+
+    # Mock the receive to return a CLOSE message
+    api._ws_response.receive = AsyncMock(
+        return_value=Mock(type=aiohttp.WSMsgType.CLOSE)
+    )
+
+    # Call ws_receive and ensure it completes without error
+    await api.ws_receive()
+
+    # Verify receive was called
+    api._ws_response.receive.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_ws_receive_close_no_sleep_mock(api):
+    """Test ws_receive with CLOSE message without mocking sleep."""
+    api._ws_response = AsyncMock()
+    api._ws_response.closed = False
+    api._ws_response.receive = AsyncMock(
+        return_value=Mock(type=aiohttp.WSMsgType.CLOSE)
+    )
+
+    # Don't mock asyncio.sleep to allow natural function flow
+    result = await api.ws_receive()
+
+    # Function should complete and return None (implicit return)
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_ws_receive_unknown_message_type(api):
+    """Test ws_receive with unknown message type to cover the implicit else branch."""
+    api._ws_response = AsyncMock()
+    api._ws_response.closed = False
+
+    # Use a message type that doesn't match any of the elif conditions
+    api._ws_response.receive = AsyncMock(
+        return_value=Mock(type=aiohttp.WSMsgType.BINARY)  # Different message type
+    )
+
+    # Function should complete without error even for unknown message types
+    result = await api.ws_receive()
+    assert result is None

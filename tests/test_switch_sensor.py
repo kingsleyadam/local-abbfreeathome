@@ -243,3 +243,24 @@ def test_update_channel_without_led(switch_sensor_without_led):
 
     switch_sensor_without_led.update_channel("AL_INFO_ON_OFF/idp0000", "0")
     assert switch_sensor_without_led.led is None
+
+
+def test_update_device_nonexistent_input(switch_sensor_with_led):
+    """Test updating the device state with a non-existent input key."""
+
+    def test_callback():
+        pass
+
+    switch_sensor_with_led.register_callback(
+        callback_attribute="led", callback=test_callback
+    )
+
+    # Store initial LED state
+    initial_led_state = switch_sensor_with_led.led
+
+    # Use a datapoint key that doesn't exist in the inputs
+    # This should hit the branch where _io_key is NOT in self._inputs
+    switch_sensor_with_led.update_channel("AL_SOME_UNKNOWN_PAIRING/idp9999", "1")
+
+    # The led state should remain unchanged since the input key doesn't exist
+    assert switch_sensor_with_led.led == initial_led_state

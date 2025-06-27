@@ -116,12 +116,55 @@ def test_register_callback(base_instance):
     )
 
 
+def test_register_callback_existing_attribute(base_instance):
+    """Test registering a callback when the attribute already exists in _callbacks."""
+    callback1 = MagicMock()
+    callback2 = MagicMock()
+
+    # Register first callback - this creates the set in _callbacks
+    base_instance.register_callback(callback_attribute="test", callback=callback1)
+    assert callback1 in base_instance._callbacks["test"]
+
+    # Register second callback to same attribute - this hits the branch where
+    # callback_attribute is already in self._callbacks (line 147 condition is False)
+    base_instance.register_callback(callback_attribute="test", callback=callback2)
+    assert callback2 in base_instance._callbacks["test"]
+    assert callback1 in base_instance._callbacks["test"]  # First callback still there
+
+
 def test_remove_callback(base_instance):
     """Test removing a callback."""
     callback = MagicMock()
     base_instance.register_callback(callback_attribute="test", callback=callback)
     base_instance.remove_callback(callback_attribute="test", callback=callback)
     assert callback not in base_instance._callbacks["test"]
+
+
+def test_remove_callback_empty_set(base_instance):
+    """Test removing a callback when the callback set is empty."""
+    # Set up _callbacks with empty set for "test" attribute
+    base_instance._callbacks["test"] = set()
+
+    callback = MagicMock()
+
+    # This should hit the branch where self._callbacks[callback_attribute] is falsy
+    # (empty set) and thus the function exits without doing anything (line 160->exit)
+    base_instance.remove_callback(callback_attribute="test", callback=callback)
+
+    # The empty set should remain empty
+    assert len(base_instance._callbacks["test"]) == 0
+
+
+def test_remove_callback_nonexistent_attribute(base_instance):
+    """Test removing a callback when the callback attribute doesn't exist."""
+    callback = MagicMock()
+
+    # This should hit the KeyError branch when trying to access
+    # self._callbacks[callback_attribute] for non-existent key
+    with pytest.raises(KeyError):
+        base_instance.remove_callback(
+            callback_attribute="nonexistent", callback=callback
+        )
 
 
 def test_update_channel(base_instance):
