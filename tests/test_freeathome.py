@@ -429,7 +429,7 @@ async def test_get_room_name(freeathome):
 @pytest.mark.asyncio
 async def test_get_device_by_class(freeathome):
     """Test the get_device_class function."""
-    await freeathome.load_channels()
+    await freeathome.load()
 
     devices = freeathome.get_channels_by_class(SwitchActuator)
     assert len(devices) == 2
@@ -438,7 +438,7 @@ async def test_get_device_by_class(freeathome):
 @pytest.mark.asyncio
 async def test_load_devices(freeathome):
     """Test the load_devices function."""
-    await freeathome.load_channels()
+    await freeathome.load()
 
     # Get the dict of devices
     devices = freeathome.get_channels()
@@ -465,7 +465,7 @@ async def test_load_devices(freeathome):
 @pytest.mark.asyncio
 async def test_load_devices_with_orphans(freeathome_orphans):
     """Test the load_devices function."""
-    await freeathome_orphans.load_channels()
+    await freeathome_orphans.load()
 
     # Get the dict of devices
     devices = freeathome_orphans.get_channels()
@@ -486,7 +486,7 @@ async def test_load_devices_with_orphans(freeathome_orphans):
 @pytest.mark.asyncio
 async def test_load_devices_with_virtuals(freeathome_virtuals):
     """Test the load_devices function."""
-    await freeathome_virtuals.load_channels()
+    await freeathome_virtuals.load()
 
     # Get the dict of devices
     devices = freeathome_virtuals.get_channels()
