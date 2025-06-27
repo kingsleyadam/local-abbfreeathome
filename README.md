@@ -129,7 +129,7 @@ async def refresh_state(self):
 
         _datapoint = (
             await self._api.get_datapoint(
-                device_id=self.device_id,
+                device_serial=self.device_serial,
                 channel_id=self.channel_id,
                 datapoint=_switch_output_id,
             )
@@ -160,7 +160,7 @@ async def _set_switching_datapoint(self, value: str):
         pairing=Pairing.AL_SWITCH_ON_OFF
     )
     return await self._api.set_datapoint(
-        device_id=self.device_id,
+        device_serial=self.device_serial,
         channel_id=self.channel_id,
         datapoint=_switch_input_id,
         value=value,
