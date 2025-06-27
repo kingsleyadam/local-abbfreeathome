@@ -1,4 +1,4 @@
-"""Test class to test the Trigger device."""
+"""Test class to test the Trigger channel."""
 
 from unittest.mock import AsyncMock
 
@@ -16,7 +16,7 @@ def mock_api():
 
 @pytest.fixture
 def trigger(mock_api):
-    """Set up the trigger instance for testing the Trigger device."""
+    """Set up the trigger instance for testing the Trigger channel."""
     inputs = {
         "idp0001": {"pairingID": 2, "value": "1"},
         "idp0003": {"pairingID": 4, "value": "0"},

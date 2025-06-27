@@ -1,4 +1,4 @@
-"""Test class to test the SwitchActuator device."""
+"""Test class to test the SwitchActuator channel."""
 
 from unittest.mock import AsyncMock
 
@@ -19,7 +19,7 @@ def mock_api():
 
 @pytest.fixture
 def switch_actuator(mock_api):
-    """Set up the switch instance for testing the SwitchActuator device."""
+    """Set up the switch instance for testing the SwitchActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
         "idp0001": {"pairingID": 2, "value": "0"},
@@ -135,8 +135,8 @@ async def test_refresh_state(switch_actuator):
     )
 
 
-def test_update_device(switch_actuator):
-    """Test updating the device state."""
+def test_update_channel(switch_actuator):
+    """Test updating the channel state."""
 
     def test_callback():
         pass

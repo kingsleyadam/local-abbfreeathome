@@ -1,4 +1,4 @@
-"""Test class to test the CoverActuator devices."""
+"""Test class to test the CoverActuator channel."""
 
 from unittest.mock import AsyncMock
 
@@ -21,7 +21,7 @@ def mock_api():
 
 @pytest.fixture
 def cover_actuator(mock_api):
-    """Set up the generic cover instance for testing the CoverActuator device."""
+    """Set up the generic cover instance for testing the CoverActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 32, "value": "0"},
         "idp0001": {"pairingID": 33, "value": "1"},
@@ -57,7 +57,7 @@ def cover_actuator(mock_api):
 
 @pytest.fixture
 def shutter_actuator(mock_api):
-    """Set up the shutter actuator instance for testing the ShutterActuator device."""
+    """Set up the shutter actuator instance for testing the ShutterActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 32, "value": "0"},
         "idp0001": {"pairingID": 33, "value": "1"},

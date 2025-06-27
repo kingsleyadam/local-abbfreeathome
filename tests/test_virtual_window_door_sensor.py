@@ -1,4 +1,4 @@
-"""Test class to test the virtual WindowDoorSensor device."""
+"""Test class to test the virtual WindowDoorSensor channel."""
 
 from unittest.mock import AsyncMock
 
@@ -18,7 +18,7 @@ def mock_api():
 
 @pytest.fixture
 def virtual_window_door_sensor(mock_api):
-    """Set up the sensor instance for testing the virtual WindowDoorSensor device."""
+    """Set up the sensor instance for testing the virtual WindowDoorSensor channel."""
     inputs = {}
     outputs = {
         "odp000c": {"pairingID": 53, "value": "0"},
@@ -64,8 +64,8 @@ async def test_turn_off(virtual_window_door_sensor):
     assert virtual_window_door_sensor.state is False
 
 
-def test_update_device(virtual_window_door_sensor):
-    """Test updating the device state."""
+def test_update_channel(virtual_window_door_sensor):
+    """Test updating the channel state."""
 
     def test_callback():
         pass

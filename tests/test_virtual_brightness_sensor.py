@@ -1,4 +1,4 @@
-"""Test class to test the virtual BrightnessSensor device."""
+"""Test class to test the virtual BrightnessSensor channel."""
 
 from unittest.mock import AsyncMock
 
@@ -18,7 +18,7 @@ def mock_api():
 
 @pytest.fixture
 def virtual_brightness_sensor(mock_api):
-    """Set up the sensor instance for testing the virtual BrightnessSensor device."""
+    """Set up the sensor instance for testing the virtual BrightnessSensor channel."""
     inputs = {}
     outputs = {
         "odp0000": {"pairingID": 1026, "value": ""},

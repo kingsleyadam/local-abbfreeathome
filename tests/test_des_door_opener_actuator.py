@@ -1,4 +1,4 @@
-"""Test class to test the DesDoorOpenerActuator device."""
+"""Test class to test the DesDoorOpenerActuator channel."""
 
 from unittest.mock import AsyncMock
 
@@ -16,7 +16,7 @@ def mock_api():
 
 @pytest.fixture
 def des_door_opener_actuator(mock_api):
-    """Set up the instance for testing the DesDoorOpenerActuator device."""
+    """Set up the instance for testing the DesDoorOpenerActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 2, "value": "0"},
     }

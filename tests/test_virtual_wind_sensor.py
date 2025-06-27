@@ -1,4 +1,4 @@
-"""Test class to test the virtual WindSensor device."""
+"""Test class to test the virtual WindSensor channel."""
 
 from unittest.mock import AsyncMock
 
@@ -16,7 +16,7 @@ def mock_api():
 
 @pytest.fixture
 def virtual_wind_sensor(mock_api):
-    """Set up the sensor instance for testing the virtual WindSensor device."""
+    """Set up the sensor instance for testing the virtual WindSensor channel."""
     inputs = {}
     outputs = {
         "odp0000": {"pairingID": 37, "value": ""},
