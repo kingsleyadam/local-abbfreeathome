@@ -21,9 +21,9 @@ Using the local API will only work if you have it enabled on the SysAP. To activ
 
 Copy the username listed within that window (usually `installer`) to be used when invoking the api.
 
-## Device Implementation
+## Channel Implementation
 
-The current devices implemented within the library.
+The current channels implemented within the library.
 | Name | Primary Functions | Properties |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | BlindSensor | | `state`, `step_state`, `move_state` |

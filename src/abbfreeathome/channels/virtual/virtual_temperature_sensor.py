@@ -76,7 +76,7 @@ class VirtualTemperatureSensor(Base):
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
-        Refresh the state of the device from a given output.
+        Refresh the state of the channel from a given output.
 
         This will return the name of the attribute, which was refreshed or None.
         """
