@@ -259,7 +259,7 @@ def test_update_device_nonexistent_input(switch_sensor_with_led):
     initial_led_state = switch_sensor_with_led.led
 
     # Use a datapoint key that doesn't exist in the inputs
-    # This should hit the branch where _io_key is NOT in self._inputs (145->151)
+    # This should hit the branch where _io_key is NOT in self._inputs
     switch_sensor_with_led.update_channel("AL_SOME_UNKNOWN_PAIRING/idp9999", "1")
 
     # The led state should remain unchanged since the input key doesn't exist
