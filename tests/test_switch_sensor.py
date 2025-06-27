@@ -35,7 +35,7 @@ def switch_sensor_with_led(mock_api):
     }
 
     return SwitchSensor(
-        device_id="ABB700D9C0A4",
+        device_serial="ABB700D9C0A4",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",
@@ -62,7 +62,7 @@ def switch_sensor_without_led(mock_api):
     }
 
     return SwitchSensor(
-        device_id="ABB700D9C0A4",
+        device_serial="ABB700D9C0A4",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",
@@ -85,7 +85,7 @@ def dimming_sensor(mock_api):
     parameters = {}
 
     return DimmingSensor(
-        device_id="ABB700D9C0A4",
+        device_serial="ABB700D9C0A4",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",
@@ -108,7 +108,7 @@ async def test_turn_on_led(switch_sensor_with_led):
     await switch_sensor_with_led.turn_on_led()
     assert switch_sensor_with_led.led is True
     switch_sensor_with_led._api.set_datapoint.assert_called_with(
-        device_id="ABB700D9C0A4",
+        device_serial="ABB700D9C0A4",
         channel_id="ch0000",
         datapoint="idp0000",
         value="1",
@@ -121,7 +121,7 @@ async def test_turn_off_led(switch_sensor_with_led):
     await switch_sensor_with_led.turn_off_led()
     assert switch_sensor_with_led.led is False
     switch_sensor_with_led._api.set_datapoint.assert_called_with(
-        device_id="ABB700D9C0A4",
+        device_serial="ABB700D9C0A4",
         channel_id="ch0000",
         datapoint="idp0000",
         value="0",
@@ -135,7 +135,7 @@ async def test_refresh_state_with_led(switch_sensor_with_led):
     await switch_sensor_with_led.refresh_state()
     assert switch_sensor_with_led.led is True
     switch_sensor_with_led._api.get_datapoint.assert_called_with(
-        device_id="ABB700D9C0A4",
+        device_serial="ABB700D9C0A4",
         channel_id="ch0000",
         datapoint="idp0000",
     )
@@ -148,7 +148,7 @@ async def test_refresh_state_without_led(switch_sensor_without_led):
     await switch_sensor_without_led.refresh_state()
     assert switch_sensor_without_led.led is None
     switch_sensor_without_led._api.get_datapoint.assert_called_with(
-        device_id="ABB700D9C0A4",
+        device_serial="ABB700D9C0A4",
         channel_id="ch0000",
         datapoint="idp0000",
     )

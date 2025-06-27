@@ -35,7 +35,7 @@ def switch_actuator(mock_api):
     parameters = {}
 
     return SwitchActuator(
-        device_id="ABB7F500E17A",
+        device_serial="ABB7F500E17A",
         device_name="Device Name",
         channel_id="ch0003",
         channel_name="Channel Name",
@@ -58,7 +58,7 @@ async def test_turn_on(switch_actuator):
     await switch_actuator.turn_on()
     assert switch_actuator.state is True
     switch_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB7F500E17A",
+        device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0000",
         value="1",
@@ -71,7 +71,7 @@ async def test_turn_off(switch_actuator):
     await switch_actuator.turn_off()
     assert switch_actuator.state is False
     switch_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB7F500E17A",
+        device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0000",
         value="0",
@@ -88,7 +88,7 @@ async def test_set_forced(switch_actuator):
         switch_actuator.forced_position == SwitchActuatorForcedPosition.deactivated.name
     )
     switch_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB7F500E17A",
+        device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0002",
         value="0",
@@ -100,7 +100,7 @@ async def test_set_forced(switch_actuator):
         switch_actuator.forced_position == SwitchActuatorForcedPosition.forced_off.name
     )
     switch_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB7F500E17A",
+        device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0002",
         value="2",
@@ -112,7 +112,7 @@ async def test_set_forced(switch_actuator):
         switch_actuator.forced_position == SwitchActuatorForcedPosition.forced_on.name
     )
     switch_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB7F500E17A",
+        device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0002",
         value="3",
@@ -129,7 +129,7 @@ async def test_refresh_state(switch_actuator):
     await switch_actuator.refresh_state()
     assert switch_actuator.state is True
     switch_actuator._api.get_datapoint.assert_called_with(
-        device_id="ABB7F500E17A",
+        device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="odp0000",
     )

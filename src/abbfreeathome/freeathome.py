@@ -5,6 +5,7 @@ from .bin.function import Function
 from .bin.interface import Interface
 from .channels.base import Base
 from .const import FUNCTION_CHANNEL_MAPPING, FUNCTION_VIRTUAL_CHANNEL_MAPPING
+from .device import Device
 
 
 class FreeAtHome:
@@ -20,6 +21,7 @@ class FreeAtHome:
         """Initialize the FreeAtHome class."""
         self._config: dict | None = None
         self._channels: dict[str, Base] = {}
+        self._devices: dict[str, Device] = {}
 
         self.api: FreeAtHomeApi = api
 
@@ -30,6 +32,10 @@ class FreeAtHome:
     def clear_channels(self):
         """Clear all channels in the channels list."""
         self._channels.clear()
+
+    def clear_devices(self):
+        """Clear all devices in the devices list."""
+        self._devices.clear()
 
     async def get_config(self, refresh: bool = False) -> dict:
         """Get the Free@Home Configuration."""
@@ -42,6 +48,19 @@ class FreeAtHome:
         """Get the list of channels."""
         return self._channels
 
+    def get_devices(self) -> dict[str, Device]:
+        """Get the list of devices."""
+        return self._devices
+
+    def get_device_by_serial(self, device_serial: str) -> Device | None:
+        """Get a device by its serial ID."""
+        return self._devices.get(device_serial)
+
+    def get_device_for_channel(self, channel_key: str) -> Device | None:
+        """Get the device that contains a specific channel."""
+        device_serial = channel_key.split("/")[0]
+        return self.get_device_by_serial(device_serial)
+
     def get_channels_by_class(self, channel_class: Base) -> list[Base]:
         """Get the list of channels by class."""
         return [
@@ -52,20 +71,17 @@ class FreeAtHome:
 
     async def get_channels_by_function(self, function: Function) -> list[dict]:
         """Get the list of channels by function."""
-        _channels = []
-        for _device_key, _device in (await self.get_config()).get("devices").items():
-            is_virtual = False
-            if _device_key[0:4] == "6000":
-                _device["interface"] = "VD"
-                is_virtual = True
+        # Ensure devices are loaded
+        if not self._devices:
+            await self._load_devices()
 
+        _channels = []
+        for _device_key, _device in self._devices.items():
             # Filter by interface if provided
-            if self._interfaces and _device.get("interface") not in [
-                interface.value for interface in self._interfaces
-            ]:
+            if self._interfaces and _device.interface not in self._interfaces:
                 continue
 
-            for _channel_key, _channel in _device.get("channels", {}).items():
+            for _channel_key, _channel in _device.channels.items():
                 # Filter out any channels not on the Free@Home floorplan
                 if (
                     not self._include_orphan_channels
@@ -80,32 +96,28 @@ class FreeAtHome:
                 ):
                     _channel_name = _channel.get("displayName")
                     if _channel_name in ["Ⓐ", "ⓑ"] or _channel_name is None:
-                        _channel_name = _device.get("displayName")
+                        _channel_name = _device.display_name
 
                     _channels.append(
                         {
-                            "device_id": _device_key,
-                            "device_name": _device.get("displayName"),
+                            "device_serial": _device_key,
+                            "device_name": _device.display_name,
                             "channel_id": _channel_key,
                             "channel_name": _channel_name,
                             "function_id": int(_channel.get("functionID"), 16),
-                            "floor_name": await self.get_floor_name(
-                                floor_serial_id=_channel.get(
-                                    "floor", _device.get("floor")
-                                )
+                            "floor_name": _device.floor_name
+                            or await self.get_floor_name(
+                                floor_serial_id=_channel.get("floor", _device.floor)
                             ),
-                            "room_name": await self.get_room_name(
-                                floor_serial_id=_channel.get(
-                                    "floor", _device.get("floor")
-                                ),
-                                room_serial_id=_channel.get(
-                                    "room", _device.get("room")
-                                ),
+                            "room_name": _device.room_name
+                            or await self.get_room_name(
+                                floor_serial_id=_channel.get("floor", _device.floor),
+                                room_serial_id=_channel.get("room", _device.room),
                             ),
                             "inputs": _channel.get("inputs"),
                             "outputs": _channel.get("outputs"),
                             "parameters": _channel.get("parameters"),
-                            "virtual": is_virtual,
+                            "virtual": _device.is_virtual,
                         }
                     )
 
@@ -140,9 +152,56 @@ class FreeAtHome:
 
     async def load(self):
         """Load from the Free@Home api into the FreeAtHome class."""
-        await self.load_channels()
+        await self._load_devices()
+        await self._load_channels()
 
-    async def load_channels(self):
+    async def _load_devices(self):
+        """Load all devices into the devices object."""
+        self.clear_devices()
+        config = await self.get_config()
+
+        for device_serial, device_data in config.get("devices", {}).items():
+            # Convert interface string to Interface enum
+            _interface_value = device_data.get("interface")
+
+            # Any devices that start with "6000" should be considered virtual
+            if device_serial.startswith("6000"):
+                _interface_value = "VD"
+
+            interface_enum = Interface.from_string(_interface_value)
+
+            # Get floor and room names
+            floor_id = device_data.get("floor")
+            room_id = device_data.get("room")
+            floor_name = await self.get_floor_name(floor_id) if floor_id else None
+            room_name = (
+                await self.get_room_name(floor_id, room_id)
+                if floor_id and room_id
+                else None
+            )
+
+            # Extract device attributes from the configuration
+            device = Device(
+                device_serial=device_serial,
+                device_id=device_data.get("deviceId", ""),
+                display_name=device_data.get("displayName", ""),
+                interface=interface_enum,
+                unresponsive=device_data.get("unresponsive", False),
+                unresponsive_counter=device_data.get("unresponsiveCounter", 0),
+                defect=device_data.get("defect", False),
+                floor=floor_id,
+                room=room_id,
+                floor_name=floor_name,
+                room_name=room_name,
+                device_reboots=device_data.get("deviceReboots"),
+                native_id=device_data.get("nativeId"),
+                parameters=device_data.get("parameters", {}),
+                channels=device_data.get("channels", {}),
+            )
+
+            self._devices[device_serial] = device
+
+    async def _load_channels(self):
         """Load all of the channels into the channels object."""
         self.clear_channels()
         for _virtual_channel in (False, True):
@@ -164,6 +223,11 @@ class FreeAtHome:
         ]:
             self._channels.pop(key)
 
+    def unload_device_by_serial(self, device_serial: str):
+        """Unload a device by its serial ID."""
+        if device_serial in self._devices:
+            self._devices.pop(device_serial)
+
     async def _load_channels_by_function(
         self,
         function: Function,
@@ -179,9 +243,9 @@ class FreeAtHome:
                 continue
 
             self._channels[
-                f"{_channel.get('device_id')}/{_channel.get('channel_id')}"
+                f"{_channel.get('device_serial')}/{_channel.get('channel_id')}"
             ] = channel_class(
-                device_id=_channel.get("device_id"),
+                device_serial=_channel.get("device_serial"),
                 device_name=_channel.get("device_name"),
                 channel_id=_channel.get("channel_id"),
                 channel_name=_channel.get("channel_name"),

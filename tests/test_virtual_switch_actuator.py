@@ -33,7 +33,7 @@ def virtual_switch_actuator(mock_api):
     parameters = {}
 
     return VirtualSwitchActuator(
-        device_id="60004F56EA24",
+        device_serial="60004F56EA24",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",
@@ -56,7 +56,7 @@ async def test_turn_on(virtual_switch_actuator):
     await virtual_switch_actuator.turn_on()
     assert virtual_switch_actuator.state is True
     virtual_switch_actuator._api.set_datapoint.assert_called_with(
-        device_id="60004F56EA24",
+        device_serial="60004F56EA24",
         channel_id="ch0000",
         datapoint="odp0000",
         value="1",
@@ -69,7 +69,7 @@ async def test_turn_off(virtual_switch_actuator):
     await virtual_switch_actuator.turn_off()
     assert virtual_switch_actuator.state is False
     virtual_switch_actuator._api.set_datapoint.assert_called_with(
-        device_id="60004F56EA24",
+        device_serial="60004F56EA24",
         channel_id="ch0000",
         datapoint="odp0000",
         value="0",
@@ -83,7 +83,7 @@ async def test_refresh_state(virtual_switch_actuator):
     await virtual_switch_actuator.refresh_state()
     assert virtual_switch_actuator.state is True
     virtual_switch_actuator._api.get_datapoint.assert_called_with(
-        device_id="60004F56EA24",
+        device_serial="60004F56EA24",
         channel_id="ch0000",
         datapoint="odp0000",
     )

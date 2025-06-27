@@ -41,7 +41,7 @@ def base_instance(mock_api):
     }
 
     instance = Base(
-        device_id="ABB7F500E17A",
+        device_serial="ABB7F500E17A",
         device_name="Device Name",
         channel_id="ch0003",
         channel_name="Channel Name",
@@ -58,7 +58,7 @@ def base_instance(mock_api):
 
 def test_initialization(base_instance):
     """Test the initialization of the base class."""
-    assert base_instance.device_id == "ABB7F500E17A"
+    assert base_instance.device_serial == "ABB7F500E17A"
     assert base_instance.device_name == "Device Name"
     assert base_instance.channel_id == "ch0003"
     assert base_instance.channel_name == "Channel Name"

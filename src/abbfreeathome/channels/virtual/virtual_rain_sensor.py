@@ -19,7 +19,7 @@ class VirtualRainSensor(Base):
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -34,7 +34,7 @@ class VirtualRainSensor(Base):
         self._alarm: bool | None = None
 
         super().__init__(
-            device_id,
+            device_serial,
             device_name,
             channel_id,
             channel_name,
@@ -79,7 +79,7 @@ class VirtualRainSensor(Base):
             pairing=Pairing.AL_RAIN_ALARM
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,

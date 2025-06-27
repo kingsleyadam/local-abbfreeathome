@@ -27,7 +27,7 @@ def virtual_rain_sensor(mock_api):
     parameters = {}
 
     return VirtualRainSensor(
-        device_id="6000A0EA2CF4",
+        device_serial="6000A0EA2CF4",
         device_name="Device Name",
         channel_id="ch0001",
         channel_name="Channel Name",
@@ -43,7 +43,7 @@ async def test_turn_on(virtual_rain_sensor):
     """Test to activate the sensor."""
     await virtual_rain_sensor.turn_on()
     virtual_rain_sensor._api.set_datapoint.assert_called_with(
-        device_id="6000A0EA2CF4",
+        device_serial="6000A0EA2CF4",
         channel_id="ch0001",
         datapoint="odp0000",
         value="1",
@@ -56,7 +56,7 @@ async def test_turn_off(virtual_rain_sensor):
     """Test to deactivate the sensor."""
     await virtual_rain_sensor.turn_off()
     virtual_rain_sensor._api.set_datapoint.assert_called_with(
-        device_id="6000A0EA2CF4",
+        device_serial="6000A0EA2CF4",
         channel_id="ch0001",
         datapoint="odp0000",
         value="0",

@@ -29,7 +29,7 @@ class RoomTemperatureController(Base):
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -50,7 +50,7 @@ class RoomTemperatureController(Base):
         self._eco_mode: bool | None = None
 
         super().__init__(
-            device_id,
+            device_serial,
             device_name,
             channel_id,
             channel_name,
@@ -182,7 +182,7 @@ class RoomTemperatureController(Base):
             pairing=Pairing.AL_CONTROLLER_ON_OFF_REQUEST
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_switch_input_id,
             value=value,
@@ -194,7 +194,7 @@ class RoomTemperatureController(Base):
             pairing=Pairing.AL_ECO_ON_OFF
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_eco_input_id,
             value=value,
@@ -206,7 +206,7 @@ class RoomTemperatureController(Base):
             pairing=Pairing.AL_INFO_ABSOLUTE_SET_POINT_REQUEST
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_temperature_input_id,
             value=value,

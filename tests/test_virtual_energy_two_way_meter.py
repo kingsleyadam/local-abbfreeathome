@@ -33,7 +33,7 @@ def virtual_energy_two_way_meter(mock_api):
     parameters = {}
 
     return VirtualEnergyTwoWayMeter(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         device_name="Device Name",
         channel_id="ch0001",
         channel_name="Channel Name",
@@ -49,7 +49,7 @@ async def test_set_current_power(virtual_energy_two_way_meter):
     """Test to set battery_power of the sensor."""
     await virtual_energy_two_way_meter.set_current_power(435.7)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0000",
         value="435.7",
@@ -63,7 +63,7 @@ async def test_set_imported_today(virtual_energy_two_way_meter):
     """Values greater 0 should always work"""
     await virtual_energy_two_way_meter.set_imported_today(25)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0002",
         value="25",
@@ -73,7 +73,7 @@ async def test_set_imported_today(virtual_energy_two_way_meter):
     """Float values should return integer"""
     await virtual_energy_two_way_meter.set_imported_today(13.7)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0002",
         value="13",
@@ -83,7 +83,7 @@ async def test_set_imported_today(virtual_energy_two_way_meter):
     """Negative values should return 0"""
     await virtual_energy_two_way_meter.set_imported_today(-3.4)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0002",
         value="0",
@@ -97,7 +97,7 @@ async def test_set_exported_today(virtual_energy_two_way_meter):
     """Values greater 0 should always work"""
     await virtual_energy_two_way_meter.set_exported_today(25)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0003",
         value="25",
@@ -107,7 +107,7 @@ async def test_set_exported_today(virtual_energy_two_way_meter):
     """Float values should return integer"""
     await virtual_energy_two_way_meter.set_exported_today(13.7)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0003",
         value="13",
@@ -117,7 +117,7 @@ async def test_set_exported_today(virtual_energy_two_way_meter):
     """Negative values should return 0"""
     await virtual_energy_two_way_meter.set_exported_today(-3.4)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0003",
         value="0",
@@ -131,7 +131,7 @@ async def test_set_imported_total(virtual_energy_two_way_meter):
     """Values greater 0 should always work"""
     await virtual_energy_two_way_meter.set_imported_total(25)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0004",
         value="25",
@@ -141,7 +141,7 @@ async def test_set_imported_total(virtual_energy_two_way_meter):
     """Float values should return integer"""
     await virtual_energy_two_way_meter.set_imported_total(13.7)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0004",
         value="13",
@@ -151,7 +151,7 @@ async def test_set_imported_total(virtual_energy_two_way_meter):
     """Negative values should return 0"""
     await virtual_energy_two_way_meter.set_imported_total(-3.4)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0004",
         value="0",
@@ -165,7 +165,7 @@ async def test_set_exported_total(virtual_energy_two_way_meter):
     """Values greater 0 should always work"""
     await virtual_energy_two_way_meter.set_exported_total(25)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0005",
         value="25",
@@ -175,7 +175,7 @@ async def test_set_exported_total(virtual_energy_two_way_meter):
     """Float values should return integer"""
     await virtual_energy_two_way_meter.set_exported_total(13.7)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0005",
         value="13",
@@ -185,7 +185,7 @@ async def test_set_exported_total(virtual_energy_two_way_meter):
     """Negative values should return 0"""
     await virtual_energy_two_way_meter.set_exported_total(-3.4)
     virtual_energy_two_way_meter._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+        device_serial="6000702DC087",
         channel_id="ch0001",
         datapoint="odp0005",
         value="0",

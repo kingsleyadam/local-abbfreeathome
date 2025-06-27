@@ -25,7 +25,7 @@ def smoke_detector(mock_api):
     parameters = {}
 
     return SmokeDetector(
-        device_id="E11244221190",
+        device_serial="E11244221190",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",
@@ -49,7 +49,7 @@ async def test_refresh_state(smoke_detector):
     await smoke_detector.refresh_state()
     assert smoke_detector.state is True
     smoke_detector._api.get_datapoint.assert_called_with(
-        device_id="E11244221190",
+        device_serial="E11244221190",
         channel_id="ch0000",
         datapoint="odp0000",
     )

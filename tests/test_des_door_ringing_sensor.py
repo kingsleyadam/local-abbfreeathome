@@ -25,7 +25,7 @@ def des_door_ringing_sensor(mock_api):
     parameters = {}
 
     return DesDoorRingingSensor(
-        device_id="0007EE9503A4",
+        device_serial="0007EE9503A4",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",

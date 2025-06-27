@@ -227,7 +227,7 @@ async def test_get_datapoint(api):
     """Test the get_datapoint function."""
     with patch.object(api, "_request", return_value=Mock()) as mock_request:
         mock_request.return_value.get.return_value = {"values": ["value1", "value2"]}
-        datapoint = await api.get_datapoint("device_id", "channel_id", "datapoint")
+        datapoint = await api.get_datapoint("device_serial", "channel_id", "datapoint")
         assert datapoint == ["value1", "value2"]
 
 
@@ -266,7 +266,7 @@ async def test_set_datapoint(api):
     with patch.object(api, "_request", return_value=Mock()) as mock_request:
         mock_request.return_value.get.return_value = {"result": "ok"}
         result = await api.set_datapoint(
-            "device_id", "channel_id", "datapoint", "value"
+            "device_serial", "channel_id", "datapoint", "value"
         )
         assert result is True
 
@@ -295,7 +295,7 @@ async def test_set_datapoint_failure(api):
     with patch.object(api, "_request", return_value=Mock()) as mock_request:
         mock_request.return_value.get.return_value = {"result": "fail"}
         with pytest.raises(SetDatapointFailureException):
-            await api.set_datapoint("device_id", "channel_id", "datapoint", "value")
+            await api.set_datapoint("device_serial", "channel_id", "datapoint", "value")
 
 
 @pytest.mark.asyncio

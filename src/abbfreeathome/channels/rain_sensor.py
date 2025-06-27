@@ -19,7 +19,7 @@ class RainSensor(Base):
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -34,7 +34,7 @@ class RainSensor(Base):
         self._state: bool | None = None
 
         super().__init__(
-            device_id,
+            device_serial,
             device_name,
             channel_id,
             channel_name,

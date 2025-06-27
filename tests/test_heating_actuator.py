@@ -27,7 +27,7 @@ def heating_actuator(mock_api):
     parameters = {}
 
     return HeatingActuator(
-        device_id="ABB289613651",
+        device_serial="ABB289613651",
         device_name="Device Name",
         channel_id="ch0002",
         channel_name="Channel Name",
@@ -49,7 +49,7 @@ async def test_set_position(heating_actuator):
     """Test to set a specific position of the HeatingActuator."""
     await heating_actuator.set_position(50)
     heating_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB289613651",
+        device_serial="ABB289613651",
         channel_id="ch0002",
         datapoint="idp0000",
         value="50",
@@ -59,7 +59,7 @@ async def test_set_position(heating_actuator):
     # Also checking lower and upper boundaries
     await heating_actuator.set_position(-1)
     heating_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB289613651",
+        device_serial="ABB289613651",
         channel_id="ch0002",
         datapoint="idp0000",
         value="0",
@@ -67,7 +67,7 @@ async def test_set_position(heating_actuator):
     assert heating_actuator.position == 0
     await heating_actuator.set_position(120)
     heating_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB289613651",
+        device_serial="ABB289613651",
         channel_id="ch0002",
         datapoint="idp0000",
         value="100",

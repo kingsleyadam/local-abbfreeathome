@@ -44,7 +44,7 @@ def cover_actuator(mock_api):
     parameters = {}
 
     return CoverActuator(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         device_name="Device Name",
         channel_id="ch0003",
         channel_name="Channel Name",
@@ -80,7 +80,7 @@ def shutter_actuator(mock_api):
     parameters = {}
 
     return ShutterActuator(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         device_name="Device Name",
         channel_id="ch0003",
         channel_name="Channel Name",
@@ -102,7 +102,7 @@ async def test_open(cover_actuator):
     """Test to open the cover."""
     await cover_actuator.open()
     cover_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0000",
         value="0",
@@ -114,7 +114,7 @@ async def test_close(cover_actuator):
     """Test to close the cover."""
     await cover_actuator.close()
     cover_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0000",
         value="1",
@@ -128,7 +128,7 @@ async def test_stop(cover_actuator):
     cover_actuator._state = CoverActuatorState.opening
     await cover_actuator.stop()
     cover_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0001",
         value="1",
@@ -178,7 +178,7 @@ async def test_set_forced_position(cover_actuator):
         cover_actuator.forced_position == CoverActuatorForcedPosition.deactivated.name
     )
     cover_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0004",
         value="0",
@@ -191,7 +191,7 @@ async def test_set_forced_position(cover_actuator):
         cover_actuator.forced_position == CoverActuatorForcedPosition.forced_open.name
     )
     cover_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0004",
         value="2",
@@ -204,7 +204,7 @@ async def test_set_forced_position(cover_actuator):
         cover_actuator.forced_position == CoverActuatorForcedPosition.forced_closed.name
     )
     cover_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0004",
         value="3",
@@ -219,7 +219,7 @@ async def test_set_position(cover_actuator):
     """Test to set a specific position of the blind."""
     await cover_actuator.set_position(50)
     cover_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0002",
         value="50",
@@ -229,7 +229,7 @@ async def test_set_position(cover_actuator):
     # Also checking lower and upper boundaries
     await cover_actuator.set_position(-1)
     cover_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0002",
         value="0",
@@ -237,7 +237,7 @@ async def test_set_position(cover_actuator):
     assert cover_actuator.position == 0
     await cover_actuator.set_position(120)
     cover_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0002",
         value="100",
@@ -250,7 +250,7 @@ async def test_set_tilt_position(shutter_actuator):
     """Test to set a specific tilt of the shutter."""
     await shutter_actuator.set_tilt_position(50)
     shutter_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0003",
         value="50",
@@ -260,7 +260,7 @@ async def test_set_tilt_position(shutter_actuator):
     # Also checking lower and upper boundaries
     await shutter_actuator.set_tilt_position(-1)
     shutter_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0003",
         value="0",
@@ -268,7 +268,7 @@ async def test_set_tilt_position(shutter_actuator):
     assert shutter_actuator.tilt_position == 0
     await shutter_actuator.set_tilt_position(120)
     shutter_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB2AC253651",
+        device_serial="ABB2AC253651",
         channel_id="ch0003",
         datapoint="idp0003",
         value="100",

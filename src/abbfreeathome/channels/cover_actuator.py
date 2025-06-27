@@ -43,7 +43,7 @@ class CoverActuator(Base):
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -62,7 +62,7 @@ class CoverActuator(Base):
         )
 
         super().__init__(
-            device_id,
+            device_serial,
             device_name,
             channel_id,
             channel_name,
@@ -167,7 +167,7 @@ class CoverActuator(Base):
             pairing=Pairing.AL_MOVE_UP_DOWN
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_move_input_id,
             value=value,
@@ -179,7 +179,7 @@ class CoverActuator(Base):
             pairing=Pairing.AL_SET_ABSOLUTE_POSITION_BLINDS_PERCENTAGE
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_position_input_id,
             value=value,
@@ -191,7 +191,7 @@ class CoverActuator(Base):
             pairing=Pairing.AL_FORCED_UP_DOWN
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_force_input_id,
             value=value,
@@ -203,7 +203,7 @@ class CoverActuator(Base):
             pairing=Pairing.AL_STOP_STEP_UP_DOWN
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_stop_input_id,
             value="1",
@@ -240,7 +240,7 @@ class ShutterActuator(CoverActuator):
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -255,7 +255,7 @@ class ShutterActuator(CoverActuator):
         self._tilt_position: int | None = None
 
         super().__init__(
-            device_id,
+            device_serial,
             device_name,
             channel_id,
             channel_name,
@@ -310,7 +310,7 @@ class ShutterActuator(CoverActuator):
             pairing=Pairing.AL_SET_ABSOLUTE_POSITION_SLATS_PERCENTAGE
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_tilt_input_id,
             value=value,

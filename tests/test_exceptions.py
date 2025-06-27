@@ -82,7 +82,10 @@ def test_set_datapoint_failure_exception():
         )
     assert str(excinfo.value) == (
         "Failed to set datapoint; "
-        "device_id: device1; channel_id: channel1; datapoint: datapoint1; value: value1"
+        "device_serial: device1; "
+        "channel_id: channel1; "
+        "datapoint: datapoint1; "
+        "value: value1"
     )
 
 

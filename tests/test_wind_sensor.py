@@ -20,7 +20,7 @@ def get_wind_sensor(mock_api):
     parameters = {"par002e": "5", "par0047": "2", "par0048": "7"}
 
     return WindSensor(
-        device_id="7EB1000021C5",
+        device_serial="7EB1000021C5",
         device_name="Device Name",
         channel_id="ch0003",
         channel_name="Channel Name",
@@ -60,7 +60,7 @@ async def test_refresh_state(wind_sensor):
     assert wind_sensor.alarm is True
     assert wind_sensor.force == 1
     wind_sensor._api.get_datapoint.assert_called_with(
-        device_id="7EB1000021C5",
+        device_serial="7EB1000021C5",
         channel_id="ch0003",
         datapoint="odp0001",
     )

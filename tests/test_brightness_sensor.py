@@ -18,7 +18,7 @@ def get_brightness_sensor(mock_api):
     parameters = {"par002b": "19998.7", "par002c": "4999.68"}
 
     return BrightnessSensor(
-        device_id="7EB1000021C5",
+        device_serial="7EB1000021C5",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",
@@ -56,7 +56,7 @@ async def test_refresh_state(brightness_sensor):
     assert brightness_sensor.state == 1.0
     assert brightness_sensor.alarm is True
     brightness_sensor._api.get_datapoint.assert_called_with(
-        device_id="7EB1000021C5",
+        device_serial="7EB1000021C5",
         channel_id="ch0000",
         datapoint="odp0000",
     )

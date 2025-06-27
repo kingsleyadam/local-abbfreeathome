@@ -44,7 +44,7 @@ class SwitchSensor(Base):
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -61,7 +61,7 @@ class SwitchSensor(Base):
         self._led: bool | None = None
 
         super().__init__(
-            device_id,
+            device_serial,
             device_name,
             channel_id,
             channel_name,
@@ -130,7 +130,7 @@ class SwitchSensor(Base):
             pairing=Pairing.AL_INFO_ON_OFF
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_input_id,
             value=value,
@@ -163,7 +163,7 @@ class SwitchSensor(Base):
 
             _datapoint = (
                 await self._api.get_datapoint(
-                    device_id=self.device_id,
+                    device_serial=self.device_serial,
                     channel_id=self.channel_id,
                     datapoint=_datapoint_id,
                 )
@@ -194,7 +194,7 @@ class DimmingSensor(SwitchSensor):
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -210,7 +210,7 @@ class DimmingSensor(SwitchSensor):
         self._dimming_sensor_state: DimmingSensorState = DimmingSensorState.unknown
 
         super().__init__(
-            device_id,
+            device_serial,
             device_name,
             channel_id,
             channel_name,

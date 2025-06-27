@@ -27,7 +27,7 @@ def des_door_opener_actuator(mock_api):
     parameters = {}
 
     return DesDoorOpenerActuator(
-        device_id="0007EE9503A4",
+        device_serial="0007EE9503A4",
         device_name="Device Name",
         channel_id="ch0040",
         channel_name="Channel Name",
@@ -50,7 +50,7 @@ async def test_lock(des_door_opener_actuator):
     await des_door_opener_actuator.lock()
     assert des_door_opener_actuator.state is False
     des_door_opener_actuator._api.set_datapoint.assert_called_with(
-        device_id="0007EE9503A4",
+        device_serial="0007EE9503A4",
         channel_id="ch0040",
         datapoint="idp0000",
         value="0",
@@ -63,7 +63,7 @@ async def test_unlock(des_door_opener_actuator):
     await des_door_opener_actuator.unlock()
     assert des_door_opener_actuator.state is True
     des_door_opener_actuator._api.set_datapoint.assert_called_with(
-        device_id="0007EE9503A4",
+        device_serial="0007EE9503A4",
         channel_id="ch0040",
         datapoint="idp0000",
         value="1",
@@ -77,7 +77,7 @@ async def test_refresh_state(des_door_opener_actuator):
     await des_door_opener_actuator.refresh_state()
     assert des_door_opener_actuator.state is True
     des_door_opener_actuator._api.get_datapoint.assert_called_with(
-        device_id="0007EE9503A4",
+        device_serial="0007EE9503A4",
         channel_id="ch0040",
         datapoint="odp0000",
     )

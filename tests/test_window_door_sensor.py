@@ -26,7 +26,7 @@ def window_door_sensor(mock_api):
     parameters = {"par0010": "2"}
 
     return WindowDoorSensor(
-        device_id="ABB28CBC3651",
+        device_serial="ABB28CBC3651",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",
@@ -51,7 +51,7 @@ async def test_refresh_state(window_door_sensor):
     await window_door_sensor.refresh_state()
     assert window_door_sensor.state is True
     window_door_sensor._api.get_datapoint.assert_called_with(
-        device_id="ABB28CBC3651",
+        device_serial="ABB28CBC3651",
         channel_id="ch0000",
         datapoint="odp0000",
     )

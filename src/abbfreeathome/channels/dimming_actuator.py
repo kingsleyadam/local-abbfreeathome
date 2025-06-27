@@ -34,7 +34,7 @@ class DimmingActuator(Base):
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -53,7 +53,7 @@ class DimmingActuator(Base):
         )
 
         super().__init__(
-            device_id,
+            device_serial,
             device_name,
             channel_id,
             channel_name,
@@ -147,7 +147,7 @@ class DimmingActuator(Base):
             pairing=Pairing.AL_SWITCH_ON_OFF
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_switch_input_id,
             value=value,
@@ -159,7 +159,7 @@ class DimmingActuator(Base):
             pairing=Pairing.AL_ABSOLUTE_SET_VALUE_CONTROL
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_brightness_input_id,
             value=value,
@@ -171,7 +171,7 @@ class DimmingActuator(Base):
             pairing=Pairing.AL_FORCED
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_force_input_id,
             value=value,
@@ -196,7 +196,7 @@ class ColorTemperatureActuator(DimmingActuator):
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -211,7 +211,7 @@ class ColorTemperatureActuator(DimmingActuator):
         self._color_temperature: int | None = None
 
         super().__init__(
-            device_id,
+            device_serial,
             device_name,
             channel_id,
             channel_name,
@@ -276,7 +276,7 @@ class ColorTemperatureActuator(DimmingActuator):
             pairing=Pairing.AL_COLOR_TEMPERATURE
         )
         return await self._api.set_datapoint(
-            device_id=self._device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_color_temp_id,
             value=value,

@@ -28,7 +28,7 @@ def force_on_off_sensor(mock_api):
     parameters = {}
 
     return ForceOnOffSensor(
-        device_id="ABB7F5923D74",
+        device_serial="ABB7F5923D74",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",
@@ -52,7 +52,7 @@ async def test_refresh_state(force_on_off_sensor):
     await force_on_off_sensor.refresh_state()
     assert force_on_off_sensor.state == ForceOnOffSensorState.off.name
     force_on_off_sensor._api.get_datapoint.assert_called_with(
-        device_id="ABB7F5923D74",
+        device_serial="ABB7F5923D74",
         channel_id="ch0000",
         datapoint="odp0005",
     )

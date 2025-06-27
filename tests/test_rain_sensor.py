@@ -20,7 +20,7 @@ def get_rain_sensor(mock_api):
     parameters = {"par0049": "1", "par0047": "2", "par0048": "7"}
 
     return RainSensor(
-        device_id="7EB1000021C5",
+        device_serial="7EB1000021C5",
         device_name="Device Name",
         channel_id="ch0001",
         channel_name="Channel Name",
@@ -56,7 +56,7 @@ async def test_refresh_state(rain_sensor):
     await rain_sensor.refresh_state()
     assert rain_sensor.state is True
     rain_sensor._api.get_datapoint.assert_called_with(
-        device_id="7EB1000021C5",
+        device_serial="7EB1000021C5",
         channel_id="ch0001",
         datapoint="odp0000",
     )

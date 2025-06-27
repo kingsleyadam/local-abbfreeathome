@@ -24,7 +24,7 @@ class Base:
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -36,7 +36,7 @@ class Base:
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home Base class."""
-        self._device_id = device_id
+        self._device_serial = device_serial
         self._device_name = device_name
         self._channel_id = channel_id
         self._channel_name = channel_name
@@ -52,9 +52,9 @@ class Base:
         self._refresh_state_from_datapoints()
 
     @property
-    def device_id(self) -> str:
-        """Get the device id."""
-        return self._device_id
+    def device_serial(self) -> str:
+        """Get the device serial."""
+        return self._device_serial
 
     @property
     def device_name(self) -> str:
@@ -84,7 +84,7 @@ class Base:
     @property
     def is_virtual(self) -> bool | None:
         """Get the virtual-status of the device."""
-        return self.device_id[0:4] == "6000"
+        return self.device_serial[0:4] == "6000"
 
     def get_input_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
         """Get the channel input by pairing id."""
@@ -93,7 +93,7 @@ class Base:
                 return _input_id, _input.get("value")
 
         raise InvalidDeviceChannelPairing(
-            self.device_id, self.channel_id, pairing.value
+            self.device_serial, self.channel_id, pairing.value
         )
 
     def get_output_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
@@ -103,7 +103,7 @@ class Base:
                 return _output_id, _output.get("value")
 
         raise InvalidDeviceChannelPairing(
-            self.device_id, self.channel_id, pairing.value
+            self.device_serial, self.channel_id, pairing.value
         )
 
     def get_channel_parameter(self, parameter: Parameter) -> tuple[str, Any]:
@@ -114,7 +114,7 @@ class Base:
                 return _parameter_id, _parameter_value
 
         raise InvalidDeviceChannelParameter(
-            self.device_id, self.channel_id, parameter.name
+            self.device_serial, self.channel_id, parameter.name
         )
 
     def update_channel(self, datapoint_key: str, datapoint_value: str):
@@ -169,7 +169,7 @@ class Base:
 
             _datapoint = (
                 await self._api.get_datapoint(
-                    device_id=self.device_id,
+                    device_serial=self.device_serial,
                     channel_id=self.channel_id,
                     datapoint=_datapoint_id,
                 )

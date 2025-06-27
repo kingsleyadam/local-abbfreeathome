@@ -26,7 +26,7 @@ def blind_sensor(mock_api):
     parameters = {}
 
     return BlindSensor(
-        device_id="ABB700DAD681",
+        device_serial="ABB700DAD681",
         device_name="Device Name",
         channel_id="ch0003",
         channel_name="Channel Name",
@@ -50,7 +50,7 @@ async def test_refresh_state(blind_sensor):
     await blind_sensor.refresh_state()
     assert blind_sensor.state == BlindSensorState.step_down.name
     blind_sensor._api.get_datapoint.assert_called_with(
-        device_id="ABB700DAD681",
+        device_serial="ABB700DAD681",
         channel_id="ch0003",
         datapoint="odp0003",
     )

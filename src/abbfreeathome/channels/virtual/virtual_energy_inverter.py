@@ -23,7 +23,7 @@ class VirtualEnergyInverter(Base):
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -40,7 +40,7 @@ class VirtualEnergyInverter(Base):
         self._imported_total: int | None = None
 
         super().__init__(
-            device_id,
+            device_serial,
             device_name,
             channel_id,
             channel_name,
@@ -134,7 +134,7 @@ class VirtualEnergyInverter(Base):
             pairing=Pairing.AL_MEASURED_CURRENT_POWER_CONSUMED
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,
@@ -146,7 +146,7 @@ class VirtualEnergyInverter(Base):
             pairing=Pairing.AL_MEASURED_IMPORTED_ENERGY_TODAY
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,
@@ -158,7 +158,7 @@ class VirtualEnergyInverter(Base):
             pairing=Pairing.AL_MEASURED_TOTAL_ENERGY_IMPORTED
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,

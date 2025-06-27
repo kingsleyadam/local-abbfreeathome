@@ -28,7 +28,7 @@ def virtual_temperature_sensor(mock_api):
     parameters = {}
 
     return VirtualTemperatureSensor(
-        device_id="6000A0EA2CF4",
+        device_serial="6000A0EA2CF4",
         device_name="Device Name",
         channel_id="ch0002",
         channel_name="Channel Name",
@@ -44,7 +44,7 @@ async def test_turn_on(virtual_temperature_sensor):
     """Test to activate the sensor."""
     await virtual_temperature_sensor.turn_on()
     virtual_temperature_sensor._api.set_datapoint.assert_called_with(
-        device_id="6000A0EA2CF4",
+        device_serial="6000A0EA2CF4",
         channel_id="ch0002",
         datapoint="odp0000",
         value="1",
@@ -57,7 +57,7 @@ async def test_turn_off(virtual_temperature_sensor):
     """Test to deactivate the sensor."""
     await virtual_temperature_sensor.turn_off()
     virtual_temperature_sensor._api.set_datapoint.assert_called_with(
-        device_id="6000A0EA2CF4",
+        device_serial="6000A0EA2CF4",
         channel_id="ch0002",
         datapoint="odp0000",
         value="0",
@@ -70,7 +70,7 @@ async def test_set_temperature(virtual_temperature_sensor):
     """Test to set temperature of the sensor."""
     await virtual_temperature_sensor.set_temperature(-15.6)
     virtual_temperature_sensor._api.set_datapoint.assert_called_with(
-        device_id="6000A0EA2CF4",
+        device_serial="6000A0EA2CF4",
         channel_id="ch0002",
         datapoint="odp0001",
         value="-15.6",

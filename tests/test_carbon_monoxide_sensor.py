@@ -25,7 +25,7 @@ def carbon_monoxide_sensor(mock_api):
     parameters = {}
 
     return CarbonMonoxideSensor(
-        device_id="E11253502766",
+        device_serial="E11253502766",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",
@@ -49,7 +49,7 @@ async def test_refresh_state(carbon_monoxide_sensor):
     await carbon_monoxide_sensor.refresh_state()
     assert carbon_monoxide_sensor.state is True
     carbon_monoxide_sensor._api.get_datapoint.assert_called_with(
-        device_id="E11253502766",
+        device_serial="E11253502766",
         channel_id="ch0000",
         datapoint="odp0000",
     )

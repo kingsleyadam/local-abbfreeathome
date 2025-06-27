@@ -19,7 +19,7 @@ def get_temperature_sensor(mock_api):
     parameters = {"par002d": "4", "par0047": "7", "par0048": "7"}
 
     return TemperatureSensor(
-        device_id="7EB1000021C5",
+        device_serial="7EB1000021C5",
         device_name="Device Name",
         channel_id="ch0002",
         channel_name="Channel Name",
@@ -57,7 +57,7 @@ async def test_refresh_state(temperature_sensor):
     assert temperature_sensor.state == 1.0
     assert temperature_sensor.alarm is True
     temperature_sensor._api.get_datapoint.assert_called_with(
-        device_id="7EB1000021C5",
+        device_serial="7EB1000021C5",
         channel_id="ch0002",
         datapoint="odp0000",
     )

@@ -31,7 +31,7 @@ class SwitchActuator(Base):
 
     def __init__(
         self,
-        device_id: str,
+        device_serial: str,
         device_name: str,
         channel_id: str,
         channel_name: str,
@@ -49,7 +49,7 @@ class SwitchActuator(Base):
         )
 
         super().__init__(
-            device_id,
+            device_serial,
             device_name,
             channel_id,
             channel_name,
@@ -122,7 +122,7 @@ class SwitchActuator(Base):
             pairing=Pairing.AL_SWITCH_ON_OFF
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_switch_input_id,
             value=value,
@@ -134,7 +134,7 @@ class SwitchActuator(Base):
             pairing=Pairing.AL_FORCED
         )
         return await self._api.set_datapoint(
-            device_id=self.device_id,
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_force_input_id,
             value=value,

@@ -27,7 +27,7 @@ def virtual_window_door_sensor(mock_api):
     parameters = {}
 
     return VirtualWindowDoorSensor(
-        device_id="60002AE2F1BE",
+        device_serial="60002AE2F1BE",
         device_name="Device Name",
         channel_id="ch0000",
         channel_name="Channel Name",
@@ -43,7 +43,7 @@ async def test_turn_on(virtual_window_door_sensor):
     """Test to activate the sensor."""
     await virtual_window_door_sensor.turn_on()
     virtual_window_door_sensor._api.set_datapoint.assert_called_with(
-        device_id="60002AE2F1BE",
+        device_serial="60002AE2F1BE",
         channel_id="ch0000",
         datapoint="odp000c",
         value="1",
@@ -56,7 +56,7 @@ async def test_turn_off(virtual_window_door_sensor):
     """Test to deactivate the sensor."""
     await virtual_window_door_sensor.turn_off()
     virtual_window_door_sensor._api.set_datapoint.assert_called_with(
-        device_id="60002AE2F1BE",
+        device_serial="60002AE2F1BE",
         channel_id="ch0000",
         datapoint="odp000c",
         value="0",

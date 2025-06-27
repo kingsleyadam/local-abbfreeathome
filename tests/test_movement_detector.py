@@ -23,7 +23,7 @@ def get_movement_detector(type: str, mock_api):
         outputs.pop("odp0002")
 
     return MovementDetector(
-        device_id="ABB7F500E17A",
+        device_serial="ABB7F500E17A",
         device_name="Device Name",
         channel_id="ch0003",
         channel_name="Channel Name",
@@ -74,7 +74,7 @@ async def test_refresh_state(movement_detector_indoor):
     assert movement_detector_indoor.state is True
     assert movement_detector_indoor.brightness == 1.0
     movement_detector_indoor._api.get_datapoint.assert_called_with(
-        device_id="ABB7F500E17A",
+        device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="odp0000",
     )
