@@ -158,48 +158,48 @@ class FreeAtHome:
     async def _load_devices(self):
         """Load all devices into the devices object."""
         self.clear_devices()
-        config = await self.get_config()
 
-        for device_serial, device_data in config.get("devices", {}).items():
+        _config = await self.get_config()
+        for _serial, _data in _config.get("devices", {}).items():
             # Convert interface string to Interface enum
-            _interface_value = device_data.get("interface")
+            _interface_value = _data.get("interface")
 
             # Any devices that start with "6000" should be considered virtual
-            if device_serial.startswith("6000"):
+            if _serial.startswith("6000"):
                 _interface_value = "VD"
 
-            interface_enum = Interface.from_string(_interface_value)
+            _interface = Interface.from_string(_interface_value)
 
             # Get floor and room names
-            floor_id = device_data.get("floor")
-            room_id = device_data.get("room")
-            floor_name = await self.get_floor_name(floor_id) if floor_id else None
-            room_name = (
-                await self.get_room_name(floor_id, room_id)
-                if floor_id and room_id
+            _floor_id = _data.get("floor")
+            _room_id = _data.get("room")
+            _floor_name = await self.get_floor_name(_floor_id) if _floor_id else None
+            _room_name = (
+                await self.get_room_name(_floor_id, _room_id)
+                if _floor_id and _room_id
                 else None
             )
 
             # Extract device attributes from the configuration
             device = Device(
-                device_serial=device_serial,
-                device_id=device_data.get("deviceId", ""),
-                display_name=device_data.get("displayName", ""),
-                interface=interface_enum,
-                unresponsive=device_data.get("unresponsive", False),
-                unresponsive_counter=device_data.get("unresponsiveCounter", 0),
-                defect=device_data.get("defect", False),
-                floor=floor_id,
-                room=room_id,
-                floor_name=floor_name,
-                room_name=room_name,
-                device_reboots=device_data.get("deviceReboots"),
-                native_id=device_data.get("nativeId"),
-                parameters=device_data.get("parameters", {}),
-                channels=device_data.get("channels", {}),
+                device_serial=_serial,
+                device_id=_data.get("deviceId", ""),
+                display_name=_data.get("displayName", ""),
+                interface=_interface,
+                unresponsive=_data.get("unresponsive", False),
+                unresponsive_counter=_data.get("unresponsiveCounter", 0),
+                defect=_data.get("defect", False),
+                floor=_floor_id,
+                room=_room_id,
+                floor_name=_floor_name,
+                room_name=_room_name,
+                device_reboots=_data.get("deviceReboots"),
+                native_id=_data.get("nativeId"),
+                parameters=_data.get("parameters", {}),
+                channels=_data.get("channels", {}),
             )
 
-            self._devices[device_serial] = device
+            self._devices[_serial] = device
 
     async def _load_channels(self):
         """Load all of the channels into the channels object."""
