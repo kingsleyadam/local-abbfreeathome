@@ -102,7 +102,7 @@ class VirtualSwitchActuator(Base):
             value=value,
         )
 
-    def update_device(self, datapoint_key: str, datapoint_value: str):
+    def update_channel(self, datapoint_key: str, datapoint_value: str):
         """Update the device state."""
         _LOGGER.info(
             "%s received updated data: %s: %s",

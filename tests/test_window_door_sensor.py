@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.window_door_sensor import WindowDoorSensor
+from src.abbfreeathome.channels.window_door_sensor import WindowDoorSensor
 
 
 @pytest.fixture

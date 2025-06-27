@@ -3,8 +3,8 @@
 from .api import FreeAtHomeApi
 from .bin.function import Function
 from .bin.interface import Interface
-from .const import FUNCTION_DEVICE_MAPPING, FUNCTION_VIRTUAL_DEVICE_MAPPING
-from .devices.base import Base
+from .channels.base import Base
+from .const import FUNCTION_CHANNEL_MAPPING, FUNCTION_VIRTUAL_CHANNEL_MAPPING
 
 
 class FreeAtHome:
@@ -14,22 +14,22 @@ class FreeAtHome:
         self,
         api: FreeAtHomeApi,
         interfaces: list[Interface] | None = None,
-        device_classes: list[Base] | None = None,
+        channel_classes: list[type[Base]] | None = None,
         include_orphan_channels: bool = False,
     ) -> None:
         """Initialize the FreeAtHome class."""
         self._config: dict | None = None
-        self._devices: dict[str, Base] = {}
+        self._channels: dict[str, Base] = {}
 
         self.api: FreeAtHomeApi = api
 
-        self._interfaces: list[Interface] = interfaces
-        self._device_classes: list[Base] = device_classes
+        self._interfaces: list[Interface] | None = interfaces
+        self._channel_classes: list[type[Base]] | None = channel_classes
         self._include_orphan_channels: bool = include_orphan_channels
 
-    def clear_devices(self):
-        """Clear all devices in the device list."""
-        self._devices.clear()
+    def clear_channels(self):
+        """Clear all channels in the channels list."""
+        self._channels.clear()
 
     async def get_config(self, refresh: bool = False) -> dict:
         """Get the Free@Home Configuration."""
@@ -38,21 +38,21 @@ class FreeAtHome:
 
         return self._config
 
-    def get_devices(self) -> dict[str, Base]:
-        """Get the list of devices."""
-        return self._devices
+    def get_channels(self) -> dict[str, Base]:
+        """Get the list of channels."""
+        return self._channels
 
-    def get_devices_by_class(self, device_class: Base) -> list[Base]:
-        """Get the list of devices by class."""
+    def get_channels_by_class(self, channel_class: Base) -> list[Base]:
+        """Get the list of channels by class."""
         return [
             _device
-            for _device in self._devices.values()
-            if type(_device) is device_class
+            for _device in self._channels.values()
+            if type(_device) is channel_class
         ]
 
-    async def get_devices_by_function(self, function: Function) -> list[dict]:
-        """Get the list of devices by function."""
-        _devices = []
+    async def get_channels_by_function(self, function: Function) -> list[dict]:
+        """Get the list of channels by function."""
+        _channels = []
         for _device_key, _device in (await self.get_config()).get("devices").items():
             is_virtual = False
             if _device_key[0:4] == "6000":
@@ -82,7 +82,7 @@ class FreeAtHome:
                     if _channel_name in ["Ⓐ", "ⓑ"] or _channel_name is None:
                         _channel_name = _device.get("displayName")
 
-                    _devices.append(
+                    _channels.append(
                         {
                             "device_id": _device_key,
                             "device_name": _device.get("displayName"),
@@ -109,7 +109,7 @@ class FreeAtHome:
                         }
                     )
 
-        return _devices
+        return _channels
 
     async def get_floors(self) -> dict:
         """Get the floors from the configuration."""
@@ -138,55 +138,59 @@ class FreeAtHome:
             .get("name")
         )
 
-    async def load_devices(self):
-        """Load all of the devices into the devices object."""
-        self.clear_devices()
-        for _virtual_device in (False, True):
-            for _function, _device_class in self._get_function_to_device_mapping(
-                virtual_device=_virtual_device
+    async def load(self):
+        """Load from the Free@Home api into the FreeAtHome class."""
+        await self.load_channels()
+
+    async def load_channels(self):
+        """Load all of the channels into the channels object."""
+        self.clear_channels()
+        for _virtual_channel in (False, True):
+            for _function, _function_class in self._get_function_to_channel_mapping(
+                virtual_channel=_virtual_channel
             ).items():
-                await self._load_devices_by_function(
+                await self._load_channels_by_function(
                     function=_function,
-                    device_class=_device_class,
-                    virtual_device=_virtual_device,
+                    channel_class=_function_class,
+                    virtual_channel=_virtual_channel,
                 )
 
-    def unload_device_by_device_serial(self, device_serial: str):
-        """Unload all devices by device serial id."""
+    def unload_channel_by_channel_serial(self, channel_serial: str):
+        """Unload all channels by channel serial id."""
         for key in [
-            _device
-            for _device in self._devices
-            if _device.split("/")[0] == device_serial
+            _channel
+            for _channel in self._channels
+            if _channel.split("/")[0] == channel_serial
         ]:
-            self._devices.pop(key)
+            self._channels.pop(key)
 
-    async def _load_devices_by_function(
+    async def _load_channels_by_function(
         self,
         function: Function,
-        device_class: Base,
-        virtual_device: bool = False,
+        channel_class: Base,
+        virtual_channel: bool = False,
     ):
-        _devices = await self.get_devices_by_function(function)
+        _channels = await self.get_channels_by_function(function)
 
-        for _device in _devices:
-            if (_device.get("virtual") is False and virtual_device) or (
-                _device.get("virtual") and not virtual_device
+        for _channel in _channels:
+            if (_channel.get("virtual") is False and virtual_channel) or (
+                _channel.get("virtual") and not virtual_channel
             ):
                 continue
 
-            self._devices[f"{_device.get('device_id')}/{_device.get('channel_id')}"] = (
-                device_class(
-                    device_id=_device.get("device_id"),
-                    device_name=_device.get("device_name"),
-                    channel_id=_device.get("channel_id"),
-                    channel_name=_device.get("channel_name"),
-                    inputs=_device.get("inputs"),
-                    outputs=_device.get("outputs"),
-                    parameters=_device.get("parameters"),
-                    api=self.api,
-                    floor_name=_device.get("floor_name"),
-                    room_name=_device.get("room_name"),
-                )
+            self._channels[
+                f"{_channel.get('device_id')}/{_channel.get('channel_id')}"
+            ] = channel_class(
+                device_id=_channel.get("device_id"),
+                device_name=_channel.get("device_name"),
+                channel_id=_channel.get("channel_id"),
+                channel_name=_channel.get("channel_name"),
+                inputs=_channel.get("inputs"),
+                outputs=_channel.get("outputs"),
+                parameters=_channel.get("parameters"),
+                api=self.api,
+                floor_name=_channel.get("floor_name"),
+                room_name=_channel.get("room_name"),
             )
 
     async def ws_close(self):
@@ -194,34 +198,34 @@ class FreeAtHome:
         await self.api.ws_close()
 
     async def ws_listen(self):
-        """Listen on the websocket for updates to devices."""
-        await self.api.ws_listen(callback=self.update_device)
+        """Listen on the websocket for updates to Free@Home objects."""
+        await self.api.ws_listen(callback=self.update)
 
-    async def update_device(self, data: dict):
-        """Update device based on websocket data."""
+    async def update(self, data: dict):
+        """Update channel based on websocket data."""
         for _datapoint_key, _datapoint_value in data.get("datapoints").items():
             _unique_id = "/".join(_datapoint_key.split("/")[:-1])
             try:
-                _device = self._devices[_unique_id]
-                _device.update_device(_datapoint_key, _datapoint_value)
+                _channel = self._channels[_unique_id]
+                _channel.update_channel(_datapoint_key, _datapoint_value)
             except KeyError:
                 continue
 
-    def _get_function_to_device_mapping(
-        self, virtual_device: bool = False
+    def _get_function_to_channel_mapping(
+        self, virtual_channel: bool = False
     ) -> dict[Function, Base]:
-        _device_mapping = (
-            FUNCTION_VIRTUAL_DEVICE_MAPPING
-            if virtual_device
-            else FUNCTION_DEVICE_MAPPING
+        _channel_mapping = (
+            FUNCTION_VIRTUAL_CHANNEL_MAPPING
+            if virtual_channel
+            else FUNCTION_CHANNEL_MAPPING
         )
 
         return (
-            _device_mapping
-            if not self._device_classes
+            _channel_mapping
+            if not self._channel_classes
             else {
                 key: value
-                for key, value in _device_mapping.items()
-                if value in self._device_classes
+                for key, value in _channel_mapping.items()
+                if value in self._channel_classes
             }
         )

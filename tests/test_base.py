@@ -7,7 +7,7 @@ import pytest
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.bin.parameter import Parameter
-from src.abbfreeathome.devices.base import Base
+from src.abbfreeathome.channels.base import Base
 from src.abbfreeathome.exceptions import (
     InvalidDeviceChannelPairing,
     InvalidDeviceChannelParameter,
@@ -86,16 +86,16 @@ def test_get_output_by_pairing(base_instance):
         base_instance.get_output_by_pairing(Pairing.AL_HSV)
 
 
-def test_get_device_parameter(base_instance):
-    """Test the get_device_parameter function."""
-    parameter_id, value = base_instance.get_device_parameter(
+def test_get_channel_parameter(base_instance):
+    """Test the get_channel_parameter function."""
+    parameter_id, value = base_instance.get_channel_parameter(
         Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_COOLEST
     )
     assert parameter_id == "par00f5"
     assert value == "6500"
 
     with pytest.raises(InvalidDeviceChannelParameter):
-        base_instance.get_device_parameter(Parameter.PID_DIMMER_SWITCH_ON_MODE)
+        base_instance.get_channel_parameter(Parameter.PID_DIMMER_SWITCH_ON_MODE)
 
 
 def test_register_callback(base_instance):
@@ -127,4 +127,4 @@ def test_remove_callback(base_instance):
 def test_update_device(base_instance):
     """Test when input-datapoint is provided."""
 
-    base_instance.update_device("AL_SWITCH_ON_OFF/idp0000", "1")
+    base_instance.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")

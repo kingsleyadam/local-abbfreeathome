@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.cover_actuator import (
+from src.abbfreeathome.channels.cover_actuator import (
     CoverActuator,
     CoverActuatorForcedPosition,
     CoverActuatorState,

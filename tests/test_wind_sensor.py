@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.wind_sensor import WindSensor
+from src.abbfreeathome.channels.wind_sensor import WindSensor
 
 
 def get_wind_sensor(mock_api):

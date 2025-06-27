@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.rain_sensor import RainSensor
+from src.abbfreeathome.channels.rain_sensor import RainSensor
 
 
 def get_rain_sensor(mock_api):

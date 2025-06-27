@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.temperature_sensor import TemperatureSensor
+from src.abbfreeathome.channels.temperature_sensor import TemperatureSensor
 
 
 def get_temperature_sensor(mock_api):

@@ -1,42 +1,42 @@
 """Constants for the FreeAtHome package."""
 
 from .bin.function import Function
-from .devices.base import Base
-from .devices.blind_sensor import BlindSensor
-from .devices.brightness_sensor import BrightnessSensor
-from .devices.carbon_monoxide_sensor import CarbonMonoxideSensor
-from .devices.cover_actuator import (
+from .channels.base import Base
+from .channels.blind_sensor import BlindSensor
+from .channels.brightness_sensor import BrightnessSensor
+from .channels.carbon_monoxide_sensor import CarbonMonoxideSensor
+from .channels.cover_actuator import (
     AtticWindowActuator,
     AwningActuator,
     BlindActuator,
     ShutterActuator,
 )
-from .devices.des_door_opener_actuator import DesDoorOpenerActuator
-from .devices.des_door_ringing_sensor import DesDoorRingingSensor
-from .devices.dimming_actuator import ColorTemperatureActuator, DimmingActuator
-from .devices.force_on_off_sensor import ForceOnOffSensor
-from .devices.heating_actuator import HeatingActuator
-from .devices.movement_detector import MovementDetector
-from .devices.rain_sensor import RainSensor
-from .devices.room_temperature_controller import RoomTemperatureController
-from .devices.smoke_detector import SmokeDetector
-from .devices.switch_actuator import SwitchActuator
-from .devices.switch_sensor import DimmingSensor, SwitchSensor
-from .devices.temperature_sensor import TemperatureSensor
-from .devices.trigger import Trigger
-from .devices.virtual.virtual_brightness_sensor import VirtualBrightnessSensor
-from .devices.virtual.virtual_energy_battery import VirtualEnergyBattery
-from .devices.virtual.virtual_energy_inverter import VirtualEnergyInverter
-from .devices.virtual.virtual_energy_two_way_meter import VirtualEnergyTwoWayMeter
-from .devices.virtual.virtual_rain_sensor import VirtualRainSensor
-from .devices.virtual.virtual_switch_actuator import VirtualSwitchActuator
-from .devices.virtual.virtual_temperature_sensor import VirtualTemperatureSensor
-from .devices.virtual.virtual_wind_sensor import VirtualWindSensor
-from .devices.virtual.virtual_window_door_sensor import VirtualWindowDoorSensor
-from .devices.wind_sensor import WindSensor
-from .devices.window_door_sensor import WindowDoorSensor
+from .channels.des_door_opener_actuator import DesDoorOpenerActuator
+from .channels.des_door_ringing_sensor import DesDoorRingingSensor
+from .channels.dimming_actuator import ColorTemperatureActuator, DimmingActuator
+from .channels.force_on_off_sensor import ForceOnOffSensor
+from .channels.heating_actuator import HeatingActuator
+from .channels.movement_detector import MovementDetector
+from .channels.rain_sensor import RainSensor
+from .channels.room_temperature_controller import RoomTemperatureController
+from .channels.smoke_detector import SmokeDetector
+from .channels.switch_actuator import SwitchActuator
+from .channels.switch_sensor import DimmingSensor, SwitchSensor
+from .channels.temperature_sensor import TemperatureSensor
+from .channels.trigger import Trigger
+from .channels.virtual.virtual_brightness_sensor import VirtualBrightnessSensor
+from .channels.virtual.virtual_energy_battery import VirtualEnergyBattery
+from .channels.virtual.virtual_energy_inverter import VirtualEnergyInverter
+from .channels.virtual.virtual_energy_two_way_meter import VirtualEnergyTwoWayMeter
+from .channels.virtual.virtual_rain_sensor import VirtualRainSensor
+from .channels.virtual.virtual_switch_actuator import VirtualSwitchActuator
+from .channels.virtual.virtual_temperature_sensor import VirtualTemperatureSensor
+from .channels.virtual.virtual_wind_sensor import VirtualWindSensor
+from .channels.virtual.virtual_window_door_sensor import VirtualWindowDoorSensor
+from .channels.wind_sensor import WindSensor
+from .channels.window_door_sensor import WindowDoorSensor
 
-FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
+FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_ATTIC_WINDOW_ACTUATOR: AtticWindowActuator,
     Function.FID_AWNING_ACTUATOR: AwningActuator,
     Function.FID_BLIND_ACTUATOR: BlindActuator,
@@ -122,7 +122,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_WINDOW_DOOR_SENSOR: WindowDoorSensor,
 }
 
-FUNCTION_VIRTUAL_DEVICE_MAPPING: dict[Function, Base] = {
+FUNCTION_VIRTUAL_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_BRIGHTNESS_SENSOR: VirtualBrightnessSensor,
     Function.FID_ENERGY_BATTERY: VirtualEnergyBattery,
     Function.FID_ENERGY_INVERTER: VirtualEnergyInverter,

@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.virtual.virtual_window_door_sensor import (
+from src.abbfreeathome.channels.virtual.virtual_window_door_sensor import (
     VirtualWindowDoorSensor,
 )
 
@@ -75,12 +75,12 @@ def test_update_device(virtual_window_door_sensor):
         callback_attribute="state", callback=test_callback
     )
 
-    virtual_window_door_sensor.update_device("AL_SWITCH_ON_OFF/odp000c", "1")
+    virtual_window_door_sensor.update_channel("AL_SWITCH_ON_OFF/odp000c", "1")
     assert virtual_window_door_sensor.state is True
 
-    virtual_window_door_sensor.update_device("AL_SWITCH_ON_OFF/odp000c", "0")
+    virtual_window_door_sensor.update_channel("AL_SWITCH_ON_OFF/odp000c", "0")
     assert virtual_window_door_sensor.state is False
 
     # Test scenario where websocket sends update not relevant to the state.
-    virtual_window_door_sensor.update_device("AL_SWITCH_ON_OFF/odp000d", "1")
+    virtual_window_door_sensor.update_channel("AL_SWITCH_ON_OFF/odp000d", "1")
     assert virtual_window_door_sensor.state is False

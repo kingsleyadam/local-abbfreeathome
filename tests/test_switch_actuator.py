@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.switch_actuator import (
+from src.abbfreeathome.channels.switch_actuator import (
     SwitchActuator,
     SwitchActuatorForcedPosition,
 )
@@ -146,12 +146,12 @@ def test_update_device(switch_actuator):
         callback_attribute="state", callback=test_callback
     )
 
-    switch_actuator.update_device("AL_INFO_ON_OFF/odp0000", "1")
+    switch_actuator.update_channel("AL_INFO_ON_OFF/odp0000", "1")
     assert switch_actuator.state is True
 
-    switch_actuator.update_device("AL_INFO_ON_OFF/odp0000", "0")
+    switch_actuator.update_channel("AL_INFO_ON_OFF/odp0000", "0")
     assert switch_actuator.state is False
 
     # Test scenario where websocket sends update not relevant to the state.
-    switch_actuator.update_device("AL_INFO_ON_OFF/odp0004", "1")
+    switch_actuator.update_channel("AL_INFO_ON_OFF/odp0004", "1")
     assert switch_actuator.state is False

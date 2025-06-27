@@ -106,7 +106,7 @@ class Base:
             self.device_id, self.channel_id, pairing.value
         )
 
-    def get_device_parameter(self, parameter: Parameter) -> tuple[str, Any]:
+    def get_channel_parameter(self, parameter: Parameter) -> tuple[str, Any]:
         """Get the channel parameter value by its name."""
         for _parameter_id, _parameter_value in self._parameters.items():
             _parameter_id_int = int(_parameter_id.lstrip("par"), 16)
@@ -117,7 +117,7 @@ class Base:
             self.device_id, self.channel_id, parameter.name
         )
 
-    def update_device(self, datapoint_key: str, datapoint_value: str):
+    def update_channel(self, datapoint_key: str, datapoint_value: str):
         """Update the device state."""
         _LOGGER.info(
             "%s received updated data: %s: %s",

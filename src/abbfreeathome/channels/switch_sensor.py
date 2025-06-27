@@ -114,7 +114,7 @@ class SwitchSensor(Base):
             return "state"
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             try:
-                _, _parameter_value = self.get_device_parameter(
+                _, _parameter_value = self.get_channel_parameter(
                     parameter=Parameter.PID_LED_OPERATION_MODE
                 )
                 if _parameter_value == "2":
@@ -136,9 +136,9 @@ class SwitchSensor(Base):
             value=value,
         )
 
-    def update_device(self, datapoint_key, datapoint_value):
+    def update_channel(self, datapoint_key, datapoint_value):
         """Update the device state."""
-        super().update_device(datapoint_key, datapoint_value)
+        super().update_channel(datapoint_key, datapoint_value)
         _callback_attribute = None
         _io_key = datapoint_key.split("/")[-1]
 

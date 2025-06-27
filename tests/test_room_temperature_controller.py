@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.room_temperature_controller import (
+from src.abbfreeathome.channels.room_temperature_controller import (
     RoomTemperatureController,
 )
 
@@ -229,8 +229,8 @@ def test_update_device(room_temperature_controller):
         callback_attribute="state", callback=test_callback
     )
 
-    room_temperature_controller.update_device("AL_CONTROLLER_ON_OFF/odp0008", "0")
+    room_temperature_controller.update_channel("AL_CONTROLLER_ON_OFF/odp0008", "0")
     assert room_temperature_controller.state is False
 
-    room_temperature_controller.update_device("AL_CONTROLLER_ON_OFF/odp0008", "1")
+    room_temperature_controller.update_channel("AL_CONTROLLER_ON_OFF/odp0008", "1")
     assert room_temperature_controller.state is True

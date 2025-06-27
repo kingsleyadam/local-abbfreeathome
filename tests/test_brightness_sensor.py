@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.brightness_sensor import BrightnessSensor
+from src.abbfreeathome.channels.brightness_sensor import BrightnessSensor
 
 
 def get_brightness_sensor(mock_api):

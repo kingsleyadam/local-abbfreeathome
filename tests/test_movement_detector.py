@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.movement_detector import MovementDetector
+from src.abbfreeathome.channels.movement_detector import MovementDetector
 
 
 def get_movement_detector(type: str, mock_api):

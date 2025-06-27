@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.force_on_off_sensor import (
+from src.abbfreeathome.channels.force_on_off_sensor import (
     ForceOnOffSensor,
     ForceOnOffSensorState,
 )
