@@ -342,59 +342,62 @@ Here is example code that'll output all of the devices in your Free@Home setup. 
 ```python
 import asyncio
 
-from abbfreeathome import FreeAtHome, FreeAtHomeApi
-from abbfreeathome.bin.interface import Interface
+from src.abbfreeathome import FreeAtHome, FreeAtHomeApi
+from src.abbfreeathome.bin.interface import Interface
 
 
 async def main():
-    # Initialize the API and FreeAtHome
-    api = FreeAtHomeApi(
-        host="http://<IP or HOSTNAME>", username="installer", password="<password>"
+    # Create an instance of the FreeAtHome class.
+    _free_at_home = FreeAtHome(
+        api=FreeAtHomeApi(
+          host="http://<IP or HOSTNAME>", username="installer", password="<password>"
+        )
     )
-    fah = FreeAtHome(api)
 
     # Load devices and channels
-    await fah.load()
+    await _free_at_home.load()
 
     # Get all devices
-    devices = fah.get_devices()
+    _devices = _free_at_home.get_devices()
 
     # Iterate through devices
-    for device in devices.values():
-        print(f"Device: {device.display_name}")
-        print(f"  Serial: {device.device_serial}")
-        print(f"  Interface: {device.interface}")
-        print(f"  Virtual: {device.is_virtual}")
-        print(f"  Status: {'Unresponsive' if device.unresponsive else 'Online'}")
+    for _device in _devices.values():
+        print(f"Device: {_device.display_name}")
+        print(f"  Serial: {_device.device_serial}")
+        print(f"  Interface: {_device.interface}")
+        print(f"  Virtual: {_device.is_virtual}")
+        print(f"  Status: {'Unresponsive' if _device.unresponsive else 'Online'}")
         print(
-            f"  Location: {device.floor_name or device.floor}, "
-            f"{device.room_name or device.room}"
+            f"  Location: {_device.floor_name or _device.floor}, "
+            f"{_device.room_name or _device.room}"
         )
-        print(f"  Floor: {device.floor} ({device.floor_name})")
-        print(f"  Room: {device.room} ({device.room_name})")
-        print(f"  Channels: {len(device.channels)}")
+        print(f"  Floor: {_device.floor} ({_device.floor_name})")
+        print(f"  Room: {_device.room} ({_device.room_name})")
+        print(f"  Channels: {len(_device.channels)}")
 
         # Access additional attributes if needed
-        if device.device_reboots:
-            print(f"  Reboots: {device.device_reboots}")
+        if _device.device_reboots:
+            print(f"  Reboots: {_device.device_reboots}")
 
     # Number of devices
-    print(f"\nFound {len(devices)} devices")
-    # Unresponsive devices
-    unresponsive_devices = [
-        device for device in devices.values() if device.unresponsive
-    ]
-    print(f"Unresponsive devices: {len(unresponsive_devices)}\n")
+    print(f"\nFound {len(_devices)} devices")
 
+    # Unresponsive devices
+    _unresponsive_devices = [
+        device for device in _devices.values() if device.unresponsive
+    ]
+    print(f"Unresponsive devices: {len(_unresponsive_devices)}\n")
+
+    # Filter devices by interface using the Interface enum
     # Devices by interface
     for _interface in Interface:
-        _devices = [
-            device for device in devices.values() if device.interface == _interface
+        _device_by_interface = [
+            _device for _device in _devices.values() if _device.interface == _interface
         ]
-        print(f"{_interface} devices: {len(_devices)}")
+        print(f"{_interface} devices: {len(_device_by_interface)}")
 
     # Close api session
-    await api.close_client_session()
+    await _free_at_home.api.close_client_session()
 
 
 if __name__ == "__main__":
