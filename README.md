@@ -362,22 +362,7 @@ async def main():
 
     # Iterate through devices
     for _device in _devices.values():
-        print(f"Device: {_device.display_name}")
-        print(f"  Serial: {_device.device_serial}")
-        print(f"  Interface: {_device.interface}")
-        print(f"  Virtual: {_device.is_virtual}")
-        print(f"  Status: {'Unresponsive' if _device.unresponsive else 'Online'}")
-        print(
-            f"  Location: {_device.floor_name or _device.floor}, "
-            f"{_device.room_name or _device.room}"
-        )
-        print(f"  Floor: {_device.floor} ({_device.floor_name})")
-        print(f"  Room: {_device.room} ({_device.room_name})")
-        print(f"  Channels: {len(_device.channels)}")
-
-        # Access additional attributes if needed
-        if _device.device_reboots:
-            print(f"  Reboots: {_device.device_reboots}")
+        print(str(_device))
 
     # Number of devices
     print(f"\nFound {len(_devices)} devices")
