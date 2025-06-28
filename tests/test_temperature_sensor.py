@@ -1,4 +1,4 @@
-"""Test class to test the TemperatureSensor device."""
+"""Test class to test the TemperatureSensor channel."""
 
 from unittest.mock import AsyncMock
 
@@ -38,7 +38,7 @@ def mock_api():
 
 @pytest.fixture
 def temperature_sensor(mock_api):
-    """Set up the instance for testing the TemperatureSensor device."""
+    """Set up the instance for testing the TemperatureSensor channel."""
     return get_temperature_sensor(mock_api)
 
 

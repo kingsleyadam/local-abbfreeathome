@@ -1,4 +1,4 @@
-"""Test class to test the SwitchActuator device."""
+"""Test class to test the SwitchActuator channel."""
 
 from unittest.mock import AsyncMock
 
@@ -42,33 +42,33 @@ def mock_api():
 
 @pytest.fixture
 def movement_detector_indoor(mock_api):
-    """Set up the switch instance for testing the SwitchActuator device."""
+    """Set up the switch instance for testing the SwitchActuator channel."""
     return get_movement_detector("indoor", mock_api)
 
 
 @pytest.fixture
 def movement_detector_outdoor(mock_api):
-    """Set up the switch instance for testing the SwitchActuator device."""
+    """Set up the switch instance for testing the SwitchActuator channel."""
     return get_movement_detector("outdoor", mock_api)
 
 
 @pytest.mark.asyncio
 async def test_initial_state_indoor(movement_detector_indoor):
-    """Test the intial state of the switch."""
+    """Test the intial state."""
     assert movement_detector_indoor.state is False
     assert movement_detector_indoor.brightness == 1.6
 
 
 @pytest.mark.asyncio
 async def test_initial_state_outdoor(movement_detector_outdoor):
-    """Test the intial state of the switch."""
+    """Test the intial state."""
     assert movement_detector_outdoor.state is False
     assert movement_detector_outdoor.brightness is None
 
 
 @pytest.mark.asyncio
 async def test_refresh_state(movement_detector_indoor):
-    """Test refreshing the state of the switch."""
+    """Test refreshing the state."""
     movement_detector_indoor._api.get_datapoint.return_value = ["1"]
     await movement_detector_indoor.refresh_state()
     assert movement_detector_indoor.state is True

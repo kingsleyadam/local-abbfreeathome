@@ -1,4 +1,4 @@
-"""Test class to test the WindSensor device."""
+"""Test class to test the WindSensor channel."""
 
 from unittest.mock import AsyncMock
 
@@ -39,7 +39,7 @@ def mock_api():
 
 @pytest.fixture
 def wind_sensor(mock_api):
-    """Set up the instance for testing the WindSensor device."""
+    """Set up the instance for testing the WindSensor channel."""
     return get_wind_sensor(mock_api)
 
 

@@ -1,4 +1,4 @@
-"""Test class to test the RoomTemperatureController device."""
+"""Test class to test the RoomTemperatureController channel."""
 
 from unittest.mock import AsyncMock
 
@@ -18,7 +18,7 @@ def mock_api():
 
 @pytest.fixture
 def room_temperature_controller(mock_api):
-    """Set up the RTC instance for testing the RTC device."""
+    """Set up the RTC instance for testing the RTC channel."""
     inputs = {
         "idp0011": {"pairingID": 58, "value": "0"},
         "idp0012": {"pairingID": 66, "value": "1"},
@@ -227,8 +227,8 @@ async def test_refresh_state_from_datapoint(
     assert room_temperature_controller.cooling == 5
 
 
-def test_update_device(room_temperature_controller):
-    """Test updating the device state."""
+def test_update_channel(room_temperature_controller):
+    """Test updating the channel state."""
 
     def test_callback():
         pass

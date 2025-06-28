@@ -1,4 +1,4 @@
-"""Test class to test the virtual EnergyBattery device."""
+"""Test class to test the virtual EnergyBattery channel."""
 
 from unittest.mock import AsyncMock
 
@@ -18,7 +18,7 @@ def mock_api():
 
 @pytest.fixture
 def virtual_energy_battery(mock_api):
-    """Set up the sensor instance for testing the virtual EnergyBattery device."""
+    """Set up the sensor instance for testing the virtual EnergyBattery channel."""
     inputs = {}
     outputs = {
         "odp0000": {"pairingID": 1197, "value": ""},
@@ -236,8 +236,8 @@ async def test_set_exported_total(virtual_energy_battery):
     assert virtual_energy_battery.exported_total == 0
 
 
-def test_update_device(virtual_energy_battery):
-    """Test updating the device state."""
+def test_update_channel(virtual_energy_battery):
+    """Test updating the channel state."""
 
     def test_callback():
         pass

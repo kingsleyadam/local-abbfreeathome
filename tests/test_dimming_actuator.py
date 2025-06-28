@@ -1,4 +1,4 @@
-"""Test class to test the DimmingActuator device."""
+"""Test class to test the DimmingActuator channel."""
 
 from unittest.mock import AsyncMock
 
@@ -20,7 +20,7 @@ def mock_api():
 
 @pytest.fixture
 def dimming_actuator(mock_api):
-    """Set up the dimming instance for testing the DimmingActuator device."""
+    """Set up the dimming instance for testing the DimmingActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
         "idp0002": {"pairingID": 17, "value": "50"},
@@ -48,7 +48,7 @@ def dimming_actuator(mock_api):
 
 @pytest.fixture
 def colortemperature_actuator(mock_api):
-    """Set up the instance for testing the ColorTemperatureActuator device."""
+    """Set up the instance for testing the ColorTemperatureActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
         "idp0002": {"pairingID": 17, "value": "50"},
@@ -215,8 +215,8 @@ def test_refresh_state_from_datapoint(dimming_actuator):
     )
 
 
-def test_update_device(dimming_actuator):
-    """Test updating the device state."""
+def test_update_channel(dimming_actuator):
+    """Test updating the channel state."""
 
     def test_callback():
         pass

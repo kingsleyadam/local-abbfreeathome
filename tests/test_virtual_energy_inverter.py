@@ -1,4 +1,4 @@
-"""Test class to test the virtual EnergyInverter device."""
+"""Test class to test the virtual EnergyInverter channel."""
 
 from unittest.mock import AsyncMock
 
@@ -18,7 +18,7 @@ def mock_api():
 
 @pytest.fixture
 def virtual_energy_inverter(mock_api):
-    """Set up the sensor instance for testing the virtual EnergyInverter device."""
+    """Set up the sensor instance for testing the virtual EnergyInverter channel."""
     inputs = {}
     outputs = {
         "odp0000": {"pairingID": 1190, "value": ""},

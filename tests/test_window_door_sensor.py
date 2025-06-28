@@ -1,4 +1,4 @@
-"""Test class to test the WindowDoorSensor device."""
+"""Test class to test the WindowDoorSensor channel."""
 
 from unittest.mock import AsyncMock
 
@@ -16,7 +16,7 @@ def mock_api():
 
 @pytest.fixture
 def window_door_sensor(mock_api):
-    """Set up the sensor instance for testing the WindowDoorSensor device."""
+    """Set up the sensor instance for testing the WindowDoorSensor channel."""
     inputs = {}
     outputs = {
         "odp0000": {"pairingID": 53, "value": "1"},

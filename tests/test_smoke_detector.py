@@ -1,4 +1,4 @@
-"""Test class to test the SmokeDetector device."""
+"""Test class to test the SmokeDetector channel."""
 
 from unittest.mock import AsyncMock
 
@@ -16,7 +16,7 @@ def mock_api():
 
 @pytest.fixture
 def smoke_detector(mock_api):
-    """Set up the smoke-detector instance for testing the SmokeDetector device."""
+    """Set up the smoke-detector instance for testing the SmokeDetector channel."""
     inputs = {}
     outputs = {
         "odp0000": {"pairingID": 707, "value": "0"},

@@ -1,4 +1,4 @@
-"""Test class to test the Base device."""
+"""Test class to test the Base channel."""
 
 from unittest.mock import MagicMock
 
@@ -23,7 +23,7 @@ def mock_api():
 
 @pytest.fixture
 def base_instance(mock_api):
-    """Set up the base instance for testing the Base device."""
+    """Set up the base instance for testing the Base channel."""
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
         "idp0001": {"pairingID": 2, "value": "0"},
@@ -167,7 +167,7 @@ def test_remove_callback_nonexistent_attribute(base_instance):
         )
 
 
-def test_update_device(base_instance):
+def test_update_channel(base_instance):
     """Test when input-datapoint is provided."""
 
     base_instance.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")
