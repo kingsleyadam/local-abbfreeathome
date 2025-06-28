@@ -125,10 +125,9 @@ class Device:
 
     def __repr__(self) -> str:
         """Return a string representation of the device."""
-        interface_value = self.interface.value if self.interface else None
         return (
             f"Device(device_serial='{self.device_serial}', "
             f"display_name='{self.display_name}', "
-            f"interface='{interface_value}', "
+            f"interface='{self.interface.value}', "
             f"unresponsive={self.unresponsive})"
         )
