@@ -6,6 +6,7 @@ import aiohttp
 import aiohttp.client_exceptions
 from aioresponses import aioresponses
 import pytest
+import pytest_asyncio
 import voluptuous as vol
 
 from src.abbfreeathome.api import FreeAtHomeApi, FreeAtHomeSettings
@@ -22,16 +23,24 @@ from src.abbfreeathome.exceptions import (
 )
 
 
-@pytest.fixture
-def api():
+@pytest_asyncio.fixture
+async def api():
     """Create FreeAtHome Api Fixture."""
-    return FreeAtHomeApi(host="http://192.168.1.1", username="user", password="pass")
+    instance = FreeAtHomeApi(
+        host="http://192.168.1.1", username="user", password="pass"
+    )
+    yield instance
+    # Cleanup: Close any client session that might have been created
+    await instance.close_client_session()
 
 
-@pytest.fixture
-def settings():
+@pytest_asyncio.fixture
+async def settings():
     """Create FreeAtHome Api Fixture."""
-    return FreeAtHomeSettings(host="http://192.168.1.1")
+    instance = FreeAtHomeSettings(host="http://192.168.1.1")
+    yield instance
+    # Cleanup: Close any client session that might have been created
+    await instance.close_client_session()
 
 
 @pytest.mark.asyncio
@@ -110,8 +119,12 @@ async def test_get_settings_client_connection_error(settings):
     """Test the _request function for an invalid client."""
     settings._host = "http://0.0.0.0:1"
 
-    with pytest.raises(ClientConnectionError):
-        await settings.load()
+    try:
+        with pytest.raises(ClientConnectionError):
+            await settings.load()
+    finally:
+        # Cleanup any client session that might have been created during failed request
+        await settings.close_client_session()
 
 
 def test_get_user(settings):
@@ -531,8 +544,12 @@ async def test_request_client_connection_error(api):
     """Test the _request function for an invalid client."""
     api._host = "http://0.0.0.0:1"
 
-    with pytest.raises(ClientConnectionError):
-        await api._request("/test")
+    try:
+        with pytest.raises(ClientConnectionError):
+            await api._request("/test")
+    finally:
+        # Cleanup any client session that might have been created during failed request
+        await api.close_client_session()
 
 
 @pytest.mark.asyncio
@@ -592,16 +609,17 @@ async def test_settings_get_client_session_creates_new_session(settings):
     settings._client_session = None
     settings._close_client_session = False
 
-    # Call _get_client_session
-    session = settings._get_client_session()
+    try:
+        # Call _get_client_session
+        session = settings._get_client_session()
 
-    # Verify a new session was created and close flag was set
-    assert session is not None
-    assert settings._client_session is session
-    assert settings._close_client_session is True
-
-    # Clean up properly
-    await settings.close_client_session()
+        # Verify a new session was created and close flag was set
+        assert session is not None
+        assert settings._client_session is session
+        assert settings._close_client_session is True
+    finally:
+        # Clean up properly
+        await settings.close_client_session()
 
 
 @pytest.mark.asyncio
@@ -627,16 +645,17 @@ async def test_get_client_session_creates_new_session(api):
     api._client_session = None
     api._close_client_session = False
 
-    # Call _get_client_session
-    session = api._get_client_session()
+    try:
+        # Call _get_client_session
+        session = api._get_client_session()
 
-    # Verify a new session was created and close flag was set
-    assert session is not None
-    assert api._client_session is session
-    assert api._close_client_session is True
-
-    # Clean up properly
-    await api.close_client_session()
+        # Verify a new session was created and close flag was set
+        assert session is not None
+        assert api._client_session is session
+        assert api._close_client_session is True
+    finally:
+        # Clean up properly
+        await api.close_client_session()
 
 
 @pytest.mark.asyncio
