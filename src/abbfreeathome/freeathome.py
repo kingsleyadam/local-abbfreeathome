@@ -181,7 +181,7 @@ class FreeAtHome:
             )
 
             # Extract device attributes from the configuration
-            device = Device(
+            _device = Device(
                 device_serial=_serial,
                 device_id=_data.get("deviceId", ""),
                 display_name=_data.get("displayName", ""),
@@ -199,7 +199,7 @@ class FreeAtHome:
                 channels=_data.get("channels", {}),
             )
 
-            self._devices[_serial] = device
+            self._devices[_serial] = _device
 
     async def _load_channels(self):
         """Load all of the channels into the channels object."""
