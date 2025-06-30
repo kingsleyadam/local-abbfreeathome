@@ -342,8 +342,8 @@ Here is example code that'll output all of the devices in your Free@Home setup. 
 ```python
 import asyncio
 
-from src.abbfreeathome import FreeAtHome, FreeAtHomeApi
-from src.abbfreeathome.bin.interface import Interface
+from abbfreeathome import FreeAtHome, FreeAtHomeApi
+from abbfreeathome.bin.interface import Interface
 
 
 async def main():

@@ -171,3 +171,10 @@ def test_update_channel(base_instance):
     """Test when input-datapoint is provided."""
 
     base_instance.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")
+
+
+def test_set_device(base_instance):
+    """Test the set_device method."""
+    mock_device = MagicMock()
+    base_instance.set_device(mock_device)
+    assert base_instance._device == mock_device

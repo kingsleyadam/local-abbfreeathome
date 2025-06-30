@@ -34,6 +34,8 @@ class Base:
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
+        # TODO: Make this required, use Device class type (creates circular reference)
+        device: Any = None,
     ) -> None:
         """Initialize the Free@Home Base class."""
         self._device_serial = device_serial
@@ -46,6 +48,7 @@ class Base:
         self._parameters = parameters
         self._floor_name = floor_name
         self._room_name = room_name
+        self._device = device
         self._callbacks = {}
 
         # Set the initial state of the channel
@@ -85,6 +88,15 @@ class Base:
     def is_virtual(self) -> bool | None:
         """Get the virtual-status of the device."""
         return self.device_serial[0:4] == "6000"
+
+    @property
+    def device(self):
+        """Get the parent Device object."""
+        return self._device
+
+    def set_device(self, device) -> None:
+        """Set the parent Device object reference."""
+        self._device = device
 
     def get_input_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
         """Get the channel input by pairing id."""

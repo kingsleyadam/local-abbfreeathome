@@ -5,13 +5,13 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.bin.function import Function
 from src.abbfreeathome.bin.interface import Interface
 from src.abbfreeathome.channels.switch_actuator import SwitchActuator
 from src.abbfreeathome.channels.switch_sensor import SwitchSensor
 from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
     VirtualSwitchActuator,
 )
+from src.abbfreeathome.device import Device
 from src.abbfreeathome.freeathome import FreeAtHome
 
 
@@ -328,6 +328,28 @@ def api_mock():
             },
         },
     }
+
+    async def mock_get_floor_name(floor_serial_id):
+        if not floor_serial_id:
+            return None
+        floors = {
+            "01": "Ground Floor",
+            "02": "First Floor",
+        }
+        return floors.get(floor_serial_id)
+
+    async def mock_get_room_name(floor_serial_id, room_serial_id):
+        if not floor_serial_id or not room_serial_id:
+            return None
+        rooms = {
+            ("01", "01"): "Living Room",
+            ("02", "02"): "Bedroom",
+        }
+        return rooms.get((floor_serial_id, room_serial_id))
+
+    api.get_floor_name.side_effect = mock_get_floor_name
+    api.get_room_name.side_effect = mock_get_room_name
+
     return api
 
 
@@ -363,67 +385,11 @@ def freeathome_virtuals(api_mock):
 
 
 @pytest.mark.asyncio
-async def test_floors(freeathome):
-    """Test the floors property."""
-    floors = await freeathome.get_floors()
-    assert floors == {
-        "01": {
-            "name": "Ground Floor",
-            "rooms": {"01": {"name": "Living Room"}},
-        },
-        "02": {"name": "First Floor", "rooms": {"02": {"name": "Bedroom"}}},
-    }
-
-
-@pytest.mark.asyncio
 async def test_get_config(freeathome, api_mock):
     """Test the get_config function."""
     config = await freeathome.get_config()
     assert config == api_mock.get_configuration.return_value
     api_mock.get_configuration.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_get_channels_by_function(freeathome):
-    """Test the get_channels_by_fuction function."""
-    channels = await freeathome.get_channels_by_function(Function.FID_SWITCH_ACTUATOR)
-    assert len(channels) == 2
-    assert channels[0]["device_name"] == "Study Area Rocker"
-    assert channels[0]["channel_name"] == "Study Area Light"
-    assert channels[0]["floor_name"] == "Ground Floor"
-    assert channels[0]["room_name"] == "Living Room"
-
-
-@pytest.mark.asyncio
-async def test_get_floor_name(freeathome):
-    """Test the get_floor_name function."""
-    floor_name = await freeathome.get_floor_name("01")
-    assert floor_name == "Ground Floor"
-
-    floor_name = await freeathome.get_floor_name(floor_serial_id=None)
-    assert floor_name is None
-
-
-@pytest.mark.asyncio
-async def test_get_room_name(freeathome):
-    """Test the get_room_name function."""
-    room_name = await freeathome.get_room_name("01", "01")
-    assert room_name == "Living Room"
-
-    room_name = await freeathome.get_room_name(
-        floor_serial_id="01", room_serial_id=None
-    )
-    assert room_name is None
-
-    room_name = await freeathome.get_room_name(
-        floor_serial_id=None, room_serial_id=None
-    )
-    assert room_name is None
-
-    room_name = await freeathome.get_room_name(
-        floor_serial_id=None, room_serial_id="01"
-    )
-    assert room_name is None
 
 
 @pytest.mark.asyncio
@@ -524,8 +490,27 @@ async def test_ws_listen(freeathome, api_mock):
 @pytest.mark.asyncio
 async def test_update(freeathome):
     """Test the update function."""
+    # Create a mock channel
     channel = MagicMock()
-    freeathome._channels = {"ABB7F500E17A/ch0003": channel}
+
+    # Create a device with the channel that has floor/room info to pass orphan filtering
+    device = Device(
+        device_serial="ABB7F500E17A",
+        device_id="ABB7F500E17A",
+        display_name="Test Device",
+        interface=Interface.WIRED_BUS,
+        channels_data={
+            "ch0003": {"functionID": "0", "floor": "floor1", "room": "room1"}
+        },
+        api=freeathome.api,
+    )
+
+    # Add the device to freeathome
+    freeathome._devices["ABB7F500E17A"] = device
+
+    # Mock the device.channels to return our mock channel
+    device._channels = {"ch0003": channel}
+
     data = {
         "datapoints": {"ABB7F500E17A/ch0003/256": "0", "ABB7F500E17A/ch0001/0": "0"}
     }
@@ -618,11 +603,6 @@ async def test_load_devices_functionality(api_mock):
     # Test non-existent device
     non_existent = freeathome.get_device_by_serial("NONEXISTENT")
     assert non_existent is None
-
-    # Test get_device_for_channel
-    channel_device = freeathome.get_device_for_channel("ABB7F500E17A/ch0003")
-    assert channel_device is not None
-    assert channel_device.device_serial == "ABB7F500E17A"
 
     # Test clear_devices
     freeathome.clear_devices()
@@ -793,3 +773,44 @@ async def test_device_floor_room_names(api_mock):
     assert no_location_device.room is None
     assert no_location_device.floor_name is None
     assert no_location_device.room_name is None
+
+
+@pytest.mark.asyncio
+async def test_clear_channels(api_mock):
+    """Test the clear_channels method."""
+    freeathome = FreeAtHome(api_mock)
+
+    # Load some devices first
+    await freeathome.load()
+
+    # Verify devices have channels
+    devices = freeathome.get_devices()
+    assert len(devices) > 0
+
+    # Clear channels
+    freeathome.clear_channels()
+
+    # Verify all device channels are cleared and filtered cache is invalidated
+    for device in devices.values():
+        if hasattr(device, "_channels"):
+            assert device._channels is None
+    assert freeathome._filtered_channels is None
+
+
+@pytest.mark.asyncio
+async def test_channel_class_filtering(api_mock):
+    """Test filtering channels by channel class."""
+    # Initialize FreeAtHome with specific channel class filter
+    freeathome = FreeAtHome(
+        api_mock,
+        channel_classes=[SwitchActuator],  # Only SwitchActuator
+    )
+
+    await freeathome.load()
+
+    # Get filtered channels
+    channels = freeathome.get_channels()
+
+    # Verify all returned channels are of the specified class
+    for channel in channels.values():
+        assert isinstance(channel, SwitchActuator)

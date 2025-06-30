@@ -2,7 +2,11 @@
 
 from typing import Any
 
+from .api import FreeAtHomeApi
+from .bin.function import Function
 from .bin.interface import Interface
+from .channels.base import Base
+from .const import FUNCTION_CHANNEL_MAPPING, FUNCTION_VIRTUAL_CHANNEL_MAPPING
 
 
 class Device:
@@ -13,6 +17,7 @@ class Device:
         device_serial: str,
         device_id: str,
         display_name: str,
+        api: FreeAtHomeApi,
         interface: Interface | None = None,
         unresponsive: bool = False,
         unresponsive_counter: int = 0,
@@ -24,12 +29,13 @@ class Device:
         device_reboots: str | None = None,
         native_id: str | None = None,
         parameters: dict[str, dict[str, Any]] | None = None,
-        channels: dict[str, dict] | None = None,
+        channels_data: dict[str, dict] | None = None,
     ) -> None:
         """Initialize the Device class."""
         self._device_serial = device_serial
         self._device_id = device_id
         self._display_name = display_name
+        self._api: FreeAtHomeApi = api
         self._interface = interface if interface is not None else Interface.UNDEFINED
         self._unresponsive = unresponsive
         self._unresponsive_counter = unresponsive_counter
@@ -41,7 +47,8 @@ class Device:
         self._device_reboots = device_reboots
         self._native_id = native_id
         self._parameters = parameters or {}
-        self._channels = channels or {}
+        self._channels_data = channels_data or {}
+        self._channels: dict[str, Base] | None = None
 
     @property
     def device_serial(self) -> str:
@@ -109,19 +116,93 @@ class Device:
         return self._native_id
 
     @property
-    def parameters(self) -> dict[str, Any]:
+    def parameters(self) -> dict[str, dict[str, Any]]:
         """Return the device parameters."""
         return self._parameters
 
     @property
-    def channels(self) -> dict[str, dict]:
+    def channels_data(self) -> dict[str, dict]:
+        """Return the device channels data."""
+        return self._channels_data
+
+    @property
+    def channels(self) -> dict[str, Base]:
         """Return the device channels."""
         return self._channels
+
+    @property
+    def api(self) -> FreeAtHomeApi:
+        """Return the API instance."""
+        return self._api
 
     @property
     def is_virtual(self) -> bool:
         """Return True if this is a virtual device."""
         return self._interface == Interface.VIRTUAL_DEVICE
+
+    def clear_channels(self):
+        """Clear channels from the device."""
+        self._channels = None
+
+    async def load_channels(self):
+        """Load the channels object."""
+        # Select appropriate mapping based on virtual status
+        _function_channel_mapping = (
+            FUNCTION_VIRTUAL_CHANNEL_MAPPING
+            if self.is_virtual
+            else FUNCTION_CHANNEL_MAPPING
+        )
+
+        # Create channels dictionary
+        self._channels = {}
+        for channel_id, channel_data in self._channels_data.items():
+            # Determine channel class based on function ID
+            _function_id = channel_data.get("functionID")
+            if not _function_id:
+                continue
+
+            try:
+                _function = Function(int(_function_id, 16))
+            except (ValueError, KeyError):
+                continue
+
+            _channel_class = _function_channel_mapping.get(_function)
+            if not _channel_class:
+                continue
+
+            # Create the Channel object
+            _channel_name = channel_data.get("displayName", f"Channel {channel_id}")
+            if _channel_name in ["Ⓐ", "ⓑ"] or _channel_name is None:
+                _channel_name = self.display_name
+
+            _floor_name = self.floor_name or await self.api.get_floor_name(
+                floor_serial_id=channel_data.get("floor", self.floor)
+            )
+            _room_name = self.room_name or await self.api.get_room_name(
+                floor_serial_id=channel_data.get("floor", self.floor),
+                room_serial_id=channel_data.get("room", self.room),
+            )
+
+            _channel = _channel_class(
+                device_serial=self.device_serial,
+                device_name=self.display_name,
+                channel_id=channel_id,
+                channel_name=_channel_name,
+                inputs=channel_data.get("inputs", {}),
+                outputs=channel_data.get("outputs", {}),
+                parameters=channel_data.get("parameters", {}),
+                api=self._api,
+                floor_name=_floor_name,
+                room_name=_room_name,
+            )
+
+            setattr(_channel, "_device", self)
+
+            # Assign channel to channel cache
+            self._channels[channel_id] = _channel
+
+        # Return the channels dictionary
+        return self._channels
 
     def __repr__(self) -> str:
         """Return a string representation of the device."""
