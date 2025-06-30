@@ -1,6 +1,6 @@
 """Test code for the Device class."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -20,7 +20,13 @@ def mock_api():
     return AsyncMock(spec=FreeAtHomeApi)
 
 
-def test_device_initialization_minimal(mock_api):
+@pytest.fixture
+def mock_device():
+    """Create a mock device for testing."""
+    return MagicMock(spec=Device)
+
+
+def test_device_initialization_minimal(mock_api, mock_device):
     """Test Device initialization with minimal parameters."""
     device = Device(
         device_serial="ABB7F500E17A",
@@ -48,7 +54,7 @@ def test_device_initialization_minimal(mock_api):
     assert device.is_virtual is False
 
 
-def test_device_initialization_full(mock_api):
+def test_device_initialization_full(mock_api, mock_device):
     """Test Device initialization with all parameters."""
     test_parameters = {"par0001": "value1", "par0002": "value2"}
     test_channels = {
@@ -93,11 +99,11 @@ def test_device_initialization_full(mock_api):
     assert device.is_virtual is False
 
 
-def test_device_virtual_detection(mock_api):
+def test_device_virtual_detection(mock_api, mock_device):
     """Test virtual device detection based on device serial."""
     # Test virtual device (starts with 6000)
     virtual_device = Device(
-        device_serial="6000F91624D1",
+        device_serial="60005D808C54",
         device_id="0161",
         display_name="Virtual Device",
         api=mock_api,
@@ -115,7 +121,7 @@ def test_device_virtual_detection(mock_api):
     assert physical_device.is_virtual is False
 
 
-def test_device_interface_enum(mock_api):
+def test_device_interface_enum(mock_api, mock_device):
     """Test device interface with different Interface enum values."""
     test_cases = [
         (Interface.WIRED_BUS, "TP"),
@@ -129,7 +135,7 @@ def test_device_interface_enum(mock_api):
 
     for interface_enum, expected_value in test_cases:
         device = Device(
-            device_serial="TEST123",
+            device_serial="TEST",
             device_id="TEST",
             display_name="Test Device",
             api=mock_api,
@@ -139,10 +145,10 @@ def test_device_interface_enum(mock_api):
         assert device.interface.value == expected_value
 
 
-def test_device_parameters_default(mock_api):
+def test_device_parameters_default(mock_api, mock_device):
     """Test device parameters default to empty dict when None."""
     device = Device(
-        device_serial="TEST123",
+        device_serial="TEST",
         device_id="TEST",
         display_name="Test Device",
         api=mock_api,
@@ -151,10 +157,10 @@ def test_device_parameters_default(mock_api):
     assert device.parameters == {}
 
 
-def test_device_channels_default(mock_api):
+def test_device_channels_default(mock_api, mock_device):
     """Test device channels default to empty dict when None."""
     device = Device(
-        device_serial="TEST123",
+        device_serial="TEST",
         device_id="TEST",
         display_name="Test Device",
         api=mock_api,
@@ -163,7 +169,7 @@ def test_device_channels_default(mock_api):
     assert device.channels_data == {}
 
 
-def test_device_repr(mock_api):
+def test_device_repr(mock_api, mock_device):
     """Test device string representation."""
     # Test with interface enum
     device = Device(
@@ -182,7 +188,7 @@ def test_device_repr(mock_api):
     assert "unresponsive=True" in repr_str
 
 
-def test_device_repr_no_interface(mock_api):
+def test_device_repr_no_interface(mock_api, mock_device):
     """Test device string representation with no interface."""
     device = Device(
         device_serial="ABB7F500E17A",
@@ -200,7 +206,7 @@ def test_device_repr_no_interface(mock_api):
     assert "unresponsive=False" in repr_str
 
 
-def test_device_repr_undefined_interface(mock_api):
+def test_device_repr_undefined_interface(mock_api, mock_device):
     """Test device string representation with undefined interface."""
     device = Device(
         device_serial="ABB7F500E17A",
@@ -218,7 +224,7 @@ def test_device_repr_undefined_interface(mock_api):
     assert "unresponsive=False" in repr_str
 
 
-def test_device_all_properties(mock_api):
+def test_device_all_properties(mock_api, mock_device):
     """Test all device properties are accessible."""
     test_parameters = {"par0001": "value1"}
     test_channels = {"ch0000": {"displayName": "Channel 1"}}
@@ -261,7 +267,7 @@ def test_device_all_properties(mock_api):
     assert device.is_virtual is False
 
 
-def test_device_empty_strings(mock_api):
+def test_device_empty_strings(mock_api, mock_device):
     """Test device with empty string values."""
     device = Device(
         device_serial="",
@@ -284,7 +290,7 @@ def test_device_empty_strings(mock_api):
     assert device.is_virtual is False  # Empty string doesn't start with "6000"
 
 
-def test_device_interface_conversion(mock_api):
+def test_device_interface_conversion(mock_api, mock_device):
     """Test interface conversion for different interface values."""
     # Test that the device properly handles Interface enum values
     interfaces_to_test = [
@@ -299,7 +305,7 @@ def test_device_interface_conversion(mock_api):
 
     for interface in interfaces_to_test:
         device = Device(
-            device_serial="TEST123",
+            device_serial="TEST",
             device_id="TEST",
             display_name="Test Device",
             api=mock_api,
@@ -313,11 +319,11 @@ def test_device_interface_conversion(mock_api):
         assert f"interface='{expected_value}'" in repr_str
 
 
-def test_device_floor_room_names_properties(mock_api):
+def test_device_floor_room_names_properties(mock_api, mock_device):
     """Test floor_name and room_name properties specifically."""
     # Test with both floor and room names
     device_with_names = Device(
-        device_serial="TEST123",
+        device_serial="TEST",
         device_id="TEST",
         display_name="Test Device",
         api=mock_api,
@@ -334,7 +340,7 @@ def test_device_floor_room_names_properties(mock_api):
 
     # Test with None values
     device_no_names = Device(
-        device_serial="TEST456",
+        device_serial="TEST",
         device_id="TEST",
         display_name="Test Device",
         api=mock_api,
@@ -505,7 +511,7 @@ async def test_device_load_channels_virtual_device():
     }
 
     device = Device(
-        device_serial="6000F91624D1",  # Virtual device serial
+        device_serial="60005D808C54",  # Virtual device serial
         device_id="0161",
         display_name="Virtual Test Device",
         api=mock_api,
@@ -568,7 +574,7 @@ async def test_device_load_channels_special_channel_names():
         assert channel.channel_name == "Test Device"
 
 
-def test_device_clear_channels(mock_api):
+def test_device_clear_channels(mock_api, mock_device):
     """Test the clear_channels method."""
     device = Device(
         device_serial="ABB7F500E17A",
@@ -584,7 +590,7 @@ def test_device_clear_channels(mock_api):
 
 
 @pytest.mark.asyncio
-async def test_device_load_channels_with_missing_function_id(mock_api):
+async def test_device_load_channels_with_missing_function_id(mock_api, mock_device):
     """Test load_channels with channel data missing functionID."""
     channels_data = {
         "ch0000": {
@@ -607,7 +613,7 @@ async def test_device_load_channels_with_missing_function_id(mock_api):
 
 
 @pytest.mark.asyncio
-async def test_device_load_channels_with_invalid_function_id(mock_api):
+async def test_device_load_channels_with_invalid_function_id(mock_api, mock_device):
     """Test load_channels with invalid functionID that can't be converted to hex."""
     channels_data = {
         "ch0000": {
@@ -630,7 +636,7 @@ async def test_device_load_channels_with_invalid_function_id(mock_api):
 
 
 @pytest.mark.asyncio
-async def test_device_load_channels_with_unknown_function(mock_api):
+async def test_device_load_channels_with_unknown_function(mock_api, mock_device):
     """Test load_channels with functionID that doesn't map to a known channel class."""
     channels_data = {
         "ch0000": {

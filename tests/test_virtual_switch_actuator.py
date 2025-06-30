@@ -1,6 +1,6 @@
 """Test class to test the virtual SwitchActuator channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -8,6 +8,7 @@ from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
     VirtualSwitchActuator,
 )
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -17,7 +18,13 @@ def mock_api():
 
 
 @pytest.fixture
-def virtual_switch_actuator(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def virtual_switch_actuator(mock_api, mock_device):
     """Set up the switch instance for testing the virtual SwitchActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
@@ -32,9 +39,9 @@ def virtual_switch_actuator(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "60004F56EA24"
     return VirtualSwitchActuator(
-        device_serial="60004F56EA24",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,

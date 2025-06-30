@@ -1,14 +1,15 @@
 """Test class to test the WindSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.wind_sensor import WindSensor
+from src.abbfreeathome.device import Device
 
 
-def get_wind_sensor(mock_api):
+def get_wind_sensor(mock_api, mock_device):
     """Get the WindSensor class to be tested against."""
     inputs = {}
     outputs = {
@@ -20,8 +21,7 @@ def get_wind_sensor(mock_api):
     parameters = {"par002e": "5", "par0047": "2", "par0048": "7"}
 
     return WindSensor(
-        device_serial="7EB1000021C5",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0003",
         channel_name="Channel Name",
         inputs=inputs,
@@ -38,9 +38,16 @@ def mock_api():
 
 
 @pytest.fixture
-def wind_sensor(mock_api):
+def wind_sensor(mock_api, mock_device):
     """Set up the instance for testing the WindSensor channel."""
-    return get_wind_sensor(mock_api)
+    mock_device.device_serial = "7EB1000021C5"
+    return get_wind_sensor(mock_api, mock_device)
+
+
+@pytest.fixture
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
 
 
 @pytest.mark.asyncio

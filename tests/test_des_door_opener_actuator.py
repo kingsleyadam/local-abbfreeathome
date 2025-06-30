@@ -1,11 +1,12 @@
 """Test class to test the DesDoorOpenerActuator channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.des_door_opener_actuator import DesDoorOpenerActuator
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -15,7 +16,13 @@ def mock_api():
 
 
 @pytest.fixture
-def des_door_opener_actuator(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def des_door_opener_actuator(mock_api, mock_device):
     """Set up the instance for testing the DesDoorOpenerActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 2, "value": "0"},
@@ -26,9 +33,9 @@ def des_door_opener_actuator(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "0007EE9503A4"
     return DesDoorOpenerActuator(
-        device_serial="0007EE9503A4",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0040",
         channel_name="Channel Name",
         inputs=inputs,

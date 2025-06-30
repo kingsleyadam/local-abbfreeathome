@@ -1,6 +1,6 @@
 """Test class to test the ForceOnOffSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -9,6 +9,7 @@ from src.abbfreeathome.channels.force_on_off_sensor import (
     ForceOnOffSensor,
     ForceOnOffSensorState,
 )
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -18,7 +19,13 @@ def mock_api():
 
 
 @pytest.fixture
-def force_on_off_sensor(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def force_on_off_sensor(mock_api, mock_device):
     """Set up the force-on-off-sensor instance for testing the sensor channel."""
     inputs = {}
     outputs = {
@@ -27,9 +34,9 @@ def force_on_off_sensor(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB7F5923D74"
     return ForceOnOffSensor(
-        device_serial="ABB7F5923D74",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,

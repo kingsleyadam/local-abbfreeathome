@@ -1,13 +1,16 @@
 """Free@Home SwitchSensor Class."""
 
 import enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from ..bin.parameter import Parameter
 from ..exceptions import InvalidDeviceChannelParameter
 from .base import Base
+
+if TYPE_CHECKING:
+    from ..device import Device
 
 
 class SwitchSensorState(enum.Enum):
@@ -44,8 +47,7 @@ class SwitchSensor(Base):
 
     def __init__(
         self,
-        device_serial: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
@@ -61,8 +63,7 @@ class SwitchSensor(Base):
         self._led: bool | None = None
 
         super().__init__(
-            device_serial,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,
@@ -194,8 +195,7 @@ class DimmingSensor(SwitchSensor):
 
     def __init__(
         self,
-        device_serial: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
@@ -210,8 +210,7 @@ class DimmingSensor(SwitchSensor):
         self._dimming_sensor_state: DimmingSensorState = DimmingSensorState.unknown
 
         super().__init__(
-            device_serial,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,

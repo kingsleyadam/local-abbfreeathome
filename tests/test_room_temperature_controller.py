@@ -1,6 +1,6 @@
 """Test class to test the RoomTemperatureController channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -8,6 +8,7 @@ from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.room_temperature_controller import (
     RoomTemperatureController,
 )
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -17,7 +18,13 @@ def mock_api():
 
 
 @pytest.fixture
-def room_temperature_controller(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def room_temperature_controller(mock_api, mock_device):
     """Set up the RTC instance for testing the RTC channel."""
     inputs = {
         "idp0011": {"pairingID": 58, "value": "0"},
@@ -35,9 +42,9 @@ def room_temperature_controller(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB700D72CC9"
     return RoomTemperatureController(
-        device_serial="ABB700D72CC9",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,

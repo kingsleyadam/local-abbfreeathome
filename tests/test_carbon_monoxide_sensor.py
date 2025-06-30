@@ -1,11 +1,12 @@
 """Test class to test the CarbonMonoxideSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.carbon_monoxide_sensor import CarbonMonoxideSensor
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -15,7 +16,13 @@ def mock_api():
 
 
 @pytest.fixture
-def carbon_monoxide_sensor(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def carbon_monoxide_sensor(mock_api, mock_device):
     """Set up the sensor instance for testing the CarbonMonoxideSensor channel."""
     inputs = {}
     outputs = {
@@ -24,9 +31,9 @@ def carbon_monoxide_sensor(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "E11253502766"
     return CarbonMonoxideSensor(
-        device_serial="E11253502766",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,

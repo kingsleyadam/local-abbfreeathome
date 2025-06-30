@@ -1,10 +1,13 @@
 """Free@Home Virtual EnergyBattery Class."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ...api import FreeAtHomeApi
 from ...bin.pairing import Pairing
 from ..base import Base
+
+if TYPE_CHECKING:
+    from ...device import Device
 
 
 class VirtualEnergyBattery(Base):
@@ -29,8 +32,7 @@ class VirtualEnergyBattery(Base):
 
     def __init__(
         self,
-        device_serial: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
@@ -39,7 +41,7 @@ class VirtualEnergyBattery(Base):
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
-    ):
+    ) -> None:
         """Initialize the Free@Home Virtual EnergyBattery class."""
         self._battery_power: float | None = None
         self._soc: int | None = None
@@ -49,8 +51,7 @@ class VirtualEnergyBattery(Base):
         self._exported_total: int | None = None
 
         super().__init__(
-            device_serial,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,

@@ -1,10 +1,13 @@
 """Free@Home Virtual EnergyInverter Class."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ...api import FreeAtHomeApi
 from ...bin.pairing import Pairing
 from ..base import Base
+
+if TYPE_CHECKING:
+    from ...device import Device
 
 
 class VirtualEnergyInverter(Base):
@@ -23,8 +26,7 @@ class VirtualEnergyInverter(Base):
 
     def __init__(
         self,
-        device_serial: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
@@ -33,15 +35,14 @@ class VirtualEnergyInverter(Base):
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
-    ):
+    ) -> None:
         """Initialize the Free@Home Virtual EnergyInverter class."""
         self._current_power: float | None = None
         self._imported_today: int | None = None
         self._imported_total: int | None = None
 
         super().__init__(
-            device_serial,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,

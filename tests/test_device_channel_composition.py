@@ -1,6 +1,6 @@
 """Test Device/Channel composition pattern."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -22,7 +22,13 @@ def mock_api():
 
 
 @pytest.fixture
-def test_device_with_channels(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def test_device_with_channels(mock_api, mock_device):
     """Create a test device with mock channel data."""
     channels_data = {
         "ch0000": {
@@ -49,7 +55,7 @@ def test_device_with_channels(mock_api):
 
     return Device(
         device_serial="ABB7F500E17A",
-        device_id="ABB7F500E17A",
+        device_id="910C",
         display_name="Test Device",
         interface=Interface.WIRED_BUS,
         unresponsive=False,
@@ -114,11 +120,11 @@ async def test_channels_are_cached(test_device_with_channels):
 
 
 @pytest.mark.asyncio
-async def test_device_with_empty_channels_data(mock_api):
+async def test_device_with_empty_channels_data(mock_api, mock_device):
     """Test that device with empty channels_data returns empty channels dict."""
     device = Device(
         device_serial="ABB7F500E17B",
-        device_id="ABB7F500E17B",
+        device_id="910D",
         display_name="Device With Empty Channels",
         channels_data={},  # Empty channels data
         api=mock_api,
@@ -146,7 +152,7 @@ async def test_channel_properties_correct(test_device_with_channels):
 
 
 @pytest.mark.asyncio
-async def test_invalid_channel_function_skipped(mock_api):
+async def test_invalid_channel_function_skipped(mock_api, mock_device):
     """Test that channels with invalid function IDs are skipped."""
     channels_data = {
         "ch0000": {
@@ -174,7 +180,7 @@ async def test_invalid_channel_function_skipped(mock_api):
 
     device = Device(
         device_serial="ABB7F500E17A",
-        device_id="ABB7F500E17A",
+        device_id="910C",
         display_name="Test Device",
         channels_data=channels_data,
         api=mock_api,

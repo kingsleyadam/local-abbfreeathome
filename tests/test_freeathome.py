@@ -496,7 +496,7 @@ async def test_update(freeathome):
     # Create a device with the channel that has floor/room info to pass orphan filtering
     device = Device(
         device_serial="ABB7F500E17A",
-        device_id="ABB7F500E17A",
+        device_id="910C",
         display_name="Test Device",
         interface=Interface.WIRED_BUS,
         channels_data={

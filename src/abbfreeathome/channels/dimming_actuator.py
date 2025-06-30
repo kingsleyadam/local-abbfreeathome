@@ -1,12 +1,15 @@
 """Free@Home DimmingActuator Class."""
 
 import enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from ..bin.parameter import Parameter
 from .base import Base
+
+if TYPE_CHECKING:
+    from ..device import Device
 
 
 class DimmingActuatorForcedPosition(enum.Enum):
@@ -34,8 +37,7 @@ class DimmingActuator(Base):
 
     def __init__(
         self,
-        device_serial: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
@@ -53,8 +55,7 @@ class DimmingActuator(Base):
         )
 
         super().__init__(
-            device_serial,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,
@@ -196,8 +197,7 @@ class ColorTemperatureActuator(DimmingActuator):
 
     def __init__(
         self,
-        device_serial: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
@@ -211,8 +211,7 @@ class ColorTemperatureActuator(DimmingActuator):
         self._color_temperature: int | None = None
 
         super().__init__(
-            device_serial,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,

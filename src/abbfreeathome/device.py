@@ -184,8 +184,7 @@ class Device:
             )
 
             _channel = _channel_class(
-                device_serial=self.device_serial,
-                device_name=self.display_name,
+                device=self,
                 channel_id=channel_id,
                 channel_name=_channel_name,
                 inputs=channel_data.get("inputs", {}),
@@ -195,8 +194,6 @@ class Device:
                 floor_name=_floor_name,
                 room_name=_room_name,
             )
-
-            setattr(_channel, "_device", self)
 
             # Assign channel to channel cache
             self._channels[channel_id] = _channel

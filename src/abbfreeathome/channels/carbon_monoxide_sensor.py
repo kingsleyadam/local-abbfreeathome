@@ -1,10 +1,13 @@
 """Free@Home CarbonMonoxideSensor Class."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
+
+if TYPE_CHECKING:
+    from ..device import Device
 
 
 class CarbonMonoxideSensor(Base):
@@ -19,8 +22,7 @@ class CarbonMonoxideSensor(Base):
 
     def __init__(
         self,
-        device_serial: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
@@ -34,8 +36,7 @@ class CarbonMonoxideSensor(Base):
         self._state: bool | None = None
 
         super().__init__(
-            device_serial,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,

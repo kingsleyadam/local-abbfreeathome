@@ -1,6 +1,6 @@
 """Test class to test the SwitchActuator channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -9,6 +9,7 @@ from src.abbfreeathome.channels.switch_actuator import (
     SwitchActuator,
     SwitchActuatorForcedPosition,
 )
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -18,7 +19,13 @@ def mock_api():
 
 
 @pytest.fixture
-def switch_actuator(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def switch_actuator(mock_api, mock_device):
     """Set up the switch instance for testing the SwitchActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
@@ -34,9 +41,9 @@ def switch_actuator(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB7F500E17A"
     return SwitchActuator(
-        device_serial="ABB7F500E17A",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0003",
         channel_name="Channel Name",
         inputs=inputs,

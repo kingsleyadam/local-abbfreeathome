@@ -1,6 +1,6 @@
 """Test class to test the DimmingActuator channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -10,6 +10,7 @@ from src.abbfreeathome.channels.dimming_actuator import (
     DimmingActuator,
     DimmingActuatorForcedPosition,
 )
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -19,7 +20,13 @@ def mock_api():
 
 
 @pytest.fixture
-def dimming_actuator(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def dimming_actuator(mock_api, mock_device):
     """Set up the dimming instance for testing the DimmingActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
@@ -34,9 +41,9 @@ def dimming_actuator(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB70139AF8A"
     return DimmingActuator(
-        device_serial="ABB70139AF8A",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,
@@ -47,7 +54,7 @@ def dimming_actuator(mock_api):
 
 
 @pytest.fixture
-def colortemperature_actuator(mock_api):
+def colortemperature_actuator(mock_api, mock_device):
     """Set up the instance for testing the ColorTemperatureActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
@@ -67,9 +74,9 @@ def colortemperature_actuator(mock_api):
         "par00f6": "2700",
     }
 
+    mock_device.device_serial = "ABB70139AF8A"
     return ColorTemperatureActuator(
-        device_serial="ABB7026310B7",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,

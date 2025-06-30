@@ -1,14 +1,15 @@
 """Test class to test the BrightnessSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.brightness_sensor import BrightnessSensor
+from src.abbfreeathome.device import Device
 
 
-def get_brightness_sensor(mock_api):
+def get_brightness_sensor(mock_api, mock_device):
     """Get the BrightnessSensor class to be tested against."""
     inputs = {}
     outputs = {
@@ -18,8 +19,7 @@ def get_brightness_sensor(mock_api):
     parameters = {"par002b": "19998.7", "par002c": "4999.68"}
 
     return BrightnessSensor(
-        device_serial="7EB1000021C5",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,
@@ -36,9 +36,16 @@ def mock_api():
 
 
 @pytest.fixture
-def brightness_sensor(mock_api):
+def brightness_sensor(mock_api, mock_device):
     """Set up the instance for testing the BrightnessSensor channel."""
-    return get_brightness_sensor(mock_api)
+    mock_device.device_serial = "7EB1000021C5"
+    return get_brightness_sensor(mock_api, mock_device)
+
+
+@pytest.fixture
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
 
 
 @pytest.mark.asyncio

@@ -1,11 +1,12 @@
 """Test class to test the virtual RainSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.virtual.virtual_rain_sensor import VirtualRainSensor
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -15,7 +16,13 @@ def mock_api():
 
 
 @pytest.fixture
-def virtual_rain_sensor(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def virtual_rain_sensor(mock_api, mock_device):
     """Set up the sensor instance for testing the virtual RainSensor channel."""
     inputs = {}
     outputs = {
@@ -26,9 +33,9 @@ def virtual_rain_sensor(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "6000A0EA2CF4"
     return VirtualRainSensor(
-        device_serial="6000A0EA2CF4",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0001",
         channel_name="Channel Name",
         inputs=inputs,

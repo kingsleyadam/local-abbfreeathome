@@ -1,6 +1,6 @@
 """Test class to test the virtual WindowDoorSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -8,6 +8,7 @@ from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.virtual.virtual_window_door_sensor import (
     VirtualWindowDoorSensor,
 )
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -17,7 +18,13 @@ def mock_api():
 
 
 @pytest.fixture
-def virtual_window_door_sensor(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def virtual_window_door_sensor(mock_api, mock_device):
     """Set up the sensor instance for testing the virtual WindowDoorSensor channel."""
     inputs = {}
     outputs = {
@@ -26,9 +33,9 @@ def virtual_window_door_sensor(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "60002AE2F1BE"
     return VirtualWindowDoorSensor(
-        device_serial="60002AE2F1BE",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,

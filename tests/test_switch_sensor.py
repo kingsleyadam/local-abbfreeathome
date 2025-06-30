@@ -1,6 +1,6 @@
 """Test class to test the SwitchSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -11,6 +11,7 @@ from src.abbfreeathome.channels.switch_sensor import (
     SwitchSensor,
     SwitchSensorState,
 )
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -20,7 +21,13 @@ def mock_api():
 
 
 @pytest.fixture
-def switch_sensor_with_led(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def switch_sensor_with_led(mock_api, mock_device):
     """Set up the switch-sensor instance for testing the SwitchSensor channel."""
     inputs = {
         "idp0000": {"pairingID": 256, "value": "0"},
@@ -34,9 +41,9 @@ def switch_sensor_with_led(mock_api):
         "par0007": "2",
     }
 
+    mock_device.device_serial = "ABB700D9C0A4"
     return SwitchSensor(
-        device_serial="ABB700D9C0A4",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,
@@ -47,7 +54,7 @@ def switch_sensor_with_led(mock_api):
 
 
 @pytest.fixture
-def switch_sensor_without_led(mock_api):
+def switch_sensor_without_led(mock_api, mock_device):
     """Set up the switch-sensor instance for testing the SwitchSensor channel."""
     inputs = {
         "idp0000": {"pairingID": 256, "value": "0"},
@@ -61,9 +68,9 @@ def switch_sensor_without_led(mock_api):
         "par0007": "1",
     }
 
+    mock_device.device_serial = "ABB700D9C0A4"
     return SwitchSensor(
-        device_serial="ABB700D9C0A4",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,
@@ -74,7 +81,7 @@ def switch_sensor_without_led(mock_api):
 
 
 @pytest.fixture
-def dimming_sensor(mock_api):
+def dimming_sensor(mock_api, mock_device):
     """Set up the dimming-sensor instance for testing the DimmingSensor channel."""
     inputs = {}
     outputs = {
@@ -84,9 +91,9 @@ def dimming_sensor(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB700D9C0A4"
     return DimmingSensor(
-        device_serial="ABB700D9C0A4",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,

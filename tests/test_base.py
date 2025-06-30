@@ -8,6 +8,7 @@ from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.bin.parameter import Parameter
 from src.abbfreeathome.channels.base import Base
+from src.abbfreeathome.device import Device
 from src.abbfreeathome.exceptions import (
     InvalidDeviceChannelPairing,
     InvalidDeviceChannelParameter,
@@ -22,8 +23,16 @@ def mock_api():
 
 
 @pytest.fixture
-def base_instance(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def base_instance(mock_api, mock_device):
     """Set up the base instance for testing the Base channel."""
+    mock_device.device_serial = "ABB7F500E17A"
+    mock_device.display_name = "Device Name"
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
         "idp0001": {"pairingID": 2, "value": "0"},
@@ -41,8 +50,7 @@ def base_instance(mock_api):
     }
 
     instance = Base(
-        device_serial="ABB7F500E17A",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0003",
         channel_name="Channel Name",
         inputs=inputs,
@@ -171,10 +179,3 @@ def test_update_channel(base_instance):
     """Test when input-datapoint is provided."""
 
     base_instance.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")
-
-
-def test_set_device(base_instance):
-    """Test the set_device method."""
-    mock_device = MagicMock()
-    base_instance.set_device(mock_device)
-    assert base_instance._device == mock_device

@@ -1,11 +1,12 @@
 """Test class to test the HeatingActuator channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.heating_actuator import HeatingActuator
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -15,7 +16,13 @@ def mock_api():
 
 
 @pytest.fixture
-def heating_actuator(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def heating_actuator(mock_api, mock_device):
     """Set up the heating actuator instance for testing the HeatingActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 48, "value": "0"}  # AL_ACTUATING_VALUE_HEATING
@@ -26,9 +33,9 @@ def heating_actuator(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB289613651"
     return HeatingActuator(
-        device_serial="ABB289613651",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0002",
         channel_name="Channel Name",
         inputs=inputs,

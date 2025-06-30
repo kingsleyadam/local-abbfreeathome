@@ -1,11 +1,14 @@
 """Free@Home Trigger Class."""
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
+
+if TYPE_CHECKING:
+    from ..device import Device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -15,8 +18,7 @@ class Trigger(Base):
 
     def __init__(
         self,
-        device_serial: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
@@ -28,8 +30,7 @@ class Trigger(Base):
     ) -> None:
         """Initialize the Free@Home Trigger class."""
         super().__init__(
-            device_serial,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,

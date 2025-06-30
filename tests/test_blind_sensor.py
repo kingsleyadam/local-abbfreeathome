@@ -1,11 +1,12 @@
 """Test class to test the BlindSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.blind_sensor import BlindSensor, BlindSensorState
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -15,7 +16,13 @@ def mock_api():
 
 
 @pytest.fixture
-def blind_sensor(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def blind_sensor(mock_api, mock_device):
     """Set up the blind-sensor instance for testing the BlindSensor channel."""
     inputs = {}
     outputs = {
@@ -25,9 +32,9 @@ def blind_sensor(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB700DAD681"
     return BlindSensor(
-        device_serial="ABB700DAD681",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0003",
         channel_name="Channel Name",
         inputs=inputs,

@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
@@ -12,6 +12,9 @@ from ..exceptions import (
     InvalidDeviceChannelParameter,
     UnknownCallbackAttributeException,
 )
+
+if TYPE_CHECKING:
+    from ..device import Device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,8 +27,7 @@ class Base:
 
     def __init__(
         self,
-        device_serial: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
@@ -34,12 +36,9 @@ class Base:
         api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
-        # TODO: Make this required, use Device class type (creates circular reference)
-        device: Any = None,
     ) -> None:
         """Initialize the Free@Home Base class."""
-        self._device_serial = device_serial
-        self._device_name = device_name
+        self._device = device
         self._channel_id = channel_id
         self._channel_name = channel_name
         self._api = api
@@ -48,7 +47,6 @@ class Base:
         self._parameters = parameters
         self._floor_name = floor_name
         self._room_name = room_name
-        self._device = device
         self._callbacks = {}
 
         # Set the initial state of the channel
@@ -57,12 +55,17 @@ class Base:
     @property
     def device_serial(self) -> str:
         """Get the device serial."""
-        return self._device_serial
+        return self._device.device_serial
 
     @property
     def device_name(self) -> str:
         """Get the device name."""
-        return self._device_name
+        return self._device.display_name
+
+    @property
+    def unresponsive(self) -> bool:
+        """Get unresponsive status via device."""
+        return self._device.unresponsive
 
     @property
     def channel_id(self) -> str:
@@ -87,16 +90,12 @@ class Base:
     @property
     def is_virtual(self) -> bool | None:
         """Get the virtual-status of the device."""
-        return self.device_serial[0:4] == "6000"
+        return self.device.is_virtual
 
     @property
-    def device(self):
+    def device(self) -> "Device":
         """Get the parent Device object."""
         return self._device
-
-    def set_device(self, device) -> None:
-        """Set the parent Device object reference."""
-        self._device = device
 
     def get_input_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
         """Get the channel input by pairing id."""

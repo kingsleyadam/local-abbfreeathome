@@ -1,6 +1,6 @@
 """Test class to test the CoverActuator channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -11,6 +11,7 @@ from src.abbfreeathome.channels.cover_actuator import (
     CoverActuatorState,
     ShutterActuator,
 )
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -20,7 +21,13 @@ def mock_api():
 
 
 @pytest.fixture
-def cover_actuator(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def cover_actuator(mock_api, mock_device):
     """Set up the generic cover instance for testing the CoverActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 32, "value": "0"},
@@ -43,9 +50,9 @@ def cover_actuator(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB2AC253651"
     return CoverActuator(
-        device_serial="ABB2AC253651",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0003",
         channel_name="Channel Name",
         inputs=inputs,
@@ -56,7 +63,7 @@ def cover_actuator(mock_api):
 
 
 @pytest.fixture
-def shutter_actuator(mock_api):
+def shutter_actuator(mock_api, mock_device):
     """Set up the shutter actuator instance for testing the ShutterActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 32, "value": "0"},
@@ -79,9 +86,9 @@ def shutter_actuator(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB2AC253651"
     return ShutterActuator(
-        device_serial="ABB2AC253651",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0003",
         channel_name="Channel Name",
         inputs=inputs,
