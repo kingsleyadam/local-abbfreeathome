@@ -27,7 +27,6 @@ def get_rain_sensor(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -41,6 +40,8 @@ def mock_api():
 def rain_sensor(mock_api, mock_device):
     """Set up the instance for testing the RainSensor channel."""
     mock_device.device_serial = "7EB1000021C5"
+
+    mock_device.api = mock_api
     return get_rain_sensor(mock_api, mock_device)
 
 
@@ -59,10 +60,10 @@ async def test_initial_state(rain_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(rain_sensor):
     """Test refreshing the state of the sensor."""
-    rain_sensor._api.get_datapoint.return_value = ["1"]
+    rain_sensor.device.api.get_datapoint.return_value = ["1"]
     await rain_sensor.refresh_state()
     assert rain_sensor.state is True
-    rain_sensor._api.get_datapoint.assert_called_with(
+    rain_sensor.device.api.get_datapoint.assert_called_with(
         device_serial="7EB1000021C5",
         channel_id="ch0001",
         datapoint="odp0000",

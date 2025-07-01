@@ -3,7 +3,6 @@
 import enum
 from typing import TYPE_CHECKING, Any
 
-from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from ..bin.parameter import Parameter
 from ..exceptions import InvalidDeviceChannelParameter
@@ -53,7 +52,6 @@ class SwitchSensor(Base):
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -69,7 +67,6 @@ class SwitchSensor(Base):
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )
@@ -130,7 +127,7 @@ class SwitchSensor(Base):
         _sensor_input_id, _sensor_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_INFO_ON_OFF
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_input_id,
@@ -163,7 +160,7 @@ class SwitchSensor(Base):
             )
 
             _datapoint = (
-                await self._api.get_datapoint(
+                await self.device.api.get_datapoint(
                     device_serial=self.device_serial,
                     channel_id=self.channel_id,
                     datapoint=_datapoint_id,
@@ -201,7 +198,6 @@ class DimmingSensor(SwitchSensor):
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -216,7 +212,6 @@ class DimmingSensor(SwitchSensor):
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )

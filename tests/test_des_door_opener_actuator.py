@@ -34,6 +34,8 @@ def des_door_opener_actuator(mock_api, mock_device):
     parameters = {}
 
     mock_device.device_serial = "0007EE9503A4"
+
+    mock_device.api = mock_api
     return DesDoorOpenerActuator(
         device=mock_device,
         channel_id="ch0040",
@@ -41,7 +43,6 @@ def des_door_opener_actuator(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -56,7 +57,7 @@ async def test_lock(des_door_opener_actuator):
     """Test to lock."""
     await des_door_opener_actuator.lock()
     assert des_door_opener_actuator.state is False
-    des_door_opener_actuator._api.set_datapoint.assert_called_with(
+    des_door_opener_actuator.device.api.set_datapoint.assert_called_with(
         device_serial="0007EE9503A4",
         channel_id="ch0040",
         datapoint="idp0000",
@@ -69,7 +70,7 @@ async def test_unlock(des_door_opener_actuator):
     """Test to unlock."""
     await des_door_opener_actuator.unlock()
     assert des_door_opener_actuator.state is True
-    des_door_opener_actuator._api.set_datapoint.assert_called_with(
+    des_door_opener_actuator.device.api.set_datapoint.assert_called_with(
         device_serial="0007EE9503A4",
         channel_id="ch0040",
         datapoint="idp0000",
@@ -80,10 +81,10 @@ async def test_unlock(des_door_opener_actuator):
 @pytest.mark.asyncio
 async def test_refresh_state(des_door_opener_actuator):
     """Test refreshing the state of the DesDoorOpenerActuator."""
-    des_door_opener_actuator._api.get_datapoint.return_value = ["1"]
+    des_door_opener_actuator.device.api.get_datapoint.return_value = ["1"]
     await des_door_opener_actuator.refresh_state()
     assert des_door_opener_actuator.state is True
-    des_door_opener_actuator._api.get_datapoint.assert_called_with(
+    des_door_opener_actuator.device.api.get_datapoint.assert_called_with(
         device_serial="0007EE9503A4",
         channel_id="ch0040",
         datapoint="odp0000",

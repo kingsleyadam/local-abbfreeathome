@@ -33,6 +33,8 @@ def blind_sensor(mock_api, mock_device):
     parameters = {}
 
     mock_device.device_serial = "ABB700DAD681"
+
+    mock_device.api = mock_api
     return BlindSensor(
         device=mock_device,
         channel_id="ch0003",
@@ -40,7 +42,6 @@ def blind_sensor(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -53,10 +54,10 @@ async def test_initial_state(blind_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(blind_sensor):
     """Test refreshing the state of the blind-sensor."""
-    blind_sensor._api.get_datapoint.return_value = ["1"]
+    blind_sensor.device.api.get_datapoint.return_value = ["1"]
     await blind_sensor.refresh_state()
     assert blind_sensor.state == BlindSensorState.step_down.name
-    blind_sensor._api.get_datapoint.assert_called_with(
+    blind_sensor.device.api.get_datapoint.assert_called_with(
         device_serial="ABB700DAD681",
         channel_id="ch0003",
         datapoint="odp0003",

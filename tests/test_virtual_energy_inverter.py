@@ -37,6 +37,8 @@ def virtual_energy_inverter(mock_api, mock_device):
     parameters = {}
 
     mock_device.device_serial = "6000702DC087"
+
+    mock_device.api = mock_api
     return VirtualEnergyInverter(
         device=mock_device,
         channel_id="ch0003",
@@ -44,7 +46,6 @@ def virtual_energy_inverter(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -52,7 +53,7 @@ def virtual_energy_inverter(mock_api, mock_device):
 async def test_set_current_power(virtual_energy_inverter):
     """Test to set current_power of the sensor."""
     await virtual_energy_inverter.set_current_power(435.7)
-    virtual_energy_inverter._api.set_datapoint.assert_called_with(
+    virtual_energy_inverter.device.api.set_datapoint.assert_called_with(
         device_serial="6000702DC087",
         channel_id="ch0003",
         datapoint="odp0002",
@@ -66,7 +67,7 @@ async def test_set_imported_today(virtual_energy_inverter):
     """Test to set imported_today of the sensor."""
     """Values greater 0 should always work"""
     await virtual_energy_inverter.set_imported_today(25)
-    virtual_energy_inverter._api.set_datapoint.assert_called_with(
+    virtual_energy_inverter.device.api.set_datapoint.assert_called_with(
         device_serial="6000702DC087",
         channel_id="ch0003",
         datapoint="odp0003",
@@ -76,7 +77,7 @@ async def test_set_imported_today(virtual_energy_inverter):
 
     """Float values should return integer"""
     await virtual_energy_inverter.set_imported_today(13.7)
-    virtual_energy_inverter._api.set_datapoint.assert_called_with(
+    virtual_energy_inverter.device.api.set_datapoint.assert_called_with(
         device_serial="6000702DC087",
         channel_id="ch0003",
         datapoint="odp0003",
@@ -86,7 +87,7 @@ async def test_set_imported_today(virtual_energy_inverter):
 
     """Negative values should return 0"""
     await virtual_energy_inverter.set_imported_today(-3.4)
-    virtual_energy_inverter._api.set_datapoint.assert_called_with(
+    virtual_energy_inverter.device.api.set_datapoint.assert_called_with(
         device_serial="6000702DC087",
         channel_id="ch0003",
         datapoint="odp0003",
@@ -100,7 +101,7 @@ async def test_set_imported_total(virtual_energy_inverter):
     """Test to set imported_total of the sensor."""
     """Values greater 0 should always work"""
     await virtual_energy_inverter.set_imported_total(25)
-    virtual_energy_inverter._api.set_datapoint.assert_called_with(
+    virtual_energy_inverter.device.api.set_datapoint.assert_called_with(
         device_serial="6000702DC087",
         channel_id="ch0003",
         datapoint="odp0004",
@@ -110,7 +111,7 @@ async def test_set_imported_total(virtual_energy_inverter):
 
     """Float values should return integer"""
     await virtual_energy_inverter.set_imported_total(13.7)
-    virtual_energy_inverter._api.set_datapoint.assert_called_with(
+    virtual_energy_inverter.device.api.set_datapoint.assert_called_with(
         device_serial="6000702DC087",
         channel_id="ch0003",
         datapoint="odp0004",
@@ -120,7 +121,7 @@ async def test_set_imported_total(virtual_energy_inverter):
 
     """Negative values should return 0"""
     await virtual_energy_inverter.set_imported_total(-3.4)
-    virtual_energy_inverter._api.set_datapoint.assert_called_with(
+    virtual_energy_inverter.device.api.set_datapoint.assert_called_with(
         device_serial="6000702DC087",
         channel_id="ch0003",
         datapoint="odp0004",

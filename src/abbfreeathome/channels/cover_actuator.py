@@ -3,7 +3,6 @@
 import enum
 from typing import TYPE_CHECKING, Any
 
-from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
 
@@ -52,7 +51,6 @@ class CoverActuator(Base):
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -70,7 +68,6 @@ class CoverActuator(Base):
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )
@@ -167,7 +164,7 @@ class CoverActuator(Base):
         _move_input_id, _move_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_MOVE_UP_DOWN
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_move_input_id,
@@ -179,7 +176,7 @@ class CoverActuator(Base):
         _position_input_id, _position_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_SET_ABSOLUTE_POSITION_BLINDS_PERCENTAGE
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_position_input_id,
@@ -191,7 +188,7 @@ class CoverActuator(Base):
         _force_input_id, _force_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_FORCED_UP_DOWN
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_force_input_id,
@@ -203,7 +200,7 @@ class CoverActuator(Base):
         _stop_input_id, _stop_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_STOP_STEP_UP_DOWN
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_stop_input_id,
@@ -247,7 +244,6 @@ class ShutterActuator(CoverActuator):
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -261,7 +257,6 @@ class ShutterActuator(CoverActuator):
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )
@@ -308,7 +303,7 @@ class ShutterActuator(CoverActuator):
         _tilt_input_id, _tilt_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_SET_ABSOLUTE_POSITION_SLATS_PERCENTAGE
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_tilt_input_id,

@@ -33,6 +33,8 @@ def window_door_sensor(mock_api, mock_device):
     parameters = {"par0010": "2"}
 
     mock_device.device_serial = "ABB28CBC3651"
+
+    mock_device.api = mock_api
     return WindowDoorSensor(
         device=mock_device,
         channel_id="ch0000",
@@ -40,7 +42,6 @@ def window_door_sensor(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -54,10 +55,10 @@ async def test_initial_state(window_door_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(window_door_sensor):
     """Test refreshing the state of the window-door-sensor."""
-    window_door_sensor._api.get_datapoint.return_value = ["1"]
+    window_door_sensor.device.api.get_datapoint.return_value = ["1"]
     await window_door_sensor.refresh_state()
     assert window_door_sensor.state is True
-    window_door_sensor._api.get_datapoint.assert_called_with(
+    window_door_sensor.device.api.get_datapoint.assert_called_with(
         device_serial="ABB28CBC3651",
         channel_id="ch0000",
         datapoint="odp0000",

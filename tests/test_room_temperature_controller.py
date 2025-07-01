@@ -43,6 +43,8 @@ def room_temperature_controller(mock_api, mock_device):
     parameters = {}
 
     mock_device.device_serial = "ABB700D72CC9"
+
+    mock_device.api = mock_api
     return RoomTemperatureController(
         device=mock_device,
         channel_id="ch0000",
@@ -50,7 +52,6 @@ def room_temperature_controller(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -65,7 +66,7 @@ async def test_turn_on(room_temperature_controller):
     """Test to turning on the RTC."""
     await room_temperature_controller.turn_on()
     assert room_temperature_controller.state is True
-    room_temperature_controller._api.set_datapoint.assert_called_with(
+    room_temperature_controller.device.api.set_datapoint.assert_called_with(
         device_serial="ABB700D72CC9",
         channel_id="ch0000",
         datapoint="idp0012",
@@ -78,7 +79,7 @@ async def test_turn_off(room_temperature_controller):
     """Test to turning off the RTC."""
     await room_temperature_controller.turn_off()
     assert room_temperature_controller.state is False
-    room_temperature_controller._api.set_datapoint.assert_called_with(
+    room_temperature_controller.device.api.set_datapoint.assert_called_with(
         device_serial="ABB700D72CC9",
         channel_id="ch0000",
         datapoint="idp0012",
@@ -91,7 +92,7 @@ async def test_eco_on(room_temperature_controller):
     """Test to turning on the eco-mode."""
     await room_temperature_controller.eco_on()
     assert room_temperature_controller.eco_mode is True
-    room_temperature_controller._api.set_datapoint.assert_called_with(
+    room_temperature_controller.device.api.set_datapoint.assert_called_with(
         device_serial="ABB700D72CC9",
         channel_id="ch0000",
         datapoint="idp0011",
@@ -104,7 +105,7 @@ async def test_eco_off(room_temperature_controller):
     """Test to turning off the eco-mode."""
     await room_temperature_controller.eco_off()
     assert room_temperature_controller.eco_mode is False
-    room_temperature_controller._api.set_datapoint.assert_called_with(
+    room_temperature_controller.device.api.set_datapoint.assert_called_with(
         device_serial="ABB700D72CC9",
         channel_id="ch0000",
         datapoint="idp0011",
@@ -117,7 +118,7 @@ async def test_set_temperature(room_temperature_controller):
     """Test to set the target temperatuer of the RTC."""
     await room_temperature_controller.set_temperature(30)
     assert room_temperature_controller.target_temperature == 30
-    room_temperature_controller._api.set_datapoint.assert_called_with(
+    room_temperature_controller.device.api.set_datapoint.assert_called_with(
         device_serial="ABB700D72CC9",
         channel_id="ch0000",
         datapoint="idp0016",
@@ -126,7 +127,7 @@ async def test_set_temperature(room_temperature_controller):
     # Also checking lower and upper boundaries
     await room_temperature_controller.set_temperature(0)
     assert room_temperature_controller.target_temperature == 7
-    room_temperature_controller._api.set_datapoint.assert_called_with(
+    room_temperature_controller.device.api.set_datapoint.assert_called_with(
         device_serial="ABB700D72CC9",
         channel_id="ch0000",
         datapoint="idp0016",
@@ -134,7 +135,7 @@ async def test_set_temperature(room_temperature_controller):
     )
     await room_temperature_controller.set_temperature(50)
     assert room_temperature_controller.target_temperature == 35
-    room_temperature_controller._api.set_datapoint.assert_called_with(
+    room_temperature_controller.device.api.set_datapoint.assert_called_with(
         device_serial="ABB700D72CC9",
         channel_id="ch0000",
         datapoint="idp0016",
@@ -145,10 +146,10 @@ async def test_set_temperature(room_temperature_controller):
 @pytest.mark.asyncio
 async def test_refresh_state(room_temperature_controller):
     """Test refreshing state of the RTC."""
-    room_temperature_controller._api.get_datapoint.return_value = ["1"]
+    room_temperature_controller.device.api.get_datapoint.return_value = ["1"]
     await room_temperature_controller.refresh_state()
     assert room_temperature_controller.state is True
-    room_temperature_controller._api.get_datapoint.assert_called_with(
+    room_temperature_controller.device.api.get_datapoint.assert_called_with(
         device_serial="ABB700D72CC9",
         channel_id="ch0000",
         datapoint="odp0008",

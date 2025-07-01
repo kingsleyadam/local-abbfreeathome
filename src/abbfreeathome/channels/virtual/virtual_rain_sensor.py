@@ -2,7 +2,6 @@
 
 from typing import TYPE_CHECKING, Any
 
-from ...api import FreeAtHomeApi
 from ...bin.pairing import Pairing
 from ..base import Base
 
@@ -28,7 +27,6 @@ class VirtualRainSensor(Base):
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -42,7 +40,6 @@ class VirtualRainSensor(Base):
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )
@@ -79,7 +76,7 @@ class VirtualRainSensor(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_RAIN_ALARM
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,

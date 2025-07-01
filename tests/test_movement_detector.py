@@ -24,6 +24,7 @@ def get_movement_detector(type: str, mock_api, mock_device):
         outputs.pop("odp0002")
 
     mock_device.device_serial = "ABB7F500E17A"
+    mock_device.api = mock_api
 
     return MovementDetector(
         device=mock_device,
@@ -32,7 +33,6 @@ def get_movement_detector(type: str, mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -77,11 +77,11 @@ async def test_initial_state_outdoor(movement_detector_outdoor):
 @pytest.mark.asyncio
 async def test_refresh_state(movement_detector_indoor):
     """Test refreshing the state."""
-    movement_detector_indoor._api.get_datapoint.return_value = ["1"]
+    movement_detector_indoor.device.api.get_datapoint.return_value = ["1"]
     await movement_detector_indoor.refresh_state()
     assert movement_detector_indoor.state is True
     assert movement_detector_indoor.brightness == 1.0
-    movement_detector_indoor._api.get_datapoint.assert_called_with(
+    movement_detector_indoor.device.api.get_datapoint.assert_called_with(
         device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="odp0000",

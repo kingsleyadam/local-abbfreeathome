@@ -4,7 +4,6 @@ from collections.abc import Callable
 import logging
 from typing import TYPE_CHECKING, Any
 
-from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from ..bin.parameter import Parameter
 from ..exceptions import (
@@ -33,7 +32,6 @@ class Base:
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -41,7 +39,6 @@ class Base:
         self._device = device
         self._channel_id = channel_id
         self._channel_name = channel_name
-        self._api = api
         self._inputs = inputs
         self._outputs = outputs
         self._parameters = parameters
@@ -179,7 +176,7 @@ class Base:
             )
 
             _datapoint = (
-                await self._api.get_datapoint(
+                await self.device.api.get_datapoint(
                     device_serial=self.device_serial,
                     channel_id=self.channel_id,
                     datapoint=_datapoint_id,

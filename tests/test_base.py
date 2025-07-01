@@ -57,7 +57,6 @@ def base_instance(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
         floor_name="Ground Floor",
         room_name="Study",
     )

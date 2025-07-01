@@ -3,7 +3,6 @@
 import enum
 from typing import TYPE_CHECKING, Any
 
-from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
 
@@ -37,7 +36,6 @@ class ForceOnOffSensor(Base):
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -51,7 +49,6 @@ class ForceOnOffSensor(Base):
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )

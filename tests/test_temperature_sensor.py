@@ -26,7 +26,6 @@ def get_temperature_sensor(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -40,6 +39,8 @@ def mock_api():
 def temperature_sensor(mock_api, mock_device):
     """Set up the instance for testing the TemperatureSensor channel."""
     mock_device.device_serial = "7EB1000021C5"
+
+    mock_device.api = mock_api
     return get_temperature_sensor(mock_api, mock_device)
 
 
@@ -59,11 +60,11 @@ async def test_initial_state(temperature_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(temperature_sensor):
     """Test refreshing the state of the sensor."""
-    temperature_sensor._api.get_datapoint.return_value = ["1"]
+    temperature_sensor.device.api.get_datapoint.return_value = ["1"]
     await temperature_sensor.refresh_state()
     assert temperature_sensor.state == 1.0
     assert temperature_sensor.alarm is True
-    temperature_sensor._api.get_datapoint.assert_called_with(
+    temperature_sensor.device.api.get_datapoint.assert_called_with(
         device_serial="7EB1000021C5",
         channel_id="ch0002",
         datapoint="odp0000",

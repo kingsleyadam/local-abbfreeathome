@@ -38,7 +38,6 @@ def des_door_ringing_sensor(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 

@@ -32,6 +32,8 @@ def smoke_detector(mock_api, mock_device):
     parameters = {}
 
     mock_device.device_serial = "E11244221190"
+
+    mock_device.api = mock_api
     return SmokeDetector(
         device=mock_device,
         channel_id="ch0000",
@@ -39,7 +41,6 @@ def smoke_detector(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -52,10 +53,10 @@ async def test_initial_state(smoke_detector):
 @pytest.mark.asyncio
 async def test_refresh_state(smoke_detector):
     """Test refreshing the state of the smoke-detector."""
-    smoke_detector._api.get_datapoint.return_value = ["1"]
+    smoke_detector.device.api.get_datapoint.return_value = ["1"]
     await smoke_detector.refresh_state()
     assert smoke_detector.state is True
-    smoke_detector._api.get_datapoint.assert_called_with(
+    smoke_detector.device.api.get_datapoint.assert_called_with(
         device_serial="E11244221190",
         channel_id="ch0000",
         datapoint="odp0000",

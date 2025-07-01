@@ -3,7 +3,6 @@
 import enum
 from typing import TYPE_CHECKING, Any
 
-from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from ..bin.parameter import Parameter
 from .base import Base
@@ -43,7 +42,6 @@ class DimmingActuator(Base):
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -61,7 +59,6 @@ class DimmingActuator(Base):
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )
@@ -147,7 +144,7 @@ class DimmingActuator(Base):
         _switch_input_id, _switch_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_SWITCH_ON_OFF
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_switch_input_id,
@@ -159,7 +156,7 @@ class DimmingActuator(Base):
         _brightness_input_id, _brightness_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_ABSOLUTE_SET_VALUE_CONTROL
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_brightness_input_id,
@@ -171,7 +168,7 @@ class DimmingActuator(Base):
         _force_input_id, _force_input_value = self.get_input_by_pairing(
             pairing=Pairing.AL_FORCED
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_force_input_id,
@@ -203,7 +200,6 @@ class ColorTemperatureActuator(DimmingActuator):
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -217,7 +213,6 @@ class ColorTemperatureActuator(DimmingActuator):
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )
@@ -274,7 +269,7 @@ class ColorTemperatureActuator(DimmingActuator):
         _color_temp_id, _color_temp_value = self.get_input_by_pairing(
             pairing=Pairing.AL_COLOR_TEMPERATURE
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_color_temp_id,

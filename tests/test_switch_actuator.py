@@ -42,6 +42,7 @@ def switch_actuator(mock_api, mock_device):
     parameters = {}
 
     mock_device.device_serial = "ABB7F500E17A"
+    mock_device.api = mock_api
     return SwitchActuator(
         device=mock_device,
         channel_id="ch0003",
@@ -49,7 +50,6 @@ def switch_actuator(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -64,7 +64,7 @@ async def test_turn_on(switch_actuator):
     """Test to turning on of the switch."""
     await switch_actuator.turn_on()
     assert switch_actuator.state is True
-    switch_actuator._api.set_datapoint.assert_called_with(
+    switch_actuator.device.api.set_datapoint.assert_called_with(
         device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0000",
@@ -77,7 +77,7 @@ async def test_turn_off(switch_actuator):
     """Test to turning off of the switch."""
     await switch_actuator.turn_off()
     assert switch_actuator.state is False
-    switch_actuator._api.set_datapoint.assert_called_with(
+    switch_actuator.device.api.set_datapoint.assert_called_with(
         device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0000",
@@ -94,7 +94,7 @@ async def test_set_forced(switch_actuator):
     assert (
         switch_actuator.forced_position == SwitchActuatorForcedPosition.deactivated.name
     )
-    switch_actuator._api.set_datapoint.assert_called_with(
+    switch_actuator.device.api.set_datapoint.assert_called_with(
         device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0002",
@@ -106,7 +106,7 @@ async def test_set_forced(switch_actuator):
     assert (
         switch_actuator.forced_position == SwitchActuatorForcedPosition.forced_off.name
     )
-    switch_actuator._api.set_datapoint.assert_called_with(
+    switch_actuator.device.api.set_datapoint.assert_called_with(
         device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0002",
@@ -118,7 +118,7 @@ async def test_set_forced(switch_actuator):
     assert (
         switch_actuator.forced_position == SwitchActuatorForcedPosition.forced_on.name
     )
-    switch_actuator._api.set_datapoint.assert_called_with(
+    switch_actuator.device.api.set_datapoint.assert_called_with(
         device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="idp0002",
@@ -132,10 +132,10 @@ async def test_set_forced(switch_actuator):
 @pytest.mark.asyncio
 async def test_refresh_state(switch_actuator):
     """Test refreshing the state of the switch."""
-    switch_actuator._api.get_datapoint.return_value = ["1"]
+    switch_actuator.device.api.get_datapoint.return_value = ["1"]
     await switch_actuator.refresh_state()
     assert switch_actuator.state is True
-    switch_actuator._api.get_datapoint.assert_called_with(
+    switch_actuator.device.api.get_datapoint.assert_called_with(
         device_serial="ABB7F500E17A",
         channel_id="ch0003",
         datapoint="odp0000",

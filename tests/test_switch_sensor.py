@@ -42,6 +42,8 @@ def switch_sensor_with_led(mock_api, mock_device):
     }
 
     mock_device.device_serial = "ABB700D9C0A4"
+
+    mock_device.api = mock_api
     return SwitchSensor(
         device=mock_device,
         channel_id="ch0000",
@@ -49,7 +51,6 @@ def switch_sensor_with_led(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -69,6 +70,8 @@ def switch_sensor_without_led(mock_api, mock_device):
     }
 
     mock_device.device_serial = "ABB700D9C0A4"
+
+    mock_device.api = mock_api
     return SwitchSensor(
         device=mock_device,
         channel_id="ch0000",
@@ -76,7 +79,6 @@ def switch_sensor_without_led(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -92,6 +94,8 @@ def dimming_sensor(mock_api, mock_device):
     parameters = {}
 
     mock_device.device_serial = "ABB700D9C0A4"
+
+    mock_device.api = mock_api
     return DimmingSensor(
         device=mock_device,
         channel_id="ch0000",
@@ -99,7 +103,6 @@ def dimming_sensor(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -114,7 +117,7 @@ async def test_turn_on_led(switch_sensor_with_led):
     """Test to turning on the led of the sensor."""
     await switch_sensor_with_led.turn_on_led()
     assert switch_sensor_with_led.led is True
-    switch_sensor_with_led._api.set_datapoint.assert_called_with(
+    switch_sensor_with_led.device.api.set_datapoint.assert_called_with(
         device_serial="ABB700D9C0A4",
         channel_id="ch0000",
         datapoint="idp0000",
@@ -127,7 +130,7 @@ async def test_turn_off_led(switch_sensor_with_led):
     """Test to turning off the led of the sensor."""
     await switch_sensor_with_led.turn_off_led()
     assert switch_sensor_with_led.led is False
-    switch_sensor_with_led._api.set_datapoint.assert_called_with(
+    switch_sensor_with_led.device.api.set_datapoint.assert_called_with(
         device_serial="ABB700D9C0A4",
         channel_id="ch0000",
         datapoint="idp0000",
@@ -138,10 +141,10 @@ async def test_turn_off_led(switch_sensor_with_led):
 @pytest.mark.asyncio
 async def test_refresh_state_with_led(switch_sensor_with_led):
     """Test refreshing the state of the switch-sensor."""
-    switch_sensor_with_led._api.get_datapoint.return_value = ["1"]
+    switch_sensor_with_led.device.api.get_datapoint.return_value = ["1"]
     await switch_sensor_with_led.refresh_state()
     assert switch_sensor_with_led.led is True
-    switch_sensor_with_led._api.get_datapoint.assert_called_with(
+    switch_sensor_with_led.device.api.get_datapoint.assert_called_with(
         device_serial="ABB700D9C0A4",
         channel_id="ch0000",
         datapoint="idp0000",
@@ -151,10 +154,10 @@ async def test_refresh_state_with_led(switch_sensor_with_led):
 @pytest.mark.asyncio
 async def test_refresh_state_without_led(switch_sensor_without_led):
     """Test refreshing the state of the switch-sensor."""
-    switch_sensor_without_led._api.get_datapoint.return_value = ["1"]
+    switch_sensor_without_led.device.api.get_datapoint.return_value = ["1"]
     await switch_sensor_without_led.refresh_state()
     assert switch_sensor_without_led.led is None
-    switch_sensor_without_led._api.get_datapoint.assert_called_with(
+    switch_sensor_without_led.device.api.get_datapoint.assert_called_with(
         device_serial="ABB700D9C0A4",
         channel_id="ch0000",
         datapoint="idp0000",

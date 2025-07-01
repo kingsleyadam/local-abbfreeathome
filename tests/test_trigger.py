@@ -32,6 +32,8 @@ def trigger(mock_api, mock_device):
     parameters = {}
 
     mock_device.device_serial = "ABB28EBC3651"
+
+    mock_device.api = mock_api
     return Trigger(
         device=mock_device,
         channel_id="ch0003",
@@ -39,7 +41,6 @@ def trigger(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -47,7 +48,7 @@ def trigger(mock_api, mock_device):
 async def test_press(trigger):
     """Test to press the trigger."""
     await trigger.press()
-    trigger._api.set_datapoint.assert_called_with(
+    trigger.device.api.set_datapoint.assert_called_with(
         device_serial="ABB28EBC3651",
         channel_id="ch0003",
         datapoint="idp0001",

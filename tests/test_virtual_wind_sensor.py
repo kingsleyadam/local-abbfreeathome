@@ -34,6 +34,8 @@ def virtual_wind_sensor(mock_api, mock_device):
     parameters = {}
 
     mock_device.device_serial = "6000A0EA2CF4"
+
+    mock_device.api = mock_api
     return VirtualWindSensor(
         device=mock_device,
         channel_id="ch0003",
@@ -41,7 +43,6 @@ def virtual_wind_sensor(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -49,7 +50,7 @@ def virtual_wind_sensor(mock_api, mock_device):
 async def test_turn_on(virtual_wind_sensor):
     """Test to activate the sensor."""
     await virtual_wind_sensor.turn_on()
-    virtual_wind_sensor._api.set_datapoint.assert_called_with(
+    virtual_wind_sensor.device.api.set_datapoint.assert_called_with(
         device_serial="6000A0EA2CF4",
         channel_id="ch0003",
         datapoint="odp0000",
@@ -62,7 +63,7 @@ async def test_turn_on(virtual_wind_sensor):
 async def test_turn_off(virtual_wind_sensor):
     """Test to deactivate the sensor."""
     await virtual_wind_sensor.turn_off()
-    virtual_wind_sensor._api.set_datapoint.assert_called_with(
+    virtual_wind_sensor.device.api.set_datapoint.assert_called_with(
         device_serial="6000A0EA2CF4",
         channel_id="ch0003",
         datapoint="odp0000",
@@ -76,7 +77,7 @@ async def test_set_speed(virtual_wind_sensor):
     """Test to set speed of the sensor."""
     """Greater than 0 is ok"""
     await virtual_wind_sensor.set_speed(5)
-    virtual_wind_sensor._api.set_datapoint.assert_called_with(
+    virtual_wind_sensor.device.api.set_datapoint.assert_called_with(
         device_serial="6000A0EA2CF4",
         channel_id="ch0003",
         datapoint="odp0003",
@@ -86,7 +87,7 @@ async def test_set_speed(virtual_wind_sensor):
 
     """Below 0 is always 0"""
     await virtual_wind_sensor.set_speed(-7.5)
-    virtual_wind_sensor._api.set_datapoint.assert_called_with(
+    virtual_wind_sensor.device.api.set_datapoint.assert_called_with(
         device_serial="6000A0EA2CF4",
         channel_id="ch0003",
         datapoint="odp0003",
@@ -100,7 +101,7 @@ async def test_set_force(virtual_wind_sensor):
     """Test to set force of the sensor."""
     """between 0 and 12 is ok"""
     await virtual_wind_sensor.set_force(5)
-    virtual_wind_sensor._api.set_datapoint.assert_called_with(
+    virtual_wind_sensor.device.api.set_datapoint.assert_called_with(
         device_serial="6000A0EA2CF4",
         channel_id="ch0003",
         datapoint="odp0001",
@@ -110,7 +111,7 @@ async def test_set_force(virtual_wind_sensor):
 
     """Float values should return integer"""
     await virtual_wind_sensor.set_force(5.5)
-    virtual_wind_sensor._api.set_datapoint.assert_called_with(
+    virtual_wind_sensor.device.api.set_datapoint.assert_called_with(
         device_serial="6000A0EA2CF4",
         channel_id="ch0003",
         datapoint="odp0001",
@@ -120,7 +121,7 @@ async def test_set_force(virtual_wind_sensor):
 
     """Below 0 is always 0"""
     await virtual_wind_sensor.set_force(-7.5)
-    virtual_wind_sensor._api.set_datapoint.assert_called_with(
+    virtual_wind_sensor.device.api.set_datapoint.assert_called_with(
         device_serial="6000A0EA2CF4",
         channel_id="ch0003",
         datapoint="odp0001",
@@ -130,7 +131,7 @@ async def test_set_force(virtual_wind_sensor):
 
     """Above 12 is always 12"""
     await virtual_wind_sensor.set_force(15)
-    virtual_wind_sensor._api.set_datapoint.assert_called_with(
+    virtual_wind_sensor.device.api.set_datapoint.assert_called_with(
         device_serial="6000A0EA2CF4",
         channel_id="ch0003",
         datapoint="odp0001",

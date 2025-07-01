@@ -32,6 +32,8 @@ def carbon_monoxide_sensor(mock_api, mock_device):
     parameters = {}
 
     mock_device.device_serial = "E11253502766"
+
+    mock_device.api = mock_api
     return CarbonMonoxideSensor(
         device=mock_device,
         channel_id="ch0000",
@@ -39,7 +41,6 @@ def carbon_monoxide_sensor(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -52,10 +53,10 @@ async def test_initial_state(carbon_monoxide_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(carbon_monoxide_sensor):
     """Test refreshing the state of the carbon-monoxide-sensor."""
-    carbon_monoxide_sensor._api.get_datapoint.return_value = ["1"]
+    carbon_monoxide_sensor.device.api.get_datapoint.return_value = ["1"]
     await carbon_monoxide_sensor.refresh_state()
     assert carbon_monoxide_sensor.state is True
-    carbon_monoxide_sensor._api.get_datapoint.assert_called_with(
+    carbon_monoxide_sensor.device.api.get_datapoint.assert_called_with(
         device_serial="E11253502766",
         channel_id="ch0000",
         datapoint="odp0000",

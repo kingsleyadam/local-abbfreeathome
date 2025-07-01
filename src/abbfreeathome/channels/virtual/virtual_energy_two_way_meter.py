@@ -2,7 +2,6 @@
 
 from typing import TYPE_CHECKING, Any
 
-from ...api import FreeAtHomeApi
 from ...bin.pairing import Pairing
 from ..base import Base
 
@@ -36,7 +35,6 @@ class VirtualEnergyTwoWayMeter(Base):
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -54,7 +52,6 @@ class VirtualEnergyTwoWayMeter(Base):
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )
@@ -188,7 +185,7 @@ class VirtualEnergyTwoWayMeter(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_MEASURED_CURRENT_POWER_CONSUMED
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
@@ -200,7 +197,7 @@ class VirtualEnergyTwoWayMeter(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_MEASURED_IMPORTED_ENERGY_TODAY
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
@@ -212,7 +209,7 @@ class VirtualEnergyTwoWayMeter(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_MEASURED_EXPORTED_ENERGY_TODAY
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
@@ -224,7 +221,7 @@ class VirtualEnergyTwoWayMeter(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_MEASURED_TOTAL_ENERGY_IMPORTED
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
@@ -236,7 +233,7 @@ class VirtualEnergyTwoWayMeter(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_MEASURED_TOTAL_ENERGY_EXPORTED
         )
-        return await self._api.set_datapoint(
+        return await self.device.api.set_datapoint(
             device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,

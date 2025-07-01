@@ -35,7 +35,6 @@ class Device:
         self._device_serial = device_serial
         self._device_id = device_id
         self._display_name = display_name
-        self._api: FreeAtHomeApi = api
         self._interface = interface if interface is not None else Interface.UNDEFINED
         self._unresponsive = unresponsive
         self._unresponsive_counter = unresponsive_counter
@@ -49,6 +48,9 @@ class Device:
         self._parameters = parameters or {}
         self._channels_data = channels_data or {}
         self._channels: dict[str, Base] | None = None
+
+        # Expose api as public attribute
+        self.api: FreeAtHomeApi = api
 
     @property
     def device_serial(self) -> str:
@@ -131,11 +133,6 @@ class Device:
         return self._channels
 
     @property
-    def api(self) -> FreeAtHomeApi:
-        """Return the API instance."""
-        return self._api
-
-    @property
     def is_virtual(self) -> bool:
         """Return True if this is a virtual device."""
         return self._interface == Interface.VIRTUAL_DEVICE
@@ -190,7 +187,6 @@ class Device:
                 inputs=channel_data.get("inputs", {}),
                 outputs=channel_data.get("outputs", {}),
                 parameters=channel_data.get("parameters", {}),
-                api=self._api,
                 floor_name=_floor_name,
                 room_name=_room_name,
             )

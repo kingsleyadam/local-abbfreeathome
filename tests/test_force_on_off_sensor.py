@@ -35,6 +35,8 @@ def force_on_off_sensor(mock_api, mock_device):
     parameters = {}
 
     mock_device.device_serial = "ABB7F5923D74"
+
+    mock_device.api = mock_api
     return ForceOnOffSensor(
         device=mock_device,
         channel_id="ch0000",
@@ -42,7 +44,6 @@ def force_on_off_sensor(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -55,10 +56,10 @@ async def test_initial_state(force_on_off_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(force_on_off_sensor):
     """Test refreshing the state of the force-on-off-sensor."""
-    force_on_off_sensor._api.get_datapoint.return_value = ["1"]
+    force_on_off_sensor.device.api.get_datapoint.return_value = ["1"]
     await force_on_off_sensor.refresh_state()
     assert force_on_off_sensor.state == ForceOnOffSensorState.off.name
-    force_on_off_sensor._api.get_datapoint.assert_called_with(
+    force_on_off_sensor.device.api.get_datapoint.assert_called_with(
         device_serial="ABB7F5923D74",
         channel_id="ch0000",
         datapoint="odp0005",

@@ -11,6 +11,9 @@ from src.abbfreeathome.device import Device
 
 def get_brightness_sensor(mock_api, mock_device):
     """Get the BrightnessSensor class to be tested against."""
+    # Set the api on the mock device so channels can access it
+    mock_device.api = mock_api
+
     inputs = {}
     outputs = {
         "odp0000": {"pairingID": 1026, "value": "0"},
@@ -25,7 +28,6 @@ def get_brightness_sensor(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -58,11 +60,11 @@ async def test_initial_state(brightness_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(brightness_sensor):
     """Test refreshing the state of the sensor."""
-    brightness_sensor._api.get_datapoint.return_value = ["1"]
+    brightness_sensor.device.api.get_datapoint.return_value = ["1"]
     await brightness_sensor.refresh_state()
     assert brightness_sensor.state == 1.0
     assert brightness_sensor.alarm is True
-    brightness_sensor._api.get_datapoint.assert_called_with(
+    brightness_sensor.device.api.get_datapoint.assert_called_with(
         device_serial="7EB1000021C5",
         channel_id="ch0000",
         datapoint="odp0000",

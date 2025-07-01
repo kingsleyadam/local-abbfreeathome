@@ -27,7 +27,6 @@ def get_wind_sensor(mock_api, mock_device):
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -41,6 +40,8 @@ def mock_api():
 def wind_sensor(mock_api, mock_device):
     """Set up the instance for testing the WindSensor channel."""
     mock_device.device_serial = "7EB1000021C5"
+
+    mock_device.api = mock_api
     return get_wind_sensor(mock_api, mock_device)
 
 
@@ -61,12 +62,12 @@ async def test_initial_state(wind_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(wind_sensor):
     """Test refreshing the state of the sensor."""
-    wind_sensor._api.get_datapoint.return_value = ["1"]
+    wind_sensor.device.api.get_datapoint.return_value = ["1"]
     await wind_sensor.refresh_state()
     assert wind_sensor.state == 1.0
     assert wind_sensor.alarm is True
     assert wind_sensor.force == 1
-    wind_sensor._api.get_datapoint.assert_called_with(
+    wind_sensor.device.api.get_datapoint.assert_called_with(
         device_serial="7EB1000021C5",
         channel_id="ch0003",
         datapoint="odp0001",
