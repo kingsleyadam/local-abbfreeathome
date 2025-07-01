@@ -161,9 +161,21 @@ class FreeAtHome:
         self._filtered_channels = None
 
     def unload_channel_by_channel_serial(self, channel_serial: str):
-        """Unload all channels by channel serial id."""
-        # TODO: Check this logic, I don't think it's correct right now.
-        self.unload_device_by_serial(channel_serial)
+        """
+        Unload a specific channel by its channel serial.
+
+        Channel serial format: device_serial/channel_id
+        """
+        if "/" not in channel_serial:
+            return
+
+        _device_serial, _channel_id = channel_serial.split("/", 1)
+        _device = self._devices.get(_device_serial)
+        if _device and _device.channels:
+            # Remove the specific channel from the device
+            _device.channels.pop(_channel_id, None)
+            # Invalidate the filtered channels cache
+            self._filtered_channels = None
 
     def unload_device_by_serial(self, device_serial: str):
         """Unload a device by its serial ID."""

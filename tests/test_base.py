@@ -33,6 +33,7 @@ def base_instance(mock_api, mock_device):
     """Set up the base instance for testing the Base channel."""
     mock_device.device_serial = "ABB7F500E17A"
     mock_device.display_name = "Device Name"
+    mock_device.unresponsive = False
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
         "idp0001": {"pairingID": 2, "value": "0"},
@@ -68,6 +69,7 @@ def test_initialization(base_instance):
     """Test the initialization of the base class."""
     assert base_instance.device_serial == "ABB7F500E17A"
     assert base_instance.device_name == "Device Name"
+    assert not base_instance.unresponsive
     assert base_instance.channel_id == "ch0003"
     assert base_instance.channel_name == "Channel Name"
     assert base_instance.floor_name == "Ground Floor"

@@ -393,6 +393,50 @@ async def test_get_config(freeathome, api_mock):
 
 
 @pytest.mark.asyncio
+async def test_get_config_with_refresh(api_mock):
+    """Test the get_config function with refresh=True."""
+    freeathome = FreeAtHome(api_mock)
+
+    # First call to populate _config
+    config1 = await freeathome.get_config()
+    assert config1 == api_mock.get_configuration.return_value
+    api_mock.get_configuration.assert_called_once()
+
+    # Reset the mock call count
+    api_mock.get_configuration.reset_mock()
+
+    # Second call with refresh=True should call get_configuration again
+    config2 = await freeathome.get_config(refresh=True)
+    assert config2 == api_mock.get_configuration.return_value
+    # Should be called again due to refresh=True
+    api_mock.get_configuration.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_config_cached(api_mock):
+    """Test that get_config returns cached config when not refreshing."""
+    freeathome = FreeAtHome(api_mock)
+
+    # First call should fetch config
+    config1 = await freeathome.get_config()
+    assert config1 == api_mock.get_configuration.return_value
+    api_mock.get_configuration.assert_called_once()
+
+    # Reset the mock call count
+    api_mock.get_configuration.reset_mock()
+
+    # Second call without refresh should NOT call get_configuration again
+    config2 = await freeathome.get_config()
+    assert config2 == config1  # Should return cached config
+    api_mock.get_configuration.assert_not_called()  # Should not be called again
+
+    # Explicitly test with refresh=False
+    config3 = await freeathome.get_config(refresh=False)
+    assert config3 == config1  # Should return cached config
+    api_mock.get_configuration.assert_not_called()  # Should still not be called
+
+
+@pytest.mark.asyncio
 async def test_get_channels_by_class(freeathome):
     """Test the get_channels_by_class function."""
     await freeathome.load()
@@ -423,9 +467,9 @@ async def test_load(freeathome):
     assert channels[channel_key].is_virtual is False
 
     # Unload a single channel and test it's been removed
-    freeathome.unload_channel_by_channel_serial(channel_serial="ABB7F62F6C0B")
+    freeathome.unload_channel_by_channel_serial(channel_serial="ABB7F62F6C0B/ch0000")
     channels = freeathome.get_channels()
-    assert len(channels) == 3
+    assert len(channels) == 4
 
 
 @pytest.mark.asyncio
@@ -814,3 +858,56 @@ async def test_channel_class_filtering(api_mock):
     # Verify all returned channels are of the specified class
     for channel in channels.values():
         assert isinstance(channel, SwitchActuator)
+
+
+@pytest.mark.asyncio
+async def test_unload_channel_by_channel_serial(api_mock):
+    """Test unloading specific channels by channel serial."""
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+
+    initial_channels = freeathome.get_channels()
+    initial_count = len(initial_channels)
+    assert initial_count > 0
+
+    # Test unloading a specific channel using channel serial format
+    channel_serial = "ABB7F500E17A/ch0003"
+    assert channel_serial in initial_channels
+
+    freeathome.unload_channel_by_channel_serial(channel_serial)
+
+    # Verify the specific channel was removed
+    updated_channels = freeathome.get_channels()
+    assert channel_serial not in updated_channels
+    assert len(updated_channels) == initial_count - 1
+
+
+@pytest.mark.asyncio
+async def test_unload_channel_invalid_serial(api_mock):
+    """Test unloading channel with invalid channel serial."""
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+
+    initial_channels = freeathome.get_channels()
+    initial_count = len(initial_channels)
+
+    # Test with non-existent channel serial
+    freeathome.unload_channel_by_channel_serial("NONEXISTENT/ch0000")
+
+    # Should not change anything
+    updated_channels = freeathome.get_channels()
+    assert len(updated_channels) == initial_count
+
+    # Test with invalid device serial in channel format
+    freeathome.unload_channel_by_channel_serial("INVALID_DEVICE/ch0000")
+
+    # Should not change anything
+    updated_channels = freeathome.get_channels()
+    assert len(updated_channels) == initial_count
+
+    # Test with invalid format (no "/" separator) - should do nothing
+    freeathome.unload_channel_by_channel_serial("ABB7F500E17A")
+
+    # Should not change anything
+    updated_channels = freeathome.get_channels()
+    assert len(updated_channels) == initial_count
