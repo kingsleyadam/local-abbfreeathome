@@ -8,6 +8,7 @@ from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.bin.parameter import Parameter
 from src.abbfreeathome.channels.base import Base
+from src.abbfreeathome.device import Device
 from src.abbfreeathome.exceptions import (
     InvalidDeviceChannelPairing,
     InvalidDeviceChannelParameter,
@@ -22,8 +23,17 @@ def mock_api():
 
 
 @pytest.fixture
-def base_instance(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def base_instance(mock_api, mock_device):
     """Set up the base instance for testing the Base channel."""
+    mock_device.device_serial = "ABB7F500E17A"
+    mock_device.display_name = "Device Name"
+    mock_device.unresponsive = False
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
         "idp0001": {"pairingID": 2, "value": "0"},
@@ -41,14 +51,12 @@ def base_instance(mock_api):
     }
 
     instance = Base(
-        device_id="ABB7F500E17A",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0003",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
         floor_name="Ground Floor",
         room_name="Study",
     )
@@ -58,8 +66,9 @@ def base_instance(mock_api):
 
 def test_initialization(base_instance):
     """Test the initialization of the base class."""
-    assert base_instance.device_id == "ABB7F500E17A"
+    assert base_instance.device_serial == "ABB7F500E17A"
     assert base_instance.device_name == "Device Name"
+    assert not base_instance.unresponsive
     assert base_instance.channel_id == "ch0003"
     assert base_instance.channel_name == "Channel Name"
     assert base_instance.floor_name == "Ground Floor"

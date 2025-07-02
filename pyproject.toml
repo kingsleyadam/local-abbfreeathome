@@ -168,3 +168,10 @@ FREEATHOME_MAX_REQUEST_TRIES = "1"
 
 [tool.coverage.run]
 omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]

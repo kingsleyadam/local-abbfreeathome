@@ -2,11 +2,13 @@
 
 # import enum
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ...api import FreeAtHomeApi
 from ...bin.pairing import Pairing
 from ..base import Base
+
+if TYPE_CHECKING:
+    from ...device import Device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,30 +30,26 @@ class VirtualSwitchActuator(Base):
 
     def __init__(
         self,
-        device_id: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
-    ):
+    ) -> None:
         """Initialize the Free@Home Virtual SwitchActuator class."""
         self._state: bool | None = None
         self._requested_state: bool | None = None
 
         super().__init__(
-            device_id,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )
@@ -95,8 +93,8 @@ class VirtualSwitchActuator(Base):
         _switch_output_id, _switch_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_INFO_ON_OFF
         )
-        return await self._api.set_datapoint(
-            device_id=self.device_id,
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_switch_output_id,
             value=value,

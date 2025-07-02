@@ -1,14 +1,15 @@
 """Test class to test the RainSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.rain_sensor import RainSensor
+from src.abbfreeathome.device import Device
 
 
-def get_rain_sensor(mock_api):
+def get_rain_sensor(mock_api, mock_device):
     """Get the RainSensor class to be tested against."""
     inputs = {}
     outputs = {
@@ -20,14 +21,12 @@ def get_rain_sensor(mock_api):
     parameters = {"par0049": "1", "par0047": "2", "par0048": "7"}
 
     return RainSensor(
-        device_id="7EB1000021C5",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0001",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -38,9 +37,18 @@ def mock_api():
 
 
 @pytest.fixture
-def rain_sensor(mock_api):
+def rain_sensor(mock_api, mock_device):
     """Set up the instance for testing the RainSensor channel."""
-    return get_rain_sensor(mock_api)
+    mock_device.device_serial = "7EB1000021C5"
+
+    mock_device.api = mock_api
+    return get_rain_sensor(mock_api, mock_device)
+
+
+@pytest.fixture
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
 
 
 @pytest.mark.asyncio
@@ -52,11 +60,11 @@ async def test_initial_state(rain_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(rain_sensor):
     """Test refreshing the state of the sensor."""
-    rain_sensor._api.get_datapoint.return_value = ["1"]
+    rain_sensor.device.api.get_datapoint.return_value = ["1"]
     await rain_sensor.refresh_state()
     assert rain_sensor.state is True
-    rain_sensor._api.get_datapoint.assert_called_with(
-        device_id="7EB1000021C5",
+    rain_sensor.device.api.get_datapoint.assert_called_with(
+        device_serial="7EB1000021C5",
         channel_id="ch0001",
         datapoint="odp0000",
     )

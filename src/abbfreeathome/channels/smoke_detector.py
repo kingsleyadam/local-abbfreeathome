@@ -1,10 +1,12 @@
 """Free@Home SmokeDetector Class."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
+
+if TYPE_CHECKING:
+    from ..device import Device
 
 
 class SmokeDetector(Base):
@@ -19,14 +21,12 @@ class SmokeDetector(Base):
 
     def __init__(
         self,
-        device_id: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -34,14 +34,12 @@ class SmokeDetector(Base):
         self._state: bool | None = None
 
         super().__init__(
-            device_id,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )

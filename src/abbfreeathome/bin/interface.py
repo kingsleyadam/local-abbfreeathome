@@ -18,3 +18,11 @@ class Interface(enum.Enum):
     SONOS = "sonos"
     VIRTUAL_DEVICE = "VD"
     SMOKEALARM = "smokealarm"
+
+    @classmethod
+    def from_string(cls, interface_value: str | None) -> "Interface":
+        """Convert an interface string to an Interface enum."""
+        for interface in cls:
+            if interface.value == interface_value:
+                return interface
+        return cls.UNDEFINED

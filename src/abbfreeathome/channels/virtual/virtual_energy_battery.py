@@ -1,10 +1,12 @@
 """Free@Home Virtual EnergyBattery Class."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ...api import FreeAtHomeApi
 from ...bin.pairing import Pairing
 from ..base import Base
+
+if TYPE_CHECKING:
+    from ...device import Device
 
 
 class VirtualEnergyBattery(Base):
@@ -29,17 +31,15 @@ class VirtualEnergyBattery(Base):
 
     def __init__(
         self,
-        device_id: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
-    ):
+    ) -> None:
         """Initialize the Free@Home Virtual EnergyBattery class."""
         self._battery_power: float | None = None
         self._soc: int | None = None
@@ -49,14 +49,12 @@ class VirtualEnergyBattery(Base):
         self._exported_total: int | None = None
 
         super().__init__(
-            device_id,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )
@@ -210,8 +208,8 @@ class VirtualEnergyBattery(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_BATTERY_POWER
         )
-        return await self._api.set_datapoint(
-            device_id=self.device_id,
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,
@@ -222,8 +220,8 @@ class VirtualEnergyBattery(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_SOC
         )
-        return await self._api.set_datapoint(
-            device_id=self.device_id,
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,
@@ -234,8 +232,8 @@ class VirtualEnergyBattery(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_MEASURED_IMPORTED_ENERGY_TODAY
         )
-        return await self._api.set_datapoint(
-            device_id=self.device_id,
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,
@@ -246,8 +244,8 @@ class VirtualEnergyBattery(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_MEASURED_EXPORTED_ENERGY_TODAY
         )
-        return await self._api.set_datapoint(
-            device_id=self.device_id,
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,
@@ -258,8 +256,8 @@ class VirtualEnergyBattery(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_MEASURED_TOTAL_ENERGY_IMPORTED
         )
-        return await self._api.set_datapoint(
-            device_id=self.device_id,
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,
@@ -270,8 +268,8 @@ class VirtualEnergyBattery(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_MEASURED_TOTAL_ENERGY_EXPORTED
         )
-        return await self._api.set_datapoint(
-            device_id=self.device_id,
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,

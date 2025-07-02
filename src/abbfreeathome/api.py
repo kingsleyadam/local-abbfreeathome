@@ -197,12 +197,37 @@ class FreeAtHomeApi:
 
         return _response.get(self._sysap_uuid)
 
+    async def get_floors(self) -> dict:
+        """Get the floors from the configuration."""
+        _config = await self.get_configuration()
+        return _config.get("floorplan", {}).get("floors", {})
+
+    async def get_floor_name(self, floor_serial_id: str) -> str | None:
+        """Get the floor name from the configuration."""
+        if not floor_serial_id:
+            return None
+
+        _floors = await self.get_floors()
+        return _floors.get(floor_serial_id, {}).get("name")
+
+    async def get_room_name(
+        self, floor_serial_id: str, room_serial_id: str
+    ) -> str | None:
+        """Get the room name from the configuration."""
+        if not floor_serial_id or not room_serial_id:
+            return None
+
+        _floors = await self.get_floors()
+        _floor = _floors.get(floor_serial_id, {})
+        _rooms = _floor.get("rooms", {})
+        return _rooms.get(room_serial_id, {}).get("name")
+
     async def get_datapoint(
-        self, device_id: str, channel_id: str, datapoint: str
+        self, device_serial: str, channel_id: str, datapoint: str
     ) -> list[str]:
         """Get a specific datapoint from the api."""
         _response = await self._request(
-            path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_id}.{channel_id}.{datapoint}",
+            path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_serial}.{channel_id}.{datapoint}",
             method="get",
         )
 
@@ -227,17 +252,19 @@ class FreeAtHomeApi:
         return await self._request(path="/api/rest/sysap")
 
     async def set_datapoint(
-        self, device_id: str, channel_id: str, datapoint: str, value: str
+        self, device_serial: str, channel_id: str, datapoint: str, value: str
     ) -> bool:
         """Set a specific datapoint in the api. This is used to control channels."""
         _response = await self._request(
-            path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_id}.{channel_id}.{datapoint}",
+            path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_serial}.{channel_id}.{datapoint}",
             method="put",
             data=value,
         )
 
         if _response.get(self._sysap_uuid).get("result").lower() != "ok":
-            raise SetDatapointFailureException(device_id, channel_id, datapoint, value)
+            raise SetDatapointFailureException(
+                device_serial, channel_id, datapoint, value
+            )
 
         return True
 

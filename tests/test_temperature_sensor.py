@@ -1,14 +1,15 @@
 """Test class to test the TemperatureSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.temperature_sensor import TemperatureSensor
+from src.abbfreeathome.device import Device
 
 
-def get_temperature_sensor(mock_api):
+def get_temperature_sensor(mock_api, mock_device):
     """Get the TemperatureSensor class to be tested against."""
     inputs = {}
     outputs = {
@@ -19,14 +20,12 @@ def get_temperature_sensor(mock_api):
     parameters = {"par002d": "4", "par0047": "7", "par0048": "7"}
 
     return TemperatureSensor(
-        device_id="7EB1000021C5",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0002",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -37,9 +36,18 @@ def mock_api():
 
 
 @pytest.fixture
-def temperature_sensor(mock_api):
+def temperature_sensor(mock_api, mock_device):
     """Set up the instance for testing the TemperatureSensor channel."""
-    return get_temperature_sensor(mock_api)
+    mock_device.device_serial = "7EB1000021C5"
+
+    mock_device.api = mock_api
+    return get_temperature_sensor(mock_api, mock_device)
+
+
+@pytest.fixture
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
 
 
 @pytest.mark.asyncio
@@ -52,12 +60,12 @@ async def test_initial_state(temperature_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(temperature_sensor):
     """Test refreshing the state of the sensor."""
-    temperature_sensor._api.get_datapoint.return_value = ["1"]
+    temperature_sensor.device.api.get_datapoint.return_value = ["1"]
     await temperature_sensor.refresh_state()
     assert temperature_sensor.state == 1.0
     assert temperature_sensor.alarm is True
-    temperature_sensor._api.get_datapoint.assert_called_with(
-        device_id="7EB1000021C5",
+    temperature_sensor.device.api.get_datapoint.assert_called_with(
+        device_serial="7EB1000021C5",
         channel_id="ch0002",
         datapoint="odp0000",
     )

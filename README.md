@@ -129,7 +129,7 @@ async def refresh_state(self):
 
         _datapoint = (
             await self._api.get_datapoint(
-                device_id=self.device_id,
+                device_serial=self.device_serial,
                 channel_id=self.channel_id,
                 datapoint=_switch_output_id,
             )
@@ -160,7 +160,7 @@ async def _set_switching_datapoint(self, value: str):
         pairing=Pairing.AL_SWITCH_ON_OFF
     )
     return await self._api.set_datapoint(
-        device_id=self.device_id,
+        device_serial=self.device_serial,
         channel_id=self.channel_id,
         datapoint=_switch_input_id,
         value=value,
@@ -333,6 +333,60 @@ INFO:abbfreeathome.channels.base:Office Light received updated data: ABB7F62F6C2
 The switches datapoints have been updated.
 INFO:abbfreeathome.channels.base:Office Light received updated data: ABB7F62F6C25/ch0003/odp0000: 1
 The switches datapoints have been updated.
+```
+
+### Devices / Free@Home Overview
+
+Here is example code that'll output all of the devices in your Free@Home setup. Including some general information about the setup (e.g. number of devices, unresponsive devices, counts by interfact)
+
+```python
+import asyncio
+
+from abbfreeathome import FreeAtHome, FreeAtHomeApi
+from abbfreeathome.bin.interface import Interface
+
+
+async def main():
+    # Create an instance of the FreeAtHome class.
+    _free_at_home = FreeAtHome(
+        api=FreeAtHomeApi(
+          host="http://<IP or HOSTNAME>", username="installer", password="<password>"
+        )
+    )
+
+    # Load devices and channels
+    await _free_at_home.load()
+
+    # Get all devices
+    _devices = _free_at_home.get_devices()
+
+    # Iterate through devices
+    for _device in _devices.values():
+        print(str(_device))
+
+    # Number of devices
+    print(f"\nFound {len(_devices)} devices")
+
+    # Unresponsive devices
+    _unresponsive_devices = [
+        device for device in _devices.values() if device.unresponsive
+    ]
+    print(f"Unresponsive devices: {len(_unresponsive_devices)}\n")
+
+    # Filter devices by interface using the Interface enum
+    # Devices by interface
+    for _interface in Interface:
+        _device_by_interface = [
+            _device for _device in _devices.values() if _device.interface == _interface
+        ]
+        print(f"{_interface} devices: {len(_device_by_interface)}")
+
+    # Close api session
+    await _free_at_home.api.close_client_session()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 ## TODO

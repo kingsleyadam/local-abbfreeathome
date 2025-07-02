@@ -1,10 +1,12 @@
 """Free@Home Virtual TemperatureSensor Class."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ...api import FreeAtHomeApi
 from ...bin.pairing import Pairing
 from ..base import Base
+
+if TYPE_CHECKING:
+    from ...device import Device
 
 
 class VirtualTemperatureSensor(Base):
@@ -21,30 +23,26 @@ class VirtualTemperatureSensor(Base):
 
     def __init__(
         self,
-        device_id: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
-    ):
+    ) -> None:
         """Initialize the Free@Home Virtual TemperatureSensor class."""
         self._temperature: float | None = None
         self._alarm: bool | None = None
 
         super().__init__(
-            device_id,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )
@@ -97,8 +95,8 @@ class VirtualTemperatureSensor(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_OUTDOOR_TEMPERATURE
         )
-        return await self._api.set_datapoint(
-            device_id=self.device_id,
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,
@@ -109,8 +107,8 @@ class VirtualTemperatureSensor(Base):
         _sensor_output_id, _sensor_output_value = self.get_output_by_pairing(
             pairing=Pairing.AL_FROST_ALARM
         )
-        return await self._api.set_datapoint(
-            device_id=self.device_id,
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
             channel_id=self.channel_id,
             datapoint=_sensor_output_id,
             value=value,

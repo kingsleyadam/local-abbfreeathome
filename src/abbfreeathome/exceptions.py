@@ -68,11 +68,13 @@ class InvalidApiResponseException(FreeAtHomeException):
 class InvalidDeviceChannelPairing(FreeAtHomeException):
     """Raise an exception for an invalid pairing id."""
 
-    def __init__(self, device_id: str, channel_id: str, pairing_value: int) -> None:
+    def __init__(self, device_serial: str, channel_id: str, pairing_value: int) -> None:
         """Initialze the InvalidDeviceChannelPairing class."""
         self.message = (
             f"Could not find paring id for "
-            f"device: {device_id}; channel: {channel_id}; pairing id: {pairing_value}"
+            f"device: {device_serial}; "
+            f"channel: {channel_id}; "
+            f"pairing id: {pairing_value}"
         )
         super().__init__(self.message)
 
@@ -80,11 +82,13 @@ class InvalidDeviceChannelPairing(FreeAtHomeException):
 class InvalidDeviceChannelParameter(FreeAtHomeException):
     """Raise an exception for an invalid parameter id."""
 
-    def __init__(self, device_id: str, channel_id: str, parameter_value: int) -> None:
+    def __init__(
+        self, device_serial: str, channel_id: str, parameter_value: int
+    ) -> None:
         """Initialze the InvalidDeviceChannelParameter class."""
         self.message = (
             f"Could not find parameter id for "
-            f"device: {device_id}; channel: {channel_id}; "
+            f"device: {device_serial}; channel: {channel_id}; "
             f"parameter id: {parameter_value}"
         )
         super().__init__(self.message)
@@ -102,11 +106,11 @@ class UserNotFoundException(FreeAtHomeException):
 class SetDatapointFailureException(FreeAtHomeException):
     """Raise an exception when setting a datapoint fails."""
 
-    def __init__(self, device_id: str, channel_id: str, datapoint: str, value: str):
+    def __init__(self, device_serial: str, channel_id: str, datapoint: str, value: str):
         """Initialize the SetDatapointFailureException class."""
         self.message = (
-            f"Failed to set datapoint; device_id: "
-            f"{device_id}; "
+            f"Failed to set datapoint; device_serial: "
+            f"{device_serial}; "
             f"channel_id: {channel_id}; "
             f"datapoint: {datapoint}; "
             f"value: {value}"

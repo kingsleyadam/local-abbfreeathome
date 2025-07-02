@@ -1,11 +1,12 @@
 """Test class to test the virtual RainSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.virtual.virtual_rain_sensor import VirtualRainSensor
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -15,7 +16,13 @@ def mock_api():
 
 
 @pytest.fixture
-def virtual_rain_sensor(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def virtual_rain_sensor(mock_api, mock_device):
     """Set up the sensor instance for testing the virtual RainSensor channel."""
     inputs = {}
     outputs = {
@@ -26,15 +33,16 @@ def virtual_rain_sensor(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "6000A0EA2CF4"
+
+    mock_device.api = mock_api
     return VirtualRainSensor(
-        device_id="6000A0EA2CF4",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0001",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -42,8 +50,8 @@ def virtual_rain_sensor(mock_api):
 async def test_turn_on(virtual_rain_sensor):
     """Test to activate the sensor."""
     await virtual_rain_sensor.turn_on()
-    virtual_rain_sensor._api.set_datapoint.assert_called_with(
-        device_id="6000A0EA2CF4",
+    virtual_rain_sensor.device.api.set_datapoint.assert_called_with(
+        device_serial="6000A0EA2CF4",
         channel_id="ch0001",
         datapoint="odp0000",
         value="1",
@@ -55,8 +63,8 @@ async def test_turn_on(virtual_rain_sensor):
 async def test_turn_off(virtual_rain_sensor):
     """Test to deactivate the sensor."""
     await virtual_rain_sensor.turn_off()
-    virtual_rain_sensor._api.set_datapoint.assert_called_with(
-        device_id="6000A0EA2CF4",
+    virtual_rain_sensor.device.api.set_datapoint.assert_called_with(
+        device_serial="6000A0EA2CF4",
         channel_id="ch0001",
         datapoint="odp0000",
         value="0",

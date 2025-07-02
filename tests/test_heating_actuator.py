@@ -1,11 +1,12 @@
 """Test class to test the HeatingActuator channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.heating_actuator import HeatingActuator
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -15,7 +16,13 @@ def mock_api():
 
 
 @pytest.fixture
-def heating_actuator(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def heating_actuator(mock_api, mock_device):
     """Set up the heating actuator instance for testing the HeatingActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 48, "value": "0"}  # AL_ACTUATING_VALUE_HEATING
@@ -26,15 +33,16 @@ def heating_actuator(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB289613651"
+
+    mock_device.api = mock_api
     return HeatingActuator(
-        device_id="ABB289613651",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0002",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -48,8 +56,8 @@ async def test_initial_state(heating_actuator):
 async def test_set_position(heating_actuator):
     """Test to set a specific position of the HeatingActuator."""
     await heating_actuator.set_position(50)
-    heating_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB289613651",
+    heating_actuator.device.api.set_datapoint.assert_called_with(
+        device_serial="ABB289613651",
         channel_id="ch0002",
         datapoint="idp0000",
         value="50",
@@ -58,16 +66,16 @@ async def test_set_position(heating_actuator):
 
     # Also checking lower and upper boundaries
     await heating_actuator.set_position(-1)
-    heating_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB289613651",
+    heating_actuator.device.api.set_datapoint.assert_called_with(
+        device_serial="ABB289613651",
         channel_id="ch0002",
         datapoint="idp0000",
         value="0",
     )
     assert heating_actuator.position == 0
     await heating_actuator.set_position(120)
-    heating_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB289613651",
+    heating_actuator.device.api.set_datapoint.assert_called_with(
+        device_serial="ABB289613651",
         channel_id="ch0002",
         datapoint="idp0000",
         value="100",

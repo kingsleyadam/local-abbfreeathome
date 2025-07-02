@@ -5,13 +5,13 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.bin.function import Function
 from src.abbfreeathome.bin.interface import Interface
 from src.abbfreeathome.channels.switch_actuator import SwitchActuator
 from src.abbfreeathome.channels.switch_sensor import SwitchSensor
 from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
     VirtualSwitchActuator,
 )
+from src.abbfreeathome.device import Device
 from src.abbfreeathome.freeathome import FreeAtHome
 
 
@@ -328,6 +328,28 @@ def api_mock():
             },
         },
     }
+
+    async def mock_get_floor_name(floor_serial_id):
+        if not floor_serial_id:
+            return None
+        floors = {
+            "01": "Ground Floor",
+            "02": "First Floor",
+        }
+        return floors.get(floor_serial_id)
+
+    async def mock_get_room_name(floor_serial_id, room_serial_id):
+        if not floor_serial_id or not room_serial_id:
+            return None
+        rooms = {
+            ("01", "01"): "Living Room",
+            ("02", "02"): "Bedroom",
+        }
+        return rooms.get((floor_serial_id, room_serial_id))
+
+    api.get_floor_name.side_effect = mock_get_floor_name
+    api.get_room_name.side_effect = mock_get_room_name
+
     return api
 
 
@@ -363,19 +385,6 @@ def freeathome_virtuals(api_mock):
 
 
 @pytest.mark.asyncio
-async def test_floors(freeathome):
-    """Test the floors property."""
-    floors = await freeathome.get_floors()
-    assert floors == {
-        "01": {
-            "name": "Ground Floor",
-            "rooms": {"01": {"name": "Living Room"}},
-        },
-        "02": {"name": "First Floor", "rooms": {"02": {"name": "Bedroom"}}},
-    }
-
-
-@pytest.mark.asyncio
 async def test_get_config(freeathome, api_mock):
     """Test the get_config function."""
     config = await freeathome.get_config()
@@ -384,46 +393,47 @@ async def test_get_config(freeathome, api_mock):
 
 
 @pytest.mark.asyncio
-async def test_get_channels_by_function(freeathome):
-    """Test the get_channels_by_fuction function."""
-    channels = await freeathome.get_channels_by_function(Function.FID_SWITCH_ACTUATOR)
-    assert len(channels) == 2
-    assert channels[0]["device_name"] == "Study Area Rocker"
-    assert channels[0]["channel_name"] == "Study Area Light"
-    assert channels[0]["floor_name"] == "Ground Floor"
-    assert channels[0]["room_name"] == "Living Room"
+async def test_get_config_with_refresh(api_mock):
+    """Test the get_config function with refresh=True."""
+    freeathome = FreeAtHome(api_mock)
+
+    # First call to populate _config
+    config1 = await freeathome.get_config()
+    assert config1 == api_mock.get_configuration.return_value
+    api_mock.get_configuration.assert_called_once()
+
+    # Reset the mock call count
+    api_mock.get_configuration.reset_mock()
+
+    # Second call with refresh=True should call get_configuration again
+    config2 = await freeathome.get_config(refresh=True)
+    assert config2 == api_mock.get_configuration.return_value
+    # Should be called again due to refresh=True
+    api_mock.get_configuration.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_get_floor_name(freeathome):
-    """Test the get_floor_name function."""
-    floor_name = await freeathome.get_floor_name("01")
-    assert floor_name == "Ground Floor"
+async def test_get_config_cached(api_mock):
+    """Test that get_config returns cached config when not refreshing."""
+    freeathome = FreeAtHome(api_mock)
 
-    floor_name = await freeathome.get_floor_name(floor_serial_id=None)
-    assert floor_name is None
+    # First call should fetch config
+    config1 = await freeathome.get_config()
+    assert config1 == api_mock.get_configuration.return_value
+    api_mock.get_configuration.assert_called_once()
 
+    # Reset the mock call count
+    api_mock.get_configuration.reset_mock()
 
-@pytest.mark.asyncio
-async def test_get_room_name(freeathome):
-    """Test the get_room_name function."""
-    room_name = await freeathome.get_room_name("01", "01")
-    assert room_name == "Living Room"
+    # Second call without refresh should NOT call get_configuration again
+    config2 = await freeathome.get_config()
+    assert config2 == config1  # Should return cached config
+    api_mock.get_configuration.assert_not_called()  # Should not be called again
 
-    room_name = await freeathome.get_room_name(
-        floor_serial_id="01", room_serial_id=None
-    )
-    assert room_name is None
-
-    room_name = await freeathome.get_room_name(
-        floor_serial_id=None, room_serial_id=None
-    )
-    assert room_name is None
-
-    room_name = await freeathome.get_room_name(
-        floor_serial_id=None, room_serial_id="01"
-    )
-    assert room_name is None
+    # Explicitly test with refresh=False
+    config3 = await freeathome.get_config(refresh=False)
+    assert config3 == config1  # Should return cached config
+    api_mock.get_configuration.assert_not_called()  # Should still not be called
 
 
 @pytest.mark.asyncio
@@ -457,9 +467,9 @@ async def test_load(freeathome):
     assert channels[channel_key].is_virtual is False
 
     # Unload a single channel and test it's been removed
-    freeathome.unload_channel_by_channel_serial(channel_serial="ABB7F62F6C0B")
+    freeathome.unload_channel_by_channel_serial(channel_serial="ABB7F62F6C0B/ch0000")
     channels = freeathome.get_channels()
-    assert len(channels) == 3
+    assert len(channels) == 4
 
 
 @pytest.mark.asyncio
@@ -524,10 +534,380 @@ async def test_ws_listen(freeathome, api_mock):
 @pytest.mark.asyncio
 async def test_update(freeathome):
     """Test the update function."""
+    # Create a mock channel
     channel = MagicMock()
-    freeathome._channels = {"ABB7F500E17A/ch0003": channel}
+
+    # Create a device with the channel that has floor/room info to pass orphan filtering
+    device = Device(
+        device_serial="ABB7F500E17A",
+        device_id="910C",
+        display_name="Test Device",
+        interface=Interface.WIRED_BUS,
+        channels_data={
+            "ch0003": {"functionID": "0", "floor": "floor1", "room": "room1"}
+        },
+        api=freeathome.api,
+    )
+
+    # Add the device to freeathome
+    freeathome._devices["ABB7F500E17A"] = device
+
+    # Mock the device.channels to return our mock channel
+    device._channels = {"ch0003": channel}
+
     data = {
         "datapoints": {"ABB7F500E17A/ch0003/256": "0", "ABB7F500E17A/ch0001/0": "0"}
     }
     await freeathome.update(data)
     channel.update_channel.assert_called_once_with("ABB7F500E17A/ch0003/256", "0")
+
+
+@pytest.mark.asyncio
+async def test_device_interface_enum_conversion(api_mock):
+    """Test that interface strings are properly converted to Interface enums."""
+    api_mock.get_configuration = AsyncMock(
+        return_value={
+            "devices": {
+                "ABB7F500E17A": {
+                    "deviceId": "910C",
+                    "displayName": "Test TP Device",
+                    "interface": "TP",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+                "BEED509C0001": {
+                    "deviceId": "10C0",
+                    "displayName": "Test HUE Device",
+                    "interface": "hue",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+                "6000F91624D1": {
+                    "deviceId": "0161",
+                    "displayName": "Test Virtual Device",
+                    "interface": "vdev:script.test",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+            },
+            "floorplan": {"floors": {}},
+        }
+    )
+
+    freeathome = FreeAtHome(api_mock)
+    await freeathome._load_devices()
+
+    devices = freeathome.get_devices()
+
+    # Test TP device interface conversion
+    tp_device = devices["ABB7F500E17A"]
+    assert tp_device.interface == Interface.WIRED_BUS
+    assert tp_device.interface.value == "TP"
+
+    # Test HUE device interface conversion
+    hue_device = devices["BEED509C0001"]
+    assert hue_device.interface == Interface.HUE
+    assert hue_device.interface.value == "hue"
+
+    # Test virtual device interface conversion
+    virtual_device = devices["6000F91624D1"]
+    assert virtual_device.interface == Interface.VIRTUAL_DEVICE
+    assert virtual_device.interface.value == "VD"
+    assert virtual_device.is_virtual is True
+
+
+@pytest.mark.asyncio
+async def test_load_devices_functionality(api_mock):
+    """Test the load_devices method and device-related functionality."""
+    freeathome = FreeAtHome(api_mock)
+
+    # Test initial state
+    assert len(freeathome.get_devices()) == 0
+
+    # Load devices
+    await freeathome._load_devices()
+    devices = freeathome.get_devices()
+
+    # Test that devices are loaded
+    assert len(devices) > 0
+
+    # Test get_device_by_serial
+    device = freeathome.get_device_by_serial("ABB7F500E17A")
+    assert device is not None
+    assert device.device_serial == "ABB7F500E17A"
+    assert device.display_name == "Study Area Rocker"
+    assert device.interface == Interface.WIRED_BUS
+
+    # Test non-existent device
+    non_existent = freeathome.get_device_by_serial("NONEXISTENT")
+    assert non_existent is None
+
+    # Test clear_devices
+    freeathome.clear_devices()
+    assert len(freeathome.get_devices()) == 0
+
+
+@pytest.mark.asyncio
+async def test_unload_device_by_serial(api_mock):
+    """Test unloading devices by serial."""
+    freeathome = FreeAtHome(api_mock)
+    await freeathome._load_devices()
+
+    initial_count = len(freeathome.get_devices())
+    assert initial_count > 0
+
+    # Unload a specific device
+    freeathome.unload_device_by_serial("ABB7F500E17A")
+
+    # Verify device was removed
+    assert len(freeathome.get_devices()) == initial_count - 1
+    assert freeathome.get_device_by_serial("ABB7F500E17A") is None
+
+    # Test unloading non-existent device (should not raise error)
+    freeathome.unload_device_by_serial("NONEXISTENT")
+    assert len(freeathome.get_devices()) == initial_count - 1
+
+
+@pytest.mark.asyncio
+async def test_interface_conversion_mapping(api_mock):
+    """Test the interface string to enum conversion mapping."""
+    # Create a custom API mock with specific interface types
+    api_mock.get_configuration = AsyncMock(
+        return_value={
+            "devices": {
+                "TP_DEVICE": {
+                    "deviceId": "910C",
+                    "displayName": "TP Device",
+                    "interface": "TP",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+                "RF_DEVICE": {
+                    "deviceId": "910D",
+                    "displayName": "RF Device",
+                    "interface": "RF",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+                "HUE_DEVICE": {
+                    "deviceId": "10C0",
+                    "displayName": "HUE Device",
+                    "interface": "hue",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+                "SONOS_DEVICE": {
+                    "deviceId": "0001",
+                    "displayName": "SONOS Device",
+                    "interface": "sonos",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+                "SMOKEALARM_DEVICE": {
+                    "deviceId": "B001",
+                    "displayName": "Smoke Alarm Device",
+                    "interface": "smokealarm",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+                "VDEV_DEVICE": {
+                    "deviceId": "0161",
+                    "displayName": "Virtual Device",
+                    "interface": "vdev:test.example",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+                "VD_DEVICE": {
+                    "deviceId": "0001",
+                    "displayName": "VD Device",
+                    "interface": "VD",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+                "UNKNOWN_DEVICE": {
+                    "deviceId": "UNKNOWN",
+                    "displayName": "Unknown Device",
+                    "interface": "unknown_interface",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+                "NO_INTERFACE_DEVICE": {
+                    "deviceId": "NONE",
+                    "displayName": "No Interface Device",
+                    "unresponsive": False,
+                    "unresponsiveCounter": 0,
+                    "defect": False,
+                    "channels": {},
+                },
+            },
+            "floorplan": {"floors": {}},
+        }
+    )
+
+    freeathome = FreeAtHome(api_mock)
+    await freeathome._load_devices()
+    devices = freeathome.get_devices()
+
+    # Test interface conversions
+    expected_mappings = [
+        ("TP_DEVICE", Interface.WIRED_BUS),
+        ("RF_DEVICE", Interface.WIRELESS_RF),
+        ("HUE_DEVICE", Interface.HUE),
+        ("SONOS_DEVICE", Interface.SONOS),
+        ("SMOKEALARM_DEVICE", Interface.SMOKEALARM),
+        ("VD_DEVICE", Interface.VIRTUAL_DEVICE),
+        ("UNKNOWN_DEVICE", Interface.UNDEFINED),  # Unknown interface maps to UNDEFINED
+        ("NO_INTERFACE_DEVICE", Interface.UNDEFINED),  # No interface maps to UNDEFINED
+    ]
+
+    for device_serial, expected_interface in expected_mappings:
+        device = devices[device_serial]
+        assert device.interface == expected_interface, (
+            f"Device {device_serial} should have interface {expected_interface}, "
+            f"got {device.interface}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_device_floor_room_names(api_mock):
+    """Test that device floor and room names are properly populated."""
+    freeathome = FreeAtHome(api_mock)
+    await freeathome._load_devices()
+    devices = freeathome.get_devices()
+
+    # Test device with floor and room
+    device_with_location = devices["ABB7F500E17A"]
+    assert device_with_location.floor == "01"
+    assert device_with_location.room == "01"
+    assert device_with_location.floor_name == "Ground Floor"
+    assert device_with_location.room_name == "Living Room"
+
+    # Test device with different floor and room
+    bedroom_device = devices["ABB7F62F6C0B"]
+    assert bedroom_device.floor == "02"
+    assert bedroom_device.room == "02"
+    assert bedroom_device.floor_name == "First Floor"
+    assert bedroom_device.room_name == "Bedroom"
+
+    # Test device without floor/room (should have None values)
+    no_location_device = devices["ABB28CBC3651"]
+    assert no_location_device.floor is None
+    assert no_location_device.room is None
+    assert no_location_device.floor_name is None
+    assert no_location_device.room_name is None
+
+
+@pytest.mark.asyncio
+async def test_clear_channels(api_mock):
+    """Test the clear_channels method."""
+    freeathome = FreeAtHome(api_mock)
+
+    # Load some devices first
+    await freeathome.load()
+
+    # Verify devices have channels
+    devices = freeathome.get_devices()
+    assert len(devices) > 0
+
+    # Clear channels
+    freeathome.clear_channels()
+
+    # Verify all device channels are cleared and filtered cache is invalidated
+    for device in devices.values():
+        if hasattr(device, "_channels"):
+            assert device._channels is None
+    assert freeathome._filtered_channels is None
+
+
+@pytest.mark.asyncio
+async def test_channel_class_filtering(api_mock):
+    """Test filtering channels by channel class."""
+    # Initialize FreeAtHome with specific channel class filter
+    freeathome = FreeAtHome(
+        api_mock,
+        channel_classes=[SwitchActuator],  # Only SwitchActuator
+    )
+
+    await freeathome.load()
+
+    # Get filtered channels
+    channels = freeathome.get_channels()
+
+    # Verify all returned channels are of the specified class
+    for channel in channels.values():
+        assert isinstance(channel, SwitchActuator)
+
+
+@pytest.mark.asyncio
+async def test_unload_channel_by_channel_serial(api_mock):
+    """Test unloading specific channels by channel serial."""
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+
+    initial_channels = freeathome.get_channels()
+    initial_count = len(initial_channels)
+    assert initial_count > 0
+
+    # Test unloading a specific channel using channel serial format
+    channel_serial = "ABB7F500E17A/ch0003"
+    assert channel_serial in initial_channels
+
+    freeathome.unload_channel_by_channel_serial(channel_serial)
+
+    # Verify the specific channel was removed
+    updated_channels = freeathome.get_channels()
+    assert channel_serial not in updated_channels
+    assert len(updated_channels) == initial_count - 1
+
+
+@pytest.mark.asyncio
+async def test_unload_channel_invalid_serial(api_mock):
+    """Test unloading channel with invalid channel serial."""
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+
+    initial_channels = freeathome.get_channels()
+    initial_count = len(initial_channels)
+
+    # Test with non-existent channel serial
+    freeathome.unload_channel_by_channel_serial("NONEXISTENT/ch0000")
+
+    # Should not change anything
+    updated_channels = freeathome.get_channels()
+    assert len(updated_channels) == initial_count
+
+    # Test with invalid device serial in channel format
+    freeathome.unload_channel_by_channel_serial("INVALID_DEVICE/ch0000")
+
+    # Should not change anything
+    updated_channels = freeathome.get_channels()
+    assert len(updated_channels) == initial_count
+
+    # Test with invalid format (no "/" separator) - should do nothing
+    freeathome.unload_channel_by_channel_serial("ABB7F500E17A")
+
+    # Should not change anything
+    updated_channels = freeathome.get_channels()
+    assert len(updated_channels) == initial_count

@@ -1,14 +1,15 @@
 """Test class to test the WindSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.wind_sensor import WindSensor
+from src.abbfreeathome.device import Device
 
 
-def get_wind_sensor(mock_api):
+def get_wind_sensor(mock_api, mock_device):
     """Get the WindSensor class to be tested against."""
     inputs = {}
     outputs = {
@@ -20,14 +21,12 @@ def get_wind_sensor(mock_api):
     parameters = {"par002e": "5", "par0047": "2", "par0048": "7"}
 
     return WindSensor(
-        device_id="7EB1000021C5",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0003",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -38,9 +37,18 @@ def mock_api():
 
 
 @pytest.fixture
-def wind_sensor(mock_api):
+def wind_sensor(mock_api, mock_device):
     """Set up the instance for testing the WindSensor channel."""
-    return get_wind_sensor(mock_api)
+    mock_device.device_serial = "7EB1000021C5"
+
+    mock_device.api = mock_api
+    return get_wind_sensor(mock_api, mock_device)
+
+
+@pytest.fixture
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
 
 
 @pytest.mark.asyncio
@@ -54,13 +62,13 @@ async def test_initial_state(wind_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(wind_sensor):
     """Test refreshing the state of the sensor."""
-    wind_sensor._api.get_datapoint.return_value = ["1"]
+    wind_sensor.device.api.get_datapoint.return_value = ["1"]
     await wind_sensor.refresh_state()
     assert wind_sensor.state == 1.0
     assert wind_sensor.alarm is True
     assert wind_sensor.force == 1
-    wind_sensor._api.get_datapoint.assert_called_with(
-        device_id="7EB1000021C5",
+    wind_sensor.device.api.get_datapoint.assert_called_with(
+        device_serial="7EB1000021C5",
         channel_id="ch0003",
         datapoint="odp0001",
     )

@@ -6,6 +6,7 @@ import aiohttp
 import aiohttp.client_exceptions
 from aioresponses import aioresponses
 import pytest
+import pytest_asyncio
 import voluptuous as vol
 
 from src.abbfreeathome.api import FreeAtHomeApi, FreeAtHomeSettings
@@ -22,16 +23,24 @@ from src.abbfreeathome.exceptions import (
 )
 
 
-@pytest.fixture
-def api():
+@pytest_asyncio.fixture
+async def api():
     """Create FreeAtHome Api Fixture."""
-    return FreeAtHomeApi(host="http://192.168.1.1", username="user", password="pass")
+    instance = FreeAtHomeApi(
+        host="http://192.168.1.1", username="user", password="pass"
+    )
+    yield instance
+    # Cleanup: Close any client session that might have been created
+    await instance.close_client_session()
 
 
-@pytest.fixture
-def settings():
+@pytest_asyncio.fixture
+async def settings():
     """Create FreeAtHome Api Fixture."""
-    return FreeAtHomeSettings(host="http://192.168.1.1")
+    instance = FreeAtHomeSettings(host="http://192.168.1.1")
+    yield instance
+    # Cleanup: Close any client session that might have been created
+    await instance.close_client_session()
 
 
 @pytest.mark.asyncio
@@ -110,8 +119,12 @@ async def test_get_settings_client_connection_error(settings):
     """Test the _request function for an invalid client."""
     settings._host = "http://0.0.0.0:1"
 
-    with pytest.raises(ClientConnectionError):
-        await settings.load()
+    try:
+        with pytest.raises(ClientConnectionError):
+            await settings.load()
+    finally:
+        # Cleanup any client session that might have been created during failed request
+        await settings.close_client_session()
 
 
 def test_get_user(settings):
@@ -227,7 +240,7 @@ async def test_get_datapoint(api):
     """Test the get_datapoint function."""
     with patch.object(api, "_request", return_value=Mock()) as mock_request:
         mock_request.return_value.get.return_value = {"values": ["value1", "value2"]}
-        datapoint = await api.get_datapoint("device_id", "channel_id", "datapoint")
+        datapoint = await api.get_datapoint("device_serial", "channel_id", "datapoint")
         assert datapoint == ["value1", "value2"]
 
 
@@ -266,7 +279,7 @@ async def test_set_datapoint(api):
     with patch.object(api, "_request", return_value=Mock()) as mock_request:
         mock_request.return_value.get.return_value = {"result": "ok"}
         result = await api.set_datapoint(
-            "device_id", "channel_id", "datapoint", "value"
+            "device_serial", "channel_id", "datapoint", "value"
         )
         assert result is True
 
@@ -290,12 +303,118 @@ async def test_virtualdevice(api):
 
 
 @pytest.mark.asyncio
+async def test_get_floors(api):
+    """Test the get_floors function."""
+    with patch.object(api, "get_configuration", return_value=Mock()) as mock_config:
+        mock_config.return_value = {
+            "floorplan": {
+                "floors": {
+                    "01": {
+                        "name": "Ground Floor",
+                        "rooms": {"01": {"name": "Living Room"}},
+                    },
+                    "02": {"name": "First Floor", "rooms": {"02": {"name": "Bedroom"}}},
+                }
+            }
+        }
+        floors = await api.get_floors()
+        assert floors == {
+            "01": {
+                "name": "Ground Floor",
+                "rooms": {"01": {"name": "Living Room"}},
+            },
+            "02": {"name": "First Floor", "rooms": {"02": {"name": "Bedroom"}}},
+        }
+
+
+@pytest.mark.asyncio
+async def test_get_floor_name(api):
+    """Test the get_floor_name function."""
+    with patch.object(api, "get_floors", return_value=Mock()) as mock_floors:
+        mock_floors.return_value = {
+            "01": {"name": "Ground Floor"},
+            "02": {"name": "First Floor"},
+        }
+
+        # Test valid floor ID
+        floor_name = await api.get_floor_name("01")
+        assert floor_name == "Ground Floor"
+
+        # Test different valid floor ID
+        floor_name = await api.get_floor_name("02")
+        assert floor_name == "First Floor"
+
+        # Test invalid floor ID
+        floor_name = await api.get_floor_name("99")
+        assert floor_name is None
+
+        # Test None floor ID
+        floor_name = await api.get_floor_name(None)
+        assert floor_name is None
+
+        # Test empty string floor ID
+        floor_name = await api.get_floor_name("")
+        assert floor_name is None
+
+
+@pytest.mark.asyncio
+async def test_get_room_name(api):
+    """Test the get_room_name function."""
+    with patch.object(api, "get_floors", return_value=Mock()) as mock_floors:
+        mock_floors.return_value = {
+            "01": {
+                "name": "Ground Floor",
+                "rooms": {"01": {"name": "Living Room"}, "02": {"name": "Kitchen"}},
+            },
+            "02": {
+                "name": "First Floor",
+                "rooms": {"01": {"name": "Bedroom"}, "02": {"name": "Bathroom"}},
+            },
+        }
+
+        # Test valid floor and room IDs
+        room_name = await api.get_room_name("01", "01")
+        assert room_name == "Living Room"
+
+        # Test different valid floor and room IDs
+        room_name = await api.get_room_name("02", "01")
+        assert room_name == "Bedroom"
+
+        # Test valid floor but invalid room ID
+        room_name = await api.get_room_name("01", "99")
+        assert room_name is None
+
+        # Test invalid floor ID
+        room_name = await api.get_room_name("99", "01")
+        assert room_name is None
+
+        # Test None floor ID
+        room_name = await api.get_room_name(None, "01")
+        assert room_name is None
+
+        # Test None room ID
+        room_name = await api.get_room_name("01", None)
+        assert room_name is None
+
+        # Test both None
+        room_name = await api.get_room_name(None, None)
+        assert room_name is None
+
+        # Test empty strings
+        room_name = await api.get_room_name("", "01")
+        assert room_name is None
+
+        room_name = await api.get_room_name("01", "")
+        assert room_name is None
+
+
+@pytest.mark.asyncio
 async def test_set_datapoint_failure(api):
     """Test the set_datapoint function for failure."""
     with patch.object(api, "_request", return_value=Mock()) as mock_request:
         mock_request.return_value.get.return_value = {"result": "fail"}
         with pytest.raises(SetDatapointFailureException):
-            await api.set_datapoint("device_id", "channel_id", "datapoint", "value")
+            await api.set_datapoint("device_serial", "channel_id", "datapoint", "value")
 
 
 @pytest.mark.asyncio
@@ -531,8 +650,12 @@ async def test_request_client_connection_error(api):
     """Test the _request function for an invalid client."""
     api._host = "http://0.0.0.0:1"
 
-    with pytest.raises(ClientConnectionError):
-        await api._request("/test")
+    try:
+        with pytest.raises(ClientConnectionError):
+            await api._request("/test")
+    finally:
+        # Cleanup any client session that might have been created during failed request
+        await api.close_client_session()
 
 
 @pytest.mark.asyncio
@@ -592,16 +715,17 @@ async def test_settings_get_client_session_creates_new_session(settings):
     settings._client_session = None
     settings._close_client_session = False
 
-    # Call _get_client_session
-    session = settings._get_client_session()
+    try:
+        # Call _get_client_session
+        session = settings._get_client_session()
 
-    # Verify a new session was created and close flag was set
-    assert session is not None
-    assert settings._client_session is session
-    assert settings._close_client_session is True
-
-    # Clean up properly
-    await settings.close_client_session()
+        # Verify a new session was created and close flag was set
+        assert session is not None
+        assert settings._client_session is session
+        assert settings._close_client_session is True
+    finally:
+        # Clean up properly
+        await settings.close_client_session()
 
 
 @pytest.mark.asyncio
@@ -627,16 +751,17 @@ async def test_get_client_session_creates_new_session(api):
     api._client_session = None
     api._close_client_session = False
 
-    # Call _get_client_session
-    session = api._get_client_session()
+    try:
+        # Call _get_client_session
+        session = api._get_client_session()
 
-    # Verify a new session was created and close flag was set
-    assert session is not None
-    assert api._client_session is session
-    assert api._close_client_session is True
-
-    # Clean up properly
-    await api.close_client_session()
+        # Verify a new session was created and close flag was set
+        assert session is not None
+        assert api._client_session is session
+        assert api._close_client_session is True
+    finally:
+        # Clean up properly
+        await api.close_client_session()
 
 
 @pytest.mark.asyncio

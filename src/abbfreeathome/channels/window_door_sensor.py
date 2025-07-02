@@ -1,11 +1,13 @@
 """Free@Home WindowDoorSensor Class."""
 
 import enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from .base import Base
+
+if TYPE_CHECKING:
+    from ..device import Device
 
 
 class WindowDoorSensorPosition(enum.Enum):
@@ -34,14 +36,12 @@ class WindowDoorSensor(Base):
 
     def __init__(
         self,
-        device_id: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
@@ -50,14 +50,12 @@ class WindowDoorSensor(Base):
         self._position: WindowDoorSensorPosition = WindowDoorSensorPosition.unknown
 
         super().__init__(
-            device_id,
-            device_name,
+            device,
             channel_id,
             channel_name,
             inputs,
             outputs,
             parameters,
-            api,
             floor_name,
             room_name,
         )

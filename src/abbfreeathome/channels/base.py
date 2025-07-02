@@ -2,9 +2,8 @@
 
 from collections.abc import Callable
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from ..api import FreeAtHomeApi
 from ..bin.pairing import Pairing
 from ..bin.parameter import Parameter
 from ..exceptions import (
@@ -12,6 +11,9 @@ from ..exceptions import (
     InvalidDeviceChannelParameter,
     UnknownCallbackAttributeException,
 )
+
+if TYPE_CHECKING:
+    from ..device import Device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,23 +26,19 @@ class Base:
 
     def __init__(
         self,
-        device_id: str,
-        device_name: str,
+        device: "Device",
         channel_id: str,
         channel_name: str,
         inputs: dict[str, dict[str, Any]],
         outputs: dict[str, dict[str, Any]],
         parameters: dict[str, dict[str, Any]],
-        api: FreeAtHomeApi,
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home Base class."""
-        self._device_id = device_id
-        self._device_name = device_name
+        self._device = device
         self._channel_id = channel_id
         self._channel_name = channel_name
-        self._api = api
         self._inputs = inputs
         self._outputs = outputs
         self._parameters = parameters
@@ -52,14 +50,19 @@ class Base:
         self._refresh_state_from_datapoints()
 
     @property
-    def device_id(self) -> str:
-        """Get the device id."""
-        return self._device_id
+    def device_serial(self) -> str:
+        """Get the device serial."""
+        return self._device.device_serial
 
     @property
     def device_name(self) -> str:
         """Get the device name."""
-        return self._device_name
+        return self._device.display_name
+
+    @property
+    def unresponsive(self) -> bool:
+        """Get unresponsive status via device."""
+        return self._device.unresponsive
 
     @property
     def channel_id(self) -> str:
@@ -84,7 +87,12 @@ class Base:
     @property
     def is_virtual(self) -> bool | None:
         """Get the virtual-status of the device."""
-        return self.device_id[0:4] == "6000"
+        return self.device.is_virtual
+
+    @property
+    def device(self) -> "Device":
+        """Get the parent Device object."""
+        return self._device
 
     def get_input_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
         """Get the channel input by pairing id."""
@@ -93,7 +101,7 @@ class Base:
                 return _input_id, _input.get("value")
 
         raise InvalidDeviceChannelPairing(
-            self.device_id, self.channel_id, pairing.value
+            self.device_serial, self.channel_id, pairing.value
         )
 
     def get_output_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
@@ -103,7 +111,7 @@ class Base:
                 return _output_id, _output.get("value")
 
         raise InvalidDeviceChannelPairing(
-            self.device_id, self.channel_id, pairing.value
+            self.device_serial, self.channel_id, pairing.value
         )
 
     def get_channel_parameter(self, parameter: Parameter) -> tuple[str, Any]:
@@ -114,7 +122,7 @@ class Base:
                 return _parameter_id, _parameter_value
 
         raise InvalidDeviceChannelParameter(
-            self.device_id, self.channel_id, parameter.name
+            self.device_serial, self.channel_id, parameter.name
         )
 
     def update_channel(self, datapoint_key: str, datapoint_value: str):
@@ -168,8 +176,8 @@ class Base:
             )
 
             _datapoint = (
-                await self._api.get_datapoint(
-                    device_id=self.device_id,
+                await self.device.api.get_datapoint(
+                    device_serial=self.device_serial,
                     channel_id=self.channel_id,
                     datapoint=_datapoint_id,
                 )

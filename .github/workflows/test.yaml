@@ -2,9 +2,9 @@ name: Run Python UnitTests
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'beta/*', 'alpha/*']
   pull_request:
-    branches: [main]
+    branches: [main, 'beta/*', 'alpha/*']
   workflow_dispatch:
 
 jobs:

@@ -1,11 +1,12 @@
 """Test class to test the WindowDoorSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.window_door_sensor import WindowDoorSensor
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -15,7 +16,13 @@ def mock_api():
 
 
 @pytest.fixture
-def window_door_sensor(mock_api):
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def window_door_sensor(mock_api, mock_device):
     """Set up the sensor instance for testing the WindowDoorSensor channel."""
     inputs = {}
     outputs = {
@@ -25,15 +32,16 @@ def window_door_sensor(mock_api):
     }
     parameters = {"par0010": "2"}
 
+    mock_device.device_serial = "ABB28CBC3651"
+
+    mock_device.api = mock_api
     return WindowDoorSensor(
-        device_id="ABB28CBC3651",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -47,11 +55,11 @@ async def test_initial_state(window_door_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(window_door_sensor):
     """Test refreshing the state of the window-door-sensor."""
-    window_door_sensor._api.get_datapoint.return_value = ["1"]
+    window_door_sensor.device.api.get_datapoint.return_value = ["1"]
     await window_door_sensor.refresh_state()
     assert window_door_sensor.state is True
-    window_door_sensor._api.get_datapoint.assert_called_with(
-        device_id="ABB28CBC3651",
+    window_door_sensor.device.api.get_datapoint.assert_called_with(
+        device_serial="ABB28CBC3651",
         channel_id="ch0000",
         datapoint="odp0000",
     )
