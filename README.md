@@ -223,7 +223,7 @@ There is one class which is designed to only interact with the api. This should 
 There's is one endpoint that'll return the entire Free@Home configuration, including all devices. This example shows how to fetch and display that. Keep in mind the devices returned are are just Python `dict` objects.
 
 ```python
-from abbfreeathome.api import FreeAtHomeApi
+from abbfreeathome import FreeAtHomeApi
 import asyncio
 import logging
 
@@ -251,8 +251,7 @@ There an additional class called `FreeAtHome`. This class attempts to put it all
 This example will load the `FreeAtHome` class with all potential channels from the api. Once loaded another function `get_channels_by_class` is used to pull all channels that fall under a specific "class".
 
 ```python
-from abbfreeathome.api import FreeAtHomeApi
-from abbfreeathome.freeathome import FreeAtHome
+from abbfreeathome import FreeAtHome, FreeAtHomeApi
 from abbfreeathome.channels.switch_actuator import SwitchActuator
 import logging
 import asyncio
@@ -285,8 +284,7 @@ The Free@Home local api also exposes a websocket. With this library you can conn
 In addition, the library "channels" can register and run any callbacks when the state changes. Allowing outside code (e.g. Home Assistant) to get notified on changes.
 
 ```python
-from abbfreeathome.api import FreeAtHomeApi
-from abbfreeathome.freeathome import FreeAtHome
+from abbfreeathome import FreeAtHome, FreeAtHomeApi
 from abbfreeathome.channels.switch_actuator import SwitchActuator
 import logging
 import asyncio

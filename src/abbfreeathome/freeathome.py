@@ -75,8 +75,8 @@ class FreeAtHome:
                     continue
 
                 # Use the same key format as before: "device_serial/channel_id"
-                channel_key = f"{device_serial}/{channel_id}"
-                _all_channels[channel_key] = channel
+                channel_serial = f"{device_serial}/{channel_id}"
+                _all_channels[channel_serial] = channel
 
         return _all_channels
 
@@ -170,18 +170,22 @@ class FreeAtHome:
             return
 
         _device_serial, _channel_id = channel_serial.split("/", 1)
-        _device = self._devices.get(_device_serial)
-        if _device and _device.channels:
-            # Remove the specific channel from the device
-            _device.channels.pop(_channel_id, None)
-            # Invalidate the filtered channels cache
-            self._filtered_channels = None
+        try:
+            _device = self._devices[_device_serial]
+            if _device.channels is not None:
+                _device.channels.pop(_channel_id)
+                # Invalidate the filtered channels cache
+                self._filtered_channels = None
+        except KeyError:
+            pass
 
     def unload_device_by_serial(self, device_serial: str):
         """Unload a device by its serial ID."""
-        if device_serial in self._devices:
+        try:
             self._devices.pop(device_serial)
             self._filtered_channels = None
+        except KeyError:
+            pass
 
     async def ws_close(self):
         """Close the websocker connection."""

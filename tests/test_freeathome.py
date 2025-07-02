@@ -911,3 +911,13 @@ async def test_unload_channel_invalid_serial(api_mock):
     # Should not change anything
     updated_channels = freeathome.get_channels()
     assert len(updated_channels) == initial_count
+
+    # Test with device that has channels set to None
+    device = freeathome.get_device_by_serial("ABB7F500E17A")
+    if device:
+        device.clear_channels()  # This sets device._channels = None
+        freeathome.unload_channel_by_channel_serial("ABB7F500E17A/ch0000")
+
+        # Should not change anything since channels is None
+        updated_channels = freeathome.get_channels()
+        assert len(updated_channels) == initial_count
