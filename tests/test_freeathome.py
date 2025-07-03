@@ -467,7 +467,10 @@ async def test_load(freeathome):
     assert channels[channel_key].is_virtual is False
 
     # Unload a single channel and test it's been removed
-    freeathome.unload_channel_by_channel_serial(channel_serial="ABB7F62F6C0B/ch0000")
+    freeathome.unload_channel(
+        device_serial=channels[channel_key].device.device_serial,
+        channel_id=channels[channel_key].channel_id,
+    )
     channels = freeathome.get_channels()
     assert len(channels) == 4
 
@@ -654,7 +657,7 @@ async def test_load_devices_functionality(api_mock):
 
 
 @pytest.mark.asyncio
-async def test_unload_device_by_serial(api_mock):
+async def test_unload_device(api_mock):
     """Test unloading devices by serial."""
     freeathome = FreeAtHome(api_mock)
     await freeathome._load_devices()
@@ -663,14 +666,14 @@ async def test_unload_device_by_serial(api_mock):
     assert initial_count > 0
 
     # Unload a specific device
-    freeathome.unload_device_by_serial("ABB7F500E17A")
+    freeathome.unload_device("ABB7F500E17A")
 
     # Verify device was removed
     assert len(freeathome.get_devices()) == initial_count - 1
     assert freeathome.get_device_by_serial("ABB7F500E17A") is None
 
     # Test unloading non-existent device (should not raise error)
-    freeathome.unload_device_by_serial("NONEXISTENT")
+    freeathome.unload_device("NONEXISTENT")
     assert len(freeathome.get_devices()) == initial_count - 1
 
 
@@ -837,7 +840,7 @@ async def test_clear_channels(api_mock):
     # Verify all device channels are cleared and filtered cache is invalidated
     for device in devices.values():
         if hasattr(device, "_channels"):
-            assert device._channels is None
+            assert device._channels == {}
     assert freeathome._filtered_channels is None
 
 
@@ -861,7 +864,7 @@ async def test_channel_class_filtering(api_mock):
 
 
 @pytest.mark.asyncio
-async def test_unload_channel_by_channel_serial(api_mock):
+async def test_unload_channel_by_id(api_mock):
     """Test unloading specific channels by channel serial."""
     freeathome = FreeAtHome(api_mock)
     await freeathome.load()
@@ -874,7 +877,10 @@ async def test_unload_channel_by_channel_serial(api_mock):
     channel_serial = "ABB7F500E17A/ch0003"
     assert channel_serial in initial_channels
 
-    freeathome.unload_channel_by_channel_serial(channel_serial)
+    channel = initial_channels["ABB7F500E17A/ch0003"]
+    freeathome.unload_channel(
+        device_serial=channel.device.device_serial, channel_id=channel.channel_id
+    )
 
     # Verify the specific channel was removed
     updated_channels = freeathome.get_channels()
@@ -891,33 +897,16 @@ async def test_unload_channel_invalid_serial(api_mock):
     initial_channels = freeathome.get_channels()
     initial_count = len(initial_channels)
 
-    # Test with non-existent channel serial
-    freeathome.unload_channel_by_channel_serial("NONEXISTENT/ch0000")
+    # Test with invalid device serial
+    freeathome.unload_channel(device_serial="NONEXISTENT", channel_id="ch0000")
 
     # Should not change anything
     updated_channels = freeathome.get_channels()
     assert len(updated_channels) == initial_count
 
-    # Test with invalid device serial in channel format
-    freeathome.unload_channel_by_channel_serial("INVALID_DEVICE/ch0000")
+    # Test with invalid channel_id
+    freeathome.unload_channel(device_serial="ABB7F500E17A", channel_id="NONEXISTENT")
 
     # Should not change anything
     updated_channels = freeathome.get_channels()
     assert len(updated_channels) == initial_count
-
-    # Test with invalid format (no "/" separator) - should do nothing
-    freeathome.unload_channel_by_channel_serial("ABB7F500E17A")
-
-    # Should not change anything
-    updated_channels = freeathome.get_channels()
-    assert len(updated_channels) == initial_count
-
-    # Test with device that has channels set to None
-    device = freeathome.get_device_by_serial("ABB7F500E17A")
-    if device:
-        device.clear_channels()  # This sets device._channels = None
-        freeathome.unload_channel_by_channel_serial("ABB7F500E17A/ch0000")
-
-        # Should not change anything since channels is None
-        updated_channels = freeathome.get_channels()
-        assert len(updated_channels) == initial_count

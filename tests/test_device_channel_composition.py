@@ -76,7 +76,7 @@ def test_device_with_channels(mock_api, mock_device):
 def test_device_channels_property_returns_channel_objects(test_device_with_channels):
     """Test that device.channels returns Channel objects."""
     # Since channels property now returns None until load_channels is called
-    assert test_device_with_channels.channels is None
+    assert test_device_with_channels.channels == {}
 
 
 @pytest.mark.asyncio
