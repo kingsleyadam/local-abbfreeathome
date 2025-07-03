@@ -50,7 +50,7 @@ def test_device_initialization_minimal(mock_api, mock_device):
     assert device.native_id is None
     assert device.parameters == {}
     assert device.channels_data == {}
-    assert device.channels is None  # Channels None until load_channels() called
+    assert device.channels == {}
     assert device.is_virtual is False
 
 
@@ -586,7 +586,7 @@ def test_device_clear_channels(mock_api, mock_device):
     # Set some channels and then clear them
     device._channels = {"ch0000": "some_channel"}
     device.clear_channels()
-    assert device._channels is None
+    assert device._channels == {}
 
 
 @pytest.mark.asyncio

@@ -47,7 +47,7 @@ class Device:
         self._native_id = native_id
         self._parameters = parameters or {}
         self._channels_data = channels_data or {}
-        self._channels: dict[str, Base] | None = None
+        self._channels: dict[str, Base] = {}
 
         # Expose api as public attribute
         self.api: FreeAtHomeApi = api
@@ -139,7 +139,7 @@ class Device:
 
     def clear_channels(self):
         """Clear channels from the device."""
-        self._channels = None
+        self._channels.clear()
 
     async def load_channels(self):
         """Load the channels object."""
@@ -151,7 +151,7 @@ class Device:
         )
 
         # Create channels dictionary
-        self._channels = {}
+        self.clear_channels()
         for channel_id, channel_data in self._channels_data.items():
             # Determine channel class based on function ID
             _function_id = channel_data.get("functionID")

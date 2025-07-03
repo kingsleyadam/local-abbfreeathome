@@ -38,12 +38,81 @@ class FreeAtHome:
         self._devices.clear()
         self._filtered_channels = None
 
+    def get_channels(self) -> dict[str, Base]:
+        """Get channels from all devices based on class filters."""
+        if self._filtered_channels is None:
+            self._filtered_channels = self._build_filtered_channels()
+        return self._filtered_channels
+
+    def get_channels_by_class(self, channel_class: Base) -> list[Base]:
+        """Get the list of channels by class."""
+        _channels = self.get_channels()
+        return [
+            _channel
+            for _channel in _channels.values()
+            if type(_channel) is channel_class
+        ]
+
     async def get_config(self, refresh: bool = False) -> dict:
         """Get the Free@Home Configuration."""
         if self._config is None or refresh:
             self._config = await self.api.get_configuration()
 
         return self._config
+
+    def get_device_by_serial(self, device_serial: str) -> Device | None:
+        """Get a device by its serial ID."""
+        return self._devices.get(device_serial)
+
+    def get_devices(self) -> dict[str, Device]:
+        """Get the list of devices."""
+        return self._devices
+
+    async def load(self):
+        """Load from the Free@Home api into the FreeAtHome class."""
+        await self._load_devices()
+
+    def unload_channel(self, device_serial: str, channel_id: str):
+        """Unload a specific channel by device serial and channel id."""
+        try:
+            _device = self._devices[device_serial]
+            _device.channels.pop(channel_id)
+
+            # Invalidate the filtered channels cache
+            self._filtered_channels = None
+        except KeyError:
+            pass
+
+    def unload_device(self, device_serial: str):
+        """Unload a device by its serial ID."""
+        try:
+            self._devices.pop(device_serial)
+
+            # Invalidate the filtered channels cache
+            self._filtered_channels = None
+        except KeyError:
+            pass
+
+    async def update(self, data: dict):
+        """Update channel based on websocket data."""
+        _channels = self.get_channels()
+
+        for _datapoint_key, _datapoint_value in data.get("datapoints").items():
+            _unique_id = "/".join(_datapoint_key.split("/")[:-1])
+
+            try:
+                _channel = _channels[_unique_id]
+                _channel.update_channel(_datapoint_key, _datapoint_value)
+            except KeyError:
+                continue
+
+    async def ws_close(self):
+        """Close the websocker connection."""
+        await self.api.ws_close()
+
+    async def ws_listen(self):
+        """Listen on the websocket for updates to Free@Home objects."""
+        await self.api.ws_listen(callback=self.update)
 
     def _build_filtered_channels(self) -> dict[str, Base]:
         """Build a filtered dictionary of channels based on current filters."""
@@ -75,37 +144,10 @@ class FreeAtHome:
                     continue
 
                 # Use the same key format as before: "device_serial/channel_id"
-                channel_key = f"{device_serial}/{channel_id}"
-                _all_channels[channel_key] = channel
+                channel_serial = f"{device_serial}/{channel_id}"
+                _all_channels[channel_serial] = channel
 
         return _all_channels
-
-    def get_channels(self) -> dict[str, Base]:
-        """Get channels from all devices based on class filters."""
-        if self._filtered_channels is None:
-            self._filtered_channels = self._build_filtered_channels()
-        return self._filtered_channels
-
-    def get_devices(self) -> dict[str, Device]:
-        """Get the list of devices."""
-        return self._devices
-
-    def get_device_by_serial(self, device_serial: str) -> Device | None:
-        """Get a device by its serial ID."""
-        return self._devices.get(device_serial)
-
-    def get_channels_by_class(self, channel_class: Base) -> list[Base]:
-        """Get the list of channels by class."""
-        _channels = self.get_channels()
-        return [
-            _channel
-            for _channel in _channels.values()
-            if type(_channel) is channel_class
-        ]
-
-    async def load(self):
-        """Load from the Free@Home api into the FreeAtHome class."""
-        await self._load_devices()
 
     async def _load_devices(self):
         """Load all devices into the devices object."""
@@ -159,47 +201,3 @@ class FreeAtHome:
 
         # Invalidate the filtered channels cache after loading devices
         self._filtered_channels = None
-
-    def unload_channel_by_channel_serial(self, channel_serial: str):
-        """
-        Unload a specific channel by its channel serial.
-
-        Channel serial format: device_serial/channel_id
-        """
-        if "/" not in channel_serial:
-            return
-
-        _device_serial, _channel_id = channel_serial.split("/", 1)
-        _device = self._devices.get(_device_serial)
-        if _device and _device.channels:
-            # Remove the specific channel from the device
-            _device.channels.pop(_channel_id, None)
-            # Invalidate the filtered channels cache
-            self._filtered_channels = None
-
-    def unload_device_by_serial(self, device_serial: str):
-        """Unload a device by its serial ID."""
-        if device_serial in self._devices:
-            self._devices.pop(device_serial)
-            self._filtered_channels = None
-
-    async def ws_close(self):
-        """Close the websocker connection."""
-        await self.api.ws_close()
-
-    async def ws_listen(self):
-        """Listen on the websocket for updates to Free@Home objects."""
-        await self.api.ws_listen(callback=self.update)
-
-    async def update(self, data: dict):
-        """Update channel based on websocket data."""
-        _channels = self.get_channels()
-
-        for _datapoint_key, _datapoint_value in data.get("datapoints").items():
-            _unique_id = "/".join(_datapoint_key.split("/")[:-1])
-
-            try:
-                _channel = _channels[_unique_id]
-                _channel.update_channel(_datapoint_key, _datapoint_value)
-            except KeyError:
-                continue
