@@ -15,10 +15,7 @@ from src.abbfreeathome.device import Device
 @pytest.fixture
 def mock_api():
     """Create a mock API object."""
-    api = AsyncMock(spec=FreeAtHomeApi)
-    api.get_floor_name.return_value = "Ground Floor"
-    api.get_room_name.return_value = "Living Room"
-    return api
+    return AsyncMock(spec=FreeAtHomeApi)
 
 
 @pytest.fixture
