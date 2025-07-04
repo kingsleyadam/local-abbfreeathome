@@ -79,10 +79,11 @@ def test_device_channels_property_returns_channel_objects(test_device_with_chann
     assert test_device_with_channels.channels == {}
 
 
-@pytest.mark.asyncio
-async def test_device_load_channels_returns_channel_objects(test_device_with_channels):
+def test_device_load_channels_returns_channel_objects(
+    test_device_with_channels, mock_floorplan
+):
     """Test that device.load_channels() returns Channel objects."""
-    channels = await test_device_with_channels.load_channels()
+    channels = test_device_with_channels.load_channels(mock_floorplan)
 
     assert len(channels) == 2
     assert "ch0000" in channels
@@ -93,10 +94,9 @@ async def test_device_load_channels_returns_channel_objects(test_device_with_cha
     assert isinstance(channels["ch0001"], DimmingActuator)
 
 
-@pytest.mark.asyncio
-async def test_channel_has_device_reference(test_device_with_channels):
+def test_channel_has_device_reference(test_device_with_channels, mock_floorplan):
     """Test that each Channel has a reference to its parent Device."""
-    await test_device_with_channels.load_channels()
+    test_device_with_channels.load_channels(mock_floorplan)
     channels = test_device_with_channels.channels
 
     for channel in channels.values():
@@ -104,10 +104,9 @@ async def test_channel_has_device_reference(test_device_with_channels):
         assert channel.device.display_name == "Test Device"
 
 
-@pytest.mark.asyncio
-async def test_channels_are_cached(test_device_with_channels):
+def test_channels_are_cached(test_device_with_channels, mock_floorplan):
     """Test that channels are cached and same objects returned."""
-    channels1 = await test_device_with_channels.load_channels()
+    channels1 = test_device_with_channels.load_channels(mock_floorplan)
     channels2 = test_device_with_channels.channels
 
     # Should return the same dictionary instance
@@ -119,8 +118,7 @@ async def test_channels_are_cached(test_device_with_channels):
         assert channels1[first_channel_id] is channels2[first_channel_id]
 
 
-@pytest.mark.asyncio
-async def test_device_with_empty_channels_data(mock_api, mock_device):
+def test_device_with_empty_channels_data(mock_api, mock_device, mock_floorplan):
     """Test that device with empty channels_data returns empty channels dict."""
     device = Device(
         device_serial="ABB7F500E17B",
@@ -130,16 +128,15 @@ async def test_device_with_empty_channels_data(mock_api, mock_device):
         api=mock_api,
     )
 
-    channels = await device.load_channels()
+    channels = device.load_channels(mock_floorplan)
     assert len(channels) == 0
     assert isinstance(channels, dict)
     assert device.channels == {}
 
 
-@pytest.mark.asyncio
-async def test_channel_properties_correct(test_device_with_channels):
+def test_channel_properties_correct(test_device_with_channels, mock_floorplan):
     """Test that channel properties are correctly set."""
-    await test_device_with_channels.load_channels()
+    test_device_with_channels.load_channels(mock_floorplan)
     channels = test_device_with_channels.channels
     switch_channel = channels["ch0000"]
 
@@ -151,8 +148,7 @@ async def test_channel_properties_correct(test_device_with_channels):
     assert switch_channel.room_name == "Living Room"
 
 
-@pytest.mark.asyncio
-async def test_invalid_channel_function_skipped(mock_api, mock_device):
+def test_invalid_channel_function_skipped(mock_api, mock_device, mock_floorplan):
     """Test that channels with invalid function IDs are skipped."""
     channels_data = {
         "ch0000": {
@@ -186,7 +182,7 @@ async def test_invalid_channel_function_skipped(mock_api, mock_device):
         api=mock_api,
     )
 
-    channels = await device.load_channels()
+    channels = device.load_channels(mock_floorplan)
 
     # Only the valid channel should be created
     assert len(channels) == 1

@@ -4,6 +4,7 @@ from .api import FreeAtHomeApi
 from .bin.interface import Interface
 from .channels.base import Base
 from .device import Device
+from .floorplan import FreeAtHomeFloorPlan
 
 
 class FreeAtHome:
@@ -107,7 +108,7 @@ class FreeAtHome:
                 continue
 
     async def ws_close(self):
-        """Close the websocker connection."""
+        """Close the websocket connection."""
         await self.api.ws_close()
 
     async def ws_listen(self):
@@ -154,6 +155,10 @@ class FreeAtHome:
         self.clear_devices()
 
         _config = await self.get_config()
+
+        # Create floor plan from configuration
+        _floorplan = FreeAtHomeFloorPlan.from_config(_config)
+
         for _serial, _data in _config.get("devices", {}).items():
             # Convert interface string to Interface enum
             _interface_value = _data.get("interface")
@@ -164,17 +169,12 @@ class FreeAtHome:
 
             _interface = Interface.from_string(_interface_value)
 
-            # Get floor and room names
+            # Get floor and room names using floor plan
             _floor_id = _data.get("floor")
             _room_id = _data.get("room")
-            _floor_name = (
-                await self.api.get_floor_name(_floor_id) if _floor_id else None
-            )
-            _room_name = (
-                await self.api.get_room_name(_floor_id, _room_id)
-                if _floor_id and _room_id
-                else None
-            )
+
+            _floor_name = _floorplan.get_floor_name(_floor_id)
+            _room_name = _floorplan.get_room_name(_floor_id, _room_id)
 
             # Extract device attributes from the configuration
             _device = Device(
@@ -195,7 +195,7 @@ class FreeAtHome:
                 channels_data=_data.get("channels", {}),
                 api=self.api,
             )
-            await _device.load_channels()
+            _device.load_channels(floorplan=_floorplan)
 
             self._devices[_serial] = _device
 
