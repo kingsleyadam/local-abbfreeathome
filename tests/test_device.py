@@ -356,8 +356,7 @@ def test_device_floor_room_names_properties(mock_api, mock_device):
     assert device_no_names.room_name is None
 
 
-@pytest.mark.asyncio
-async def test_device_load_channels_empty():
+def test_device_load_channels_empty(mock_floorplan):
     """Test loading channels with empty channels_data."""
     mock_api = AsyncMock(spec=FreeAtHomeApi)
 
@@ -369,22 +368,21 @@ async def test_device_load_channels_empty():
         channels_data={},
     )
 
-    channels = await device.load_channels()
+    channels = device.load_channels(mock_floorplan)
 
     assert channels == {}
     assert device.channels == {}
 
 
-@pytest.mark.asyncio
-async def test_device_load_channels_with_valid_data():
+def test_device_load_channels_with_valid_data(mock_floorplan):
     """Test loading channels with valid channel data."""
     mock_api = AsyncMock(spec=FreeAtHomeApi)
-    mock_api.get_floor_name.return_value = "Ground Floor"
-    mock_api.get_room_name.return_value = "Living Room"
 
     channels_data = {
         "ch0000": {
             "displayName": "Test Switch",
+            "floor": "01",
+            "room": "18",
             "functionID": hex(Function.FID_SWITCH_ACTUATOR.value)[2:].upper().zfill(4),
             "inputs": {"idp0000": {"pairingID": 1, "value": "0"}},
             "outputs": {"odp0000": {"pairingID": 256, "value": "0"}},
@@ -398,26 +396,22 @@ async def test_device_load_channels_with_valid_data():
         display_name="Test Device",
         api=mock_api,
         channels_data=channels_data,
-        floor="01",
-        room="02",
     )
 
-    channels = await device.load_channels()
+    channels = device.load_channels(mock_floorplan)
 
     assert len(channels) == 1
     assert "ch0000" in channels
     assert isinstance(channels["ch0000"], SwitchActuator)
     assert device.channels == channels
 
-    # Verify API calls were made
-    mock_api.get_floor_name.assert_called_once_with(floor_serial_id="01")
-    mock_api.get_room_name.assert_called_once_with(
-        floor_serial_id="01", room_serial_id="02"
-    )
+    # Verify that the channel has the correct floor and room names from floorplan
+    channel = channels["ch0000"]
+    assert channel.floor_name == "Ground Floor"
+    assert channel.room_name == "Living Room"
 
 
-@pytest.mark.asyncio
-async def test_device_load_channels_with_existing_floor_room_names():
+def test_device_load_channels_with_existing_floor_room_names(mock_floorplan):
     """Test loading channels when floor_name and room_name are already provided."""
     mock_api = AsyncMock(spec=FreeAtHomeApi)
 
@@ -443,7 +437,7 @@ async def test_device_load_channels_with_existing_floor_room_names():
         room_name="Existing Room",
     )
 
-    channels = await device.load_channels()
+    channels = device.load_channels(mock_floorplan)
 
     assert len(channels) == 1
     assert "ch0000" in channels
@@ -451,13 +445,10 @@ async def test_device_load_channels_with_existing_floor_room_names():
     assert channel.floor_name == "Existing Floor"
     assert channel.room_name == "Existing Room"
 
-    # API should not be called since names are provided
-    mock_api.get_floor_name.assert_not_called()
-    mock_api.get_room_name.assert_not_called()
+    # The existing floor/room names should be used, not looked up from floorplan
 
 
-@pytest.mark.asyncio
-async def test_device_load_channels_invalid_function_id():
+def test_device_load_channels_invalid_function_id(mock_floorplan):
     """Test loading channels with invalid function IDs."""
     mock_api = AsyncMock(spec=FreeAtHomeApi)
 
@@ -486,19 +477,16 @@ async def test_device_load_channels_invalid_function_id():
         channels_data=channels_data,
     )
 
-    channels = await device.load_channels()
+    channels = device.load_channels(mock_floorplan)
 
     # Both channels should be skipped due to invalid/missing function IDs
     assert len(channels) == 0
     assert device.channels == {}
 
 
-@pytest.mark.asyncio
-async def test_device_load_channels_virtual_device():
+def test_device_load_channels_virtual_device(mock_floorplan):
     """Test loading channels for virtual device uses virtual mapping."""
     mock_api = AsyncMock(spec=FreeAtHomeApi)
-    mock_api.get_floor_name.return_value = "Virtual Floor"
-    mock_api.get_room_name.return_value = "Virtual Room"
 
     channels_data = {
         "ch0000": {
@@ -519,19 +507,16 @@ async def test_device_load_channels_virtual_device():
         channels_data=channels_data,
     )
 
-    channels = await device.load_channels()
+    channels = device.load_channels(mock_floorplan)
 
     assert len(channels) == 1
     assert "ch0000" in channels
     assert isinstance(channels["ch0000"], VirtualSwitchActuator)
 
 
-@pytest.mark.asyncio
-async def test_device_load_channels_special_channel_names():
+def test_device_load_channels_special_channel_names(mock_floorplan):
     """Test loading channels with special channel names (Ⓐ, ⓑ, None)."""
     mock_api = AsyncMock(spec=FreeAtHomeApi)
-    mock_api.get_floor_name.return_value = "Ground Floor"
-    mock_api.get_room_name.return_value = "Living Room"
 
     channels_data = {
         "ch0000": {
@@ -565,7 +550,7 @@ async def test_device_load_channels_special_channel_names():
         channels_data=channels_data,
     )
 
-    channels = await device.load_channels()
+    channels = device.load_channels(mock_floorplan)
 
     assert len(channels) == 3
 
@@ -589,8 +574,9 @@ def test_device_clear_channels(mock_api, mock_device):
     assert device._channels == {}
 
 
-@pytest.mark.asyncio
-async def test_device_load_channels_with_missing_function_id(mock_api, mock_device):
+def test_device_load_channels_with_missing_function_id(
+    mock_api, mock_device, mock_floorplan
+):
     """Test load_channels with channel data missing functionID."""
     channels_data = {
         "ch0000": {
@@ -607,13 +593,14 @@ async def test_device_load_channels_with_missing_function_id(mock_api, mock_devi
         channels_data=channels_data,
     )
 
-    await device.load_channels()
+    device.load_channels(mock_floorplan)
     # Should have empty channels dict since functionID is missing
     assert device.channels == {}
 
 
-@pytest.mark.asyncio
-async def test_device_load_channels_with_invalid_function_id(mock_api, mock_device):
+def test_device_load_channels_with_invalid_function_id(
+    mock_api, mock_device, mock_floorplan
+):
     """Test load_channels with invalid functionID that can't be converted to hex."""
     channels_data = {
         "ch0000": {
@@ -630,13 +617,14 @@ async def test_device_load_channels_with_invalid_function_id(mock_api, mock_devi
         channels_data=channels_data,
     )
 
-    await device.load_channels()
+    device.load_channels(mock_floorplan)
     # Should have empty channels dict since functionID is invalid
     assert device.channels == {}
 
 
-@pytest.mark.asyncio
-async def test_device_load_channels_with_unknown_function(mock_api, mock_device):
+def test_device_load_channels_with_unknown_function(
+    mock_api, mock_device, mock_floorplan
+):
     """Test load_channels with functionID that doesn't map to a known channel class."""
     channels_data = {
         "ch0000": {
@@ -653,6 +641,6 @@ async def test_device_load_channels_with_unknown_function(mock_api, mock_device)
         channels_data=channels_data,
     )
 
-    await device.load_channels()
+    device.load_channels(mock_floorplan)
     # Should have empty channels dict since function is unknown
     assert device.channels == {}

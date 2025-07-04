@@ -7,6 +7,7 @@ from .bin.function import Function
 from .bin.interface import Interface
 from .channels.base import Base
 from .const import FUNCTION_CHANNEL_MAPPING, FUNCTION_VIRTUAL_CHANNEL_MAPPING
+from .floorplan import Floorplan
 
 
 class Device:
@@ -141,7 +142,7 @@ class Device:
         """Clear channels from the device."""
         self._channels.clear()
 
-    async def load_channels(self):
+    def load_channels(self, floorplan: Floorplan):
         """Load the channels object."""
         # Select appropriate mapping based on virtual status
         _function_channel_mapping = (
@@ -172,13 +173,19 @@ class Device:
             if _channel_name in ["Ⓐ", "ⓑ"] or _channel_name is None:
                 _channel_name = self.display_name
 
-            _floor_name = self.floor_name or await self.api.get_floor_name(
-                floor_serial_id=channel_data.get("floor", self.floor)
-            )
-            _room_name = self.room_name or await self.api.get_room_name(
-                floor_serial_id=channel_data.get("floor", self.floor),
-                room_serial_id=channel_data.get("room", self.room),
-            )
+            # Get floor and room names
+            _floor_name = self.floor_name
+            _room_name = self.room_name
+
+            _channel_floor_id = channel_data.get("floor")
+            _channel_room_id = channel_data.get("room")
+
+            if not _floor_name and _channel_floor_id:
+                _floor_name = floorplan.get_floor_name(floor_id=_channel_floor_id)
+            if not _room_name and _channel_room_id:
+                _room_name = floorplan.get_room_name(
+                    floor_id=_channel_floor_id, room_id=_channel_room_id
+                )
 
             _channel = _channel_class(
                 device=self,

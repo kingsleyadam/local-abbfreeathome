@@ -329,27 +329,6 @@ def api_mock():
         },
     }
 
-    async def mock_get_floor_name(floor_serial_id):
-        if not floor_serial_id:
-            return None
-        floors = {
-            "01": "Ground Floor",
-            "02": "First Floor",
-        }
-        return floors.get(floor_serial_id)
-
-    async def mock_get_room_name(floor_serial_id, room_serial_id):
-        if not floor_serial_id or not room_serial_id:
-            return None
-        rooms = {
-            ("01", "01"): "Living Room",
-            ("02", "02"): "Bedroom",
-        }
-        return rooms.get((floor_serial_id, room_serial_id))
-
-    api.get_floor_name.side_effect = mock_get_floor_name
-    api.get_room_name.side_effect = mock_get_room_name
-
     return api
 
 

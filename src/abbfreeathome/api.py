@@ -197,31 +197,6 @@ class FreeAtHomeApi:
 
         return _response.get(self._sysap_uuid)
 
-    async def get_floors(self) -> dict:
-        """Get the floors from the configuration."""
-        _config = await self.get_configuration()
-        return _config.get("floorplan", {}).get("floors", {})
-
-    async def get_floor_name(self, floor_serial_id: str) -> str | None:
-        """Get the floor name from the configuration."""
-        if not floor_serial_id:
-            return None
-
-        _floors = await self.get_floors()
-        return _floors.get(floor_serial_id, {}).get("name")
-
-    async def get_room_name(
-        self, floor_serial_id: str, room_serial_id: str
-    ) -> str | None:
-        """Get the room name from the configuration."""
-        if not floor_serial_id or not room_serial_id:
-            return None
-
-        _floors = await self.get_floors()
-        _floor = _floors.get(floor_serial_id, {})
-        _rooms = _floor.get("rooms", {})
-        return _rooms.get(room_serial_id, {}).get("name")
-
     async def get_datapoint(
         self, device_serial: str, channel_id: str, datapoint: str
     ) -> list[str]:
