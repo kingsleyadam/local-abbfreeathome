@@ -7,7 +7,7 @@ from .bin.function import Function
 from .bin.interface import Interface
 from .channels.base import Base
 from .const import FUNCTION_CHANNEL_MAPPING, FUNCTION_VIRTUAL_CHANNEL_MAPPING
-from .floorplan import FreeAtHomeFloorPlan
+from .floorplan import Floorplan
 
 
 class Device:
@@ -142,7 +142,7 @@ class Device:
         """Clear channels from the device."""
         self._channels.clear()
 
-    def load_channels(self, floorplan: FreeAtHomeFloorPlan):
+    def load_channels(self, floorplan: Floorplan):
         """Load the channels object."""
         # Select appropriate mapping based on virtual status
         _function_channel_mapping = (

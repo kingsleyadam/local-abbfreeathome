@@ -1,7 +1,7 @@
 """ABB-Free@Home FloorPlan class for managing floor and room data."""
 
 
-class FreeAtHomeFloorPlan:
+class Floorplan:
     """Manages floor plan data for Free@Home devices and channels."""
 
     def __init__(self, floorplan_data: dict[str, dict] | None = None) -> None:
@@ -9,7 +9,7 @@ class FreeAtHomeFloorPlan:
         self._floors: dict[str, dict] = floorplan_data or {}
 
     @classmethod
-    def from_config(cls, config: dict) -> "FreeAtHomeFloorPlan":
+    def from_config(cls, config: dict) -> "Floorplan":
         """Return FloorPlan class from configuration data."""
         _floorplan_data = config.get("floorplan", {}).get("floors", {})
         return cls(_floorplan_data)
@@ -62,4 +62,4 @@ class FreeAtHomeFloorPlan:
             if _rooms is not None:
                 _room_count += len(_rooms)
 
-        return f"FreeAtHomeFloorPlan(floors={_floor_count}, rooms={_room_count})"
+        return f"Floorplan(floors={_floor_count}, rooms={_room_count})"

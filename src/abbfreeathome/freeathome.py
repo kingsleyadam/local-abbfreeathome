@@ -4,7 +4,7 @@ from .api import FreeAtHomeApi
 from .bin.interface import Interface
 from .channels.base import Base
 from .device import Device
-from .floorplan import FreeAtHomeFloorPlan
+from .floorplan import Floorplan
 
 
 class FreeAtHome:
@@ -157,7 +157,7 @@ class FreeAtHome:
         _config = await self.get_config()
 
         # Create floor plan from configuration
-        _floorplan = FreeAtHomeFloorPlan.from_config(_config)
+        _floorplan = Floorplan.from_config(_config)
 
         for _serial, _data in _config.get("devices", {}).items():
             # Convert interface string to Interface enum

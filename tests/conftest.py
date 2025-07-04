@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.abbfreeathome.floorplan import FreeAtHomeFloorPlan
+from src.abbfreeathome.floorplan import Floorplan
 
 
 @pytest.fixture
@@ -50,4 +50,4 @@ def mock_floorplan():
         },
     }
 
-    return FreeAtHomeFloorPlan(floorplan_data)
+    return Floorplan(floorplan_data)

@@ -1,6 +1,6 @@
-"""Test code for the FreeAtHomeFloorPlan class."""
+"""Test code for the Floorplan class."""
 
-from src.abbfreeathome.floorplan import FreeAtHomeFloorPlan
+from src.abbfreeathome.floorplan import Floorplan
 
 
 def test_floorplan_fixture_realistic_data(mock_floorplan):
@@ -23,8 +23,8 @@ def test_floorplan_fixture_realistic_data(mock_floorplan):
 
 
 def test_floorplan_empty_initialization():
-    """Test FreeAtHomeFloorPlan initialization with empty data."""
-    floorplan = FreeAtHomeFloorPlan()
+    """Test Floorplan initialization with empty data."""
+    floorplan = Floorplan()
 
     assert floorplan.get_floor_name("01") is None
     assert floorplan.get_room_name("01", "02") is None
@@ -32,7 +32,7 @@ def test_floorplan_empty_initialization():
 
 
 def test_floorplan_from_config():
-    """Test creating FreeAtHomeFloorPlan from configuration data."""
+    """Test creating Floorplan from configuration data."""
     config = {
         "floorplan": {
             "floors": {
@@ -41,24 +41,24 @@ def test_floorplan_from_config():
         }
     }
 
-    floorplan = FreeAtHomeFloorPlan.from_config(config)
+    floorplan = Floorplan.from_config(config)
 
     assert floorplan.get_floor_name("01") == "Test Floor"
     assert floorplan.get_room_name("01", "01") == "Test Room"
 
 
 def test_floorplan_from_config_missing_data():
-    """Test creating FreeAtHomeFloorPlan from config with missing floorplan data."""
+    """Test creating Floorplan from config with missing floorplan data."""
     config = {}
 
-    floorplan = FreeAtHomeFloorPlan.from_config(config)
+    floorplan = Floorplan.from_config(config)
 
     assert floorplan.get_floor_name("01") is None
     assert floorplan.get_room_name("01", "01") is None
 
 
 def test_floorplan_edge_cases():
-    """Test FreeAtHomeFloorPlan edge cases."""
+    """Test Floorplan edge cases."""
     floorplan_data = {
         "01": {
             "name": "Floor Without Rooms"
@@ -67,7 +67,7 @@ def test_floorplan_edge_cases():
         "02": {"name": "Floor With Empty Rooms", "rooms": {}},
     }
 
-    floorplan = FreeAtHomeFloorPlan(floorplan_data)
+    floorplan = Floorplan(floorplan_data)
 
     # Floor without rooms
     assert floorplan.get_floor_name("01") == "Floor Without Rooms"
@@ -79,8 +79,8 @@ def test_floorplan_edge_cases():
 
 
 def test_floorplan_none_parameters():
-    """Test FreeAtHomeFloorPlan with None parameters."""
-    floorplan = FreeAtHomeFloorPlan({"01": {"name": "Test Floor"}})
+    """Test Floorplan with None parameters."""
+    floorplan = Floorplan({"01": {"name": "Test Floor"}})
 
     assert floorplan.get_floor_name(None) is None
     assert floorplan.get_room_name(None, "01") is None
@@ -92,7 +92,7 @@ def test_floorplan_get_floors_copy():
     """Test that get_floors returns a copy, not the original data."""
     floorplan_data = {"01": {"name": "Test Floor"}}
 
-    floorplan = FreeAtHomeFloorPlan(floorplan_data)
+    floorplan = Floorplan(floorplan_data)
     floors_copy = floorplan.get_floors()
 
     # Modify the copy
@@ -106,7 +106,7 @@ def test_floorplan_has_floor():
     """Test checking if floor exists."""
     floorplan_data = {"01": {"name": "Test Floor"}, "02": {"name": "Another Floor"}}
 
-    floorplan = FreeAtHomeFloorPlan(floorplan_data)
+    floorplan = Floorplan(floorplan_data)
 
     # Existing floors
     assert floorplan.has_floor("01") is True
@@ -116,7 +116,7 @@ def test_floorplan_has_floor():
     assert floorplan.has_floor("99") is False
 
     # Empty floorplan
-    empty_floorplan = FreeAtHomeFloorPlan()
+    empty_floorplan = Floorplan()
     assert empty_floorplan.has_floor("01") is False
 
 
@@ -133,7 +133,7 @@ def test_floorplan_has_room():
         },
     }
 
-    floorplan = FreeAtHomeFloorPlan(floorplan_data)
+    floorplan = Floorplan(floorplan_data)
 
     # Existing rooms
     assert floorplan.has_room("01", "01") is True
@@ -152,25 +152,25 @@ def test_floorplan_has_room():
 def test_floorplan_is_empty():
     """Test checking if floor plan is empty."""
     # Empty floorplan
-    empty_floorplan = FreeAtHomeFloorPlan()
+    empty_floorplan = Floorplan()
     assert empty_floorplan.is_empty() is True
 
     # Empty floorplan with empty dict
-    empty_floorplan2 = FreeAtHomeFloorPlan({})
+    empty_floorplan2 = Floorplan({})
     assert empty_floorplan2.is_empty() is True
 
     # Non-empty floorplan
     floorplan_data = {"01": {"name": "Test Floor"}}
-    non_empty_floorplan = FreeAtHomeFloorPlan(floorplan_data)
+    non_empty_floorplan = Floorplan(floorplan_data)
     assert non_empty_floorplan.is_empty() is False
 
 
 def test_floorplan_repr():
     """Test string representation of floor plan."""
     # Empty floorplan
-    empty_floorplan = FreeAtHomeFloorPlan()
+    empty_floorplan = Floorplan()
     repr_str = repr(empty_floorplan)
-    assert repr_str == "FreeAtHomeFloorPlan(floors=0, rooms=0)"
+    assert repr_str == "Floorplan(floors=0, rooms=0)"
 
     # Single floor with rooms
     floorplan_data = {
@@ -179,9 +179,9 @@ def test_floorplan_repr():
             "rooms": {"01": {"name": "Room 1"}, "02": {"name": "Room 2"}},
         }
     }
-    single_floor = FreeAtHomeFloorPlan(floorplan_data)
+    single_floor = Floorplan(floorplan_data)
     repr_str = repr(single_floor)
-    assert repr_str == "FreeAtHomeFloorPlan(floors=1, rooms=2)"
+    assert repr_str == "Floorplan(floors=1, rooms=2)"
 
     # Multiple floors with different room counts
     multi_floor_data = {
@@ -195,9 +195,9 @@ def test_floorplan_repr():
             # No rooms
         },
     }
-    multi_floor = FreeAtHomeFloorPlan(multi_floor_data)
+    multi_floor = Floorplan(multi_floor_data)
     repr_str = repr(multi_floor)
-    assert repr_str == "FreeAtHomeFloorPlan(floors=3, rooms=3)"
+    assert repr_str == "Floorplan(floors=3, rooms=3)"
 
     # Floor with explicit None rooms (to test the None branch)
     none_rooms_data = {
@@ -207,10 +207,10 @@ def test_floorplan_repr():
         },
         "02": {"name": "Floor with rooms", "rooms": {"01": {"name": "Room 1"}}},
     }
-    none_rooms_floor = FreeAtHomeFloorPlan(none_rooms_data)
+    none_rooms_floor = Floorplan(none_rooms_data)
     repr_str = repr(none_rooms_floor)
     # Only count rooms from floor 02
-    assert repr_str == "FreeAtHomeFloorPlan(floors=2, rooms=1)"
+    assert repr_str == "Floorplan(floors=2, rooms=1)"
 
 
 def test_floorplan_comprehensive_coverage(mock_floorplan):
@@ -231,7 +231,7 @@ def test_floorplan_comprehensive_coverage(mock_floorplan):
 
     # Test __repr__ with realistic data
     repr_str = repr(mock_floorplan)
-    assert repr_str == "FreeAtHomeFloorPlan(floors=4, rooms=18)"
+    assert repr_str == "Floorplan(floors=4, rooms=18)"
 
 
 def test_floorplan_edge_cases_comprehensive():
@@ -244,6 +244,6 @@ def test_floorplan_edge_cases_comprehensive():
         }
     }
 
-    floorplan = FreeAtHomeFloorPlan(floorplan_data)
+    floorplan = Floorplan(floorplan_data)
     assert floorplan.has_room("01", "01") is False
     assert floorplan.get_room_name("01", "01") is None
