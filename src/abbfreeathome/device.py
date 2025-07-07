@@ -174,18 +174,12 @@ class Device:
                 _channel_name = self.display_name
 
             # Get floor and room names
-            _floor_name = self.floor_name
-            _room_name = self.room_name
-
-            _channel_floor_id = channel_data.get("floor")
-            _channel_room_id = channel_data.get("room")
-
-            if not _floor_name and _channel_floor_id:
-                _floor_name = floorplan.get_floor_name(floor_id=_channel_floor_id)
-            if not _room_name and _channel_room_id:
-                _room_name = floorplan.get_room_name(
-                    floor_id=_channel_floor_id, room_id=_channel_room_id
-                )
+            _channel_floor_name = floorplan.get_floor_name(
+                floor_id=channel_data.get("floor")
+            )
+            _channel_room_name = floorplan.get_room_name(
+                floor_id=channel_data.get("floor"), room_id=channel_data.get("room")
+            )
 
             _channel = _channel_class(
                 device=self,
@@ -194,8 +188,8 @@ class Device:
                 inputs=channel_data.get("inputs", {}),
                 outputs=channel_data.get("outputs", {}),
                 parameters=channel_data.get("parameters", {}),
-                floor_name=_floor_name,
-                room_name=_room_name,
+                floor_name=_channel_floor_name or self.floor_name,
+                room_name=_channel_room_name or self.room_name,
             )
 
             # Assign channel to channel cache
