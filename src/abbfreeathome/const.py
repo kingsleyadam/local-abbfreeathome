@@ -61,6 +61,7 @@ FUNCTION_DEVICE_MAPPING: dict[Function, Base] = {
     Function.FID_COLORTEMPERATURE_ACTUATOR: ColorTemperatureActuator,
     Function.FID_DES_DOOR_OPENER_ACTUATOR: DesDoorOpenerActuator,
     Function.FID_DES_DOOR_RINGING_SENSOR: DesDoorRingingSensor,
+    Function.FID_DES_LEVEL_CALL_SENSOR: DesDoorRingingSensor,
     Function.FID_DIMMING_ACTUATOR: DimmingActuator,
     Function.FID_DIMMING_ACTUATOR_TYPE0: DimmingActuator,
     Function.FID_DIMMING_ACTUATOR_TYPE1: DimmingActuator,
