@@ -138,6 +138,11 @@ class Device:
         """Return True if this is a virtual device."""
         return self._interface == Interface.VIRTUAL_DEVICE
 
+    @property
+    def is_multi_device(self) -> bool:
+        """Return True if this is a multi-device."""
+        return self._floor is None and self._room is None and len(self._channels.keys()) > 1
+
     def clear_channels(self):
         """Clear channels from the device."""
         self._channels.clear()
