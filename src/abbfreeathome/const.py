@@ -118,6 +118,7 @@ FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_SWITCH_SENSOR_ROCKER_TYPE2: SwitchSensor,
     Function.FID_TEMPERATURE_SENSOR: TemperatureSensor,
     Function.FID_TRIGGER: Trigger,
+    Function.FID_WELCOME_IP_BELL_INDICATOR_SENSOR: DesDoorRingingSensor,
     Function.FID_WIND_SENSOR: WindSensor,
     Function.FID_WINDOW_DOOR_POSITION_SENSOR: WindowDoorSensor,
     Function.FID_WINDOW_DOOR_SENSOR: WindowDoorSensor,
