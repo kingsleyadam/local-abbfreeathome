@@ -141,7 +141,11 @@ class Device:
     @property
     def is_multi_device(self) -> bool:
         """Return True if this is a multi-device."""
-        return self._floor is None and self._room is None and len(self._channels.keys()) > 1
+        return (
+            self._floor is None
+            and self._room is None
+            and len(self._channels.keys()) > 1
+        )
 
     def clear_channels(self):
         """Clear channels from the device."""
