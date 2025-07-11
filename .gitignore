@@ -167,5 +167,5 @@ cython_debug/
 # MacOS
 .DS_Store
 
-# Play any test files in .tests/
-.tests/
+# Ignore any tests file in the root of the repo
+test_*
