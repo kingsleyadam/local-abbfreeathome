@@ -52,6 +52,7 @@ def test_device_initialization_minimal(mock_api, mock_device):
     assert device.channels_data == {}
     assert device.channels == {}
     assert device.is_virtual is False
+    assert device.is_multi_device is False
 
 
 def test_device_initialization_full(mock_api, mock_device):
@@ -97,6 +98,7 @@ def test_device_initialization_full(mock_api, mock_device):
     assert device.parameters == test_parameters
     assert device.channels_data == test_channels
     assert device.is_virtual is False
+    assert device.is_multi_device is False
 
 
 def test_device_virtual_detection(mock_api, mock_device):
