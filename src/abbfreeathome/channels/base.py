@@ -197,3 +197,12 @@ class Base:
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """Refresh the state of the channel from a single datapoint."""
+
+    def __repr__(self) -> str:
+        """Return a string representation of the channel."""
+        return (
+            f"Channel(class='{self.__class__.__name__}', "
+            f"channel_id='{self.channel_id}', "
+            f"channel_name='{self.channel_name}', "
+            f"room_name='{self.room_name}')"
+        )

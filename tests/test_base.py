@@ -180,3 +180,15 @@ def test_update_channel(base_instance):
     """Test when input-datapoint is provided."""
 
     base_instance.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")
+
+
+def test_repr(base_instance):
+    """Test the __repr__ method."""
+    repr_str = repr(base_instance)
+    expected = (
+        "Channel(class='Base', "
+        "channel_id='ch0003', "
+        "channel_name='Channel Name', "
+        "room_name='Study')"
+    )
+    assert repr_str == expected

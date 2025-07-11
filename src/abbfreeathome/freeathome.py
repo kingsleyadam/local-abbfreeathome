@@ -120,10 +120,6 @@ class FreeAtHome:
         _all_channels = {}
 
         for device_serial, device in self._devices.items():
-            # Filter by interface if provided
-            if self._interfaces and device.interface not in self._interfaces:
-                continue
-
             for channel_id, channel_data in device.channels_data.items():
                 # Filter out any channels not on the Free@Home floorplan
                 if (
@@ -168,6 +164,10 @@ class FreeAtHome:
                 _interface_value = "VD"
 
             _interface = Interface.from_string(_interface_value)
+
+            # Filter by interface if provided - skip devices not in the interface filter
+            if self._interfaces and _interface not in self._interfaces:
+                continue
 
             # Get floor and room names using floor plan
             _floor_id = _data.get("floor")
