@@ -425,6 +425,41 @@ async def test_get_channels_by_class(freeathome):
 
 
 @pytest.mark.asyncio
+async def test_get_channels_by_device(freeathome):
+    """Test the get_channels_by_device function."""
+    await freeathome.load()
+
+    # Test getting channels for a specific device that has multiple channels
+    channels_device1 = freeathome.get_channels_by_device("ABB7F500E17A")
+    assert len(channels_device1) == 2  # Device has ch0000 and ch0003
+
+    # Verify the channels belong to the correct device
+    for channel in channels_device1:
+        assert channel.device_serial == "ABB7F500E17A"
+
+    # Test getting channels for another device
+    channels_device2 = freeathome.get_channels_by_device("ABB7F62F6C0B")
+    assert len(channels_device2) == 2  # Device has ch0000 and ch0003
+
+    # Verify the channels belong to the correct device
+    for channel in channels_device2:
+        assert channel.device_serial == "ABB7F62F6C0B"
+
+    # Test getting channels for a device with no channels (should return empty list)
+    channels_empty = freeathome.get_channels_by_device("NONEXISTENT")
+    assert len(channels_empty) == 0
+    assert isinstance(channels_empty, list)
+
+    # Test getting channels for a device that exists but may have filtered channels
+    # BEED509C0001 has one channel but it might be filtered out due to room/floor
+    # mismatch
+    channels_filtered = freeathome.get_channels_by_device("BEED509C0001")
+    # This should return 0 because the channel has floor "02"/room "06"
+    # but device is floor "01"/room "01"
+    assert len(channels_filtered) == 0
+
+
+@pytest.mark.asyncio
 async def test_load(freeathome):
     """Test the load function."""
     await freeathome.load()

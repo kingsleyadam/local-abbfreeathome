@@ -167,7 +167,7 @@ pythonpath = [
 FREEATHOME_MAX_REQUEST_TRIES = "1"
 
 [tool.coverage.run]
-omit = ["*/tests/*"]
+omit = ["*/tests/*", "test_*"]
 
 [tool.coverage.report]
 exclude_lines = [

@@ -45,6 +45,15 @@ class FreeAtHome:
             self._filtered_channels = self._build_filtered_channels()
         return self._filtered_channels
 
+    def get_channels_by_device(self, device_serial: str) -> list[Base]:
+        """Get the list of channels by device."""
+        _channels = self.get_channels()
+        return [
+            _channel
+            for key, _channel in _channels.items()
+            if key.startswith(f"{device_serial}/")
+        ]
+
     def get_channels_by_class(self, channel_class: Base) -> list[Base]:
         """Get the list of channels by class."""
         _channels = self.get_channels()
