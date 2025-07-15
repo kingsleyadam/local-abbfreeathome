@@ -198,11 +198,11 @@ class FreeAtHomeApi:
         return _response.get(self._sysap_uuid)
 
     async def get_datapoint(
-        self, device_id: str, channel_id: str, datapoint: str
+        self, device_serial: str, channel_id: str, datapoint: str
     ) -> list[str]:
         """Get a specific datapoint from the api."""
         _response = await self._request(
-            path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_id}.{channel_id}.{datapoint}",
+            path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_serial}.{channel_id}.{datapoint}",
             method="get",
         )
 
@@ -227,17 +227,19 @@ class FreeAtHomeApi:
         return await self._request(path="/api/rest/sysap")
 
     async def set_datapoint(
-        self, device_id: str, channel_id: str, datapoint: str, value: str
+        self, device_serial: str, channel_id: str, datapoint: str, value: str
     ) -> bool:
-        """Set a specific datapoint in the api. This is used to control devices."""
+        """Set a specific datapoint in the api. This is used to control channels."""
         _response = await self._request(
-            path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_id}.{channel_id}.{datapoint}",
+            path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_serial}.{channel_id}.{datapoint}",
             method="put",
             data=value,
         )
 
         if _response.get(self._sysap_uuid).get("result").lower() != "ok":
-            raise SetDatapointFailureException(device_id, channel_id, datapoint, value)
+            raise SetDatapointFailureException(
+                device_serial, channel_id, datapoint, value
+            )
 
         return True
 

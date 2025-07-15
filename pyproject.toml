@@ -7,7 +7,7 @@ packages = ["src/abbfreeathome"]
 
 [project]
 name = "local-abbfreeathome"
-version = "2.5.4"
+version = "3.0.0"
 authors = [
   { name="Adam Kingsley", email="adam@kingsley.io" },
 ]
@@ -167,4 +167,11 @@ pythonpath = [
 FREEATHOME_MAX_REQUEST_TRIES = "1"
 
 [tool.coverage.run]
-omit = ["*/tests/*"]
+omit = ["*/tests/*", "test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]

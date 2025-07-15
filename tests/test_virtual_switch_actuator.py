@@ -1,13 +1,14 @@
-"""Test class to test the virtual SwitchActuator device."""
+"""Test class to test the virtual SwitchActuator channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.virtual.virtual_switch_actuator import (
+from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
     VirtualSwitchActuator,
 )
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -17,8 +18,14 @@ def mock_api():
 
 
 @pytest.fixture
-def virtual_switch_actuator(mock_api):
-    """Set up the switch instance for testing the virtual SwitchActuator device."""
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def virtual_switch_actuator(mock_api, mock_device):
+    """Set up the switch instance for testing the virtual SwitchActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
         "idp0001": {"pairingID": 2, "value": "0"},
@@ -32,15 +39,16 @@ def virtual_switch_actuator(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "60004F56EA24"
+
+    mock_device.api = mock_api
     return VirtualSwitchActuator(
-        device_id="60004F56EA24",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -55,8 +63,8 @@ async def test_turn_on(virtual_switch_actuator):
     """Test to turning on of the switch."""
     await virtual_switch_actuator.turn_on()
     assert virtual_switch_actuator.state is True
-    virtual_switch_actuator._api.set_datapoint.assert_called_with(
-        device_id="60004F56EA24",
+    virtual_switch_actuator.device.api.set_datapoint.assert_called_with(
+        device_serial="60004F56EA24",
         channel_id="ch0000",
         datapoint="odp0000",
         value="1",
@@ -68,8 +76,8 @@ async def test_turn_off(virtual_switch_actuator):
     """Test to turning off of the switch."""
     await virtual_switch_actuator.turn_off()
     assert virtual_switch_actuator.state is False
-    virtual_switch_actuator._api.set_datapoint.assert_called_with(
-        device_id="60004F56EA24",
+    virtual_switch_actuator.device.api.set_datapoint.assert_called_with(
+        device_serial="60004F56EA24",
         channel_id="ch0000",
         datapoint="odp0000",
         value="0",
@@ -79,18 +87,18 @@ async def test_turn_off(virtual_switch_actuator):
 @pytest.mark.asyncio
 async def test_refresh_state(virtual_switch_actuator):
     """Test refreshing the state of the switch."""
-    virtual_switch_actuator._api.get_datapoint.return_value = ["1"]
+    virtual_switch_actuator.device.api.get_datapoint.return_value = ["1"]
     await virtual_switch_actuator.refresh_state()
     assert virtual_switch_actuator.state is True
-    virtual_switch_actuator._api.get_datapoint.assert_called_with(
-        device_id="60004F56EA24",
+    virtual_switch_actuator.device.api.get_datapoint.assert_called_with(
+        device_serial="60004F56EA24",
         channel_id="ch0000",
         datapoint="odp0000",
     )
 
 
-def test_update_device(virtual_switch_actuator):
-    """Test updating the device state."""
+def test_update_channel(virtual_switch_actuator):
+    """Test updating the channel state."""
 
     def test_callback():
         pass
@@ -103,18 +111,18 @@ def test_update_device(virtual_switch_actuator):
         callback_attribute="requested_state", callback=test_callback
     )
 
-    virtual_switch_actuator.update_device("AL_SWITCH_ON_OFF/odp0000", "1")
+    virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/odp0000", "1")
     assert virtual_switch_actuator.state is True
 
-    virtual_switch_actuator.update_device("AL_SWITCH_ON_OFF/odp0000", "0")
+    virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/odp0000", "0")
     assert virtual_switch_actuator.state is False
 
-    virtual_switch_actuator.update_device("AL_SWITCH_ON_OFF/idp0000", "1")
+    virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")
     assert virtual_switch_actuator.requested_state is True
 
-    virtual_switch_actuator.update_device("AL_SWITCH_ON_OFF/idp0000", "0")
+    virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/idp0000", "0")
     assert virtual_switch_actuator.requested_state is False
 
     # Test scenario where websocket sends update not relevant to the state.
-    virtual_switch_actuator.update_device("AL_SWITCH_ON_OFF/idp0001", "1")
+    virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/idp0001", "1")
     assert virtual_switch_actuator.state is False

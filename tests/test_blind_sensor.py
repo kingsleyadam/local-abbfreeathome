@@ -1,11 +1,12 @@
-"""Test class to test the BlindSensor device."""
+"""Test class to test the BlindSensor channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.blind_sensor import BlindSensor, BlindSensorState
+from src.abbfreeathome.channels.blind_sensor import BlindSensor, BlindSensorState
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -15,8 +16,14 @@ def mock_api():
 
 
 @pytest.fixture
-def blind_sensor(mock_api):
-    """Set up the blind-sensor instance for testing the BlindSensor device."""
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def blind_sensor(mock_api, mock_device):
+    """Set up the blind-sensor instance for testing the BlindSensor channel."""
     inputs = {}
     outputs = {
         "odp0002": {"pairingID": 32, "value": "0"},  # AL_MOVE_UP_DOWN
@@ -25,15 +32,16 @@ def blind_sensor(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB700DAD681"
+
+    mock_device.api = mock_api
     return BlindSensor(
-        device_id="ABB700DAD681",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0003",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -46,11 +54,11 @@ async def test_initial_state(blind_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(blind_sensor):
     """Test refreshing the state of the blind-sensor."""
-    blind_sensor._api.get_datapoint.return_value = ["1"]
+    blind_sensor.device.api.get_datapoint.return_value = ["1"]
     await blind_sensor.refresh_state()
     assert blind_sensor.state == BlindSensorState.step_down.name
-    blind_sensor._api.get_datapoint.assert_called_with(
-        device_id="ABB700DAD681",
+    blind_sensor.device.api.get_datapoint.assert_called_with(
+        device_serial="ABB700DAD681",
         channel_id="ch0003",
         datapoint="odp0003",
     )

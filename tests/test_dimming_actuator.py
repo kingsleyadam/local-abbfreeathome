@@ -1,15 +1,16 @@
-"""Test class to test the DimmingActuator device."""
+"""Test class to test the DimmingActuator channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.dimming_actuator import (
+from src.abbfreeathome.channels.dimming_actuator import (
     ColorTemperatureActuator,
     DimmingActuator,
     DimmingActuatorForcedPosition,
 )
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -19,8 +20,14 @@ def mock_api():
 
 
 @pytest.fixture
-def dimming_actuator(mock_api):
-    """Set up the dimming instance for testing the DimmingActuator device."""
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def dimming_actuator(mock_api, mock_device):
+    """Set up the dimming instance for testing the DimmingActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
         "idp0002": {"pairingID": 17, "value": "50"},
@@ -34,21 +41,21 @@ def dimming_actuator(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "ABB70139AF8A"
+    mock_device.api = mock_api
     return DimmingActuator(
-        device_id="ABB70139AF8A",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
 @pytest.fixture
-def colortemperature_actuator(mock_api):
-    """Set up the instance for testing the ColorTemperatureActuator device."""
+def colortemperature_actuator(mock_api, mock_device):
+    """Set up the instance for testing the ColorTemperatureActuator channel."""
     inputs = {
         "idp0000": {"pairingID": 1, "value": "0"},
         "idp0002": {"pairingID": 17, "value": "50"},
@@ -67,15 +74,15 @@ def colortemperature_actuator(mock_api):
         "par00f6": "2700",
     }
 
+    mock_device.device_serial = "ABB70139AF8A"
+    mock_device.api = mock_api
     return ColorTemperatureActuator(
-        device_id="ABB7026310B7",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0000",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -90,8 +97,8 @@ async def test_turn_on(dimming_actuator):
     """Test to turning on the DimmingActuator."""
     await dimming_actuator.turn_on()
     assert dimming_actuator.state is True
-    dimming_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB70139AF8A",
+    dimming_actuator.device.api.set_datapoint.assert_called_with(
+        device_serial="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="idp0000",
         value="1",
@@ -103,8 +110,8 @@ async def test_turn_off(dimming_actuator):
     """Test to turning off the DimmingActuator."""
     await dimming_actuator.turn_off()
     assert dimming_actuator.state is False
-    dimming_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB70139AF8A",
+    dimming_actuator.device.api.set_datapoint.assert_called_with(
+        device_serial="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="idp0000",
         value="0",
@@ -132,8 +139,8 @@ async def test_set_forced(dimming_actuator):
         dimming_actuator.forced_position
         == DimmingActuatorForcedPosition.deactivated.name
     )
-    dimming_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB70139AF8A",
+    dimming_actuator.device.api.set_datapoint.assert_called_with(
+        device_serial="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="idp0004",
         value="0",
@@ -145,8 +152,8 @@ async def test_set_forced(dimming_actuator):
         dimming_actuator.forced_position
         == DimmingActuatorForcedPosition.forced_off.name
     )
-    dimming_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB70139AF8A",
+    dimming_actuator.device.api.set_datapoint.assert_called_with(
+        device_serial="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="idp0004",
         value="2",
@@ -157,8 +164,8 @@ async def test_set_forced(dimming_actuator):
     assert (
         dimming_actuator.forced_position == DimmingActuatorForcedPosition.forced_on.name
     )
-    dimming_actuator._api.set_datapoint.assert_called_with(
-        device_id="ABB70139AF8A",
+    dimming_actuator.device.api.set_datapoint.assert_called_with(
+        device_serial="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="idp0004",
         value="3",
@@ -173,11 +180,11 @@ async def test_set_forced(dimming_actuator):
 @pytest.mark.asyncio
 async def test_refresh_state(dimming_actuator):
     """Test refreshing the state of the DimmingActuator."""
-    dimming_actuator._api.get_datapoint.return_value = ["1"]
+    dimming_actuator.device.api.get_datapoint.return_value = ["1"]
     await dimming_actuator.refresh_state()
     assert dimming_actuator.state is True
-    dimming_actuator._api.get_datapoint.assert_called_with(
-        device_id="ABB70139AF8A",
+    dimming_actuator.device.api.get_datapoint.assert_called_with(
+        device_serial="ABB70139AF8A",
         channel_id="ch0000",
         datapoint="odp0001",
     )
@@ -215,8 +222,8 @@ def test_refresh_state_from_datapoint(dimming_actuator):
     )
 
 
-def test_update_device(dimming_actuator):
-    """Test updating the device state."""
+def test_update_channel(dimming_actuator):
+    """Test updating the channel state."""
 
     def test_callback():
         pass
@@ -226,14 +233,14 @@ def test_update_device(dimming_actuator):
         callback_attribute="state", callback=test_callback
     )
 
-    dimming_actuator.update_device("AL_INFO_ON_OFF/odp0000", "1")
+    dimming_actuator.update_channel("AL_INFO_ON_OFF/odp0000", "1")
     assert dimming_actuator.state is True
 
-    dimming_actuator.update_device("AL_INFO_ON_OFF/odp0000", "0")
+    dimming_actuator.update_channel("AL_INFO_ON_OFF/odp0000", "0")
     assert dimming_actuator.state is False
 
     # Test scenario where websocket sends update not relevant to the state.
-    dimming_actuator.update_device("AL_INFO_ON_OFF/odp0004", "1")
+    dimming_actuator.update_channel("AL_INFO_ON_OFF/odp0004", "1")
     assert dimming_actuator.state is False
 
 

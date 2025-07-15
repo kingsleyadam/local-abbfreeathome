@@ -101,6 +101,7 @@ jobs:
           '${{ github.ref_name }}'
           --repo '${{ github.repository }}'
           --generate-notes
+          ${{ (contains(github.ref_name, 'a') || contains(github.ref_name, 'b')) && '--prerelease' || '' }}
 
       - name: Upload artifact signatures to GitHub Release
         env:

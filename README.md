@@ -21,9 +21,9 @@ Using the local API will only work if you have it enabled on the SysAP. To activ
 
 Copy the username listed within that window (usually `installer`) to be used when invoking the api.
 
-## Device Implementation
+## Channel Implementation
 
-The current devices implemented within the library.
+The current channels implemented within the library.
 | Name | Primary Functions | Properties |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | BlindSensor | | `state`, `step_state`, `move_state` |
@@ -69,30 +69,30 @@ FreeAtHomeApi
 │
 └───FreeAtHome
      │
-     └────Devices
+     └────Channels
           │  MovementDetector (FID_MOVEMENT_DETECTOR)
           │  SwitchActuator (FID_SWITCH_ACTUATOR)
           │  SwitchSensor (FID_SWITCH_SENSOR)
           │  Trigger (FID_TRIGGER)
 ```
 
-The `FreeAtHome` class (in general) would NOT update the state of any individual device (with the exception of the websocket callbacks). The device class would have access to the FreeAtHome api object to update or fetch it's own state if needed. The `FreeAtHome` class's only interaction with the `FreeAtHomeApi` would be to fetch the SysAP configuration, which it will use to "load" the list of Python `device` classes required for device interaction, and to listen for events on the websocket.
+The `FreeAtHome` class (in general) would NOT update the state of any individual channel (with the exception of the websocket callbacks). The channel class would have access to the FreeAtHome api object to update or fetch it's own state if needed. The `FreeAtHome` class's only interaction with the `FreeAtHomeApi` would be to fetch the SysAP configuration, which it will use to "load" the list of Python `channel` classes required for device interaction, and to listen for events on the websocket.
 
-To make things simple and easy to test each device should map to a single Free@Home [function](https://developer.eu.mybuildings.abb.com/fah_local/reference/functionids). This is because each function would likely have a unique set up inputs/outputs to interact with the Free@Home device, requiring unique methods within the class to properly expose and update the device. But, it is possible that a device could have multiple functions if the functions operated identically to each other. This mapping can be applied in the `FreeAtHome._get_function_to_device_mapping` method.
+To make things simple and easy to test each channel should map to a single Free@Home [function](https://developer.eu.mybuildings.abb.com/fah_local/reference/functionids). This is because each function would likely have a unique set up inputs/outputs to interact with the Free@Home device, requiring unique methods within the class to properly expose and update the device. But, it is possible that a channel could have multiple functions if the functions operated identically to each other. This mapping can be applied in the `FreeAtHome._get_function_to_channel_mapping` method.
 
-| Device Class   | Function(s)         |
+| Channel Class  | Function(s)         |
 | -------------- | ------------------- |
 | SwitchActuator | FID_SWITCH_ACTUATOR |
 
 If multiple functions share a number of the same properties but are slightly different we can create additional levels to the class inheritence hierachy as needed to avoid repeat code.
 
-### Device Api Interaction (Update Device)
+### Channel Api Interaction (Update Channel)
 
-Within the device class any number of methods and functions can be implemented in order to both expose the information from the api as device properties (e.g. lux, state) or set the state of a device in Free@Home using the api object.
+Within the channel class any number of methods and functions can be implemented in order to both expose the information from the api as channel properties (e.g. lux, state) or set the state of a channel in Free@Home using the api object.
 
-#### Set Device Initial State
+#### Set Channel Initial State
 
-All device states can be derived from the `inputs`, `outputs`, and `parameters` class attributes that will be available to all device classes and is set in the `Base` device. The state of a device is generally set using the device `outputs`. An example if getting the current state of the SwitchActuator
+All channel states can be derived from the `inputs`, `outputs`, and `parameters` class attributes that will be available to all channel classes and is set in the `Base` channel class. The state of a channel is generally set using the channel `outputs`. An example if getting the current state of the SwitchActuator
 
 ```python
 def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
@@ -107,17 +107,17 @@ def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
     return False
 ```
 
-This is called when the device class is initiated to know the current state of the device. Because the `inputs`, `outputs`, and `parameters` are fed to the device class from the `FreeAtHome` class, it does not need to interact directly with the api server. This is important, this ensures we don't have to invoke the Api every time we create an instance of a new device class.
+This is called when the channel class is initiated to know the current state of the channel. Because the `inputs`, `outputs`, and `parameters` are fed to the channel class from the `FreeAtHome` class, it does not need to interact directly with the api server. This is important, this ensures we don't have to invoke the Api every time we create an instance of a new channel class.
 
-#### Refresh Device State
+#### Refresh Channel State
 
-There may be instances where the state of the device would need to be refreshed directly from the api. In general, it's unlikely this will need to be called often, the updated state of a device should come from the websocket and directed by the FreeAtHome with callbacks. But it's good practice to implement an api refresh.
+There may be instances where the state of the channel would need to be refreshed directly from the api. In general, it's unlikely this will need to be called often, the updated state of a channel should come from the websocket and directed by the FreeAtHome with callbacks. But it's good practice to implement an api refresh.
 
-To do this we can invoke the `FreeAtHomeApi.get_datapoint` function to fetch the state of the device. We can use the `get_output_by_pairing_id` function to fetch the correct output id based on what is needed from the api.
+To do this we can invoke the `FreeAtHomeApi.get_datapoint` function to fetch the state of the channel. We can use the `get_output_by_pairing_id` function to fetch the correct output id based on what is needed from the api.
 
 ```python
 async def refresh_state(self):
-    """Refresh the state of the device from the api."""
+    """Refresh the state of the channel from the api."""
     _state_refresh_pairings = [
         Pairing.AL_INFO_ON_OFF,
     ]
@@ -129,7 +129,7 @@ async def refresh_state(self):
 
         _datapoint = (
             await self._api.get_datapoint(
-                device_id=self.device_id,
+                device_serial=self.device_serial,
                 channel_id=self.channel_id,
                 datapoint=_switch_output_id,
             )
@@ -148,19 +148,19 @@ def state(self) -> bool | None:
     return self._state
 ```
 
-#### Update Device State
+#### Update Channel State
 
-To update the state (e.g. switch on device) of a device in the Free@Home system the api will need to be invoked. This is also done directly within the device class.
+To update the state (e.g. switch on channel) of a channel in the Free@Home system the api will need to be invoked. This is also done directly within the channel class.
 
 This will use the `FreeAtHomeApi.set_datapoint` function using similar methods as fetching the state of the device.
 
 ```python
 async def _set_switching_datapoint(self, value: str):
-    _switch_input_id, _switch_input_value = self.get_input_by_pairing_id(
-        pairing_id=PairingId.AL_SWITCH_ON_OFF
+    _switch_input_id, _switch_input_value = self.get_input_by_pairing(
+        pairing=Pairing.AL_SWITCH_ON_OFF
     )
     return await self._api.set_datapoint(
-        device_id=self.device_id,
+        device_serial=self.device_serial,
         channel_id=self.channel_id,
         datapoint=_switch_input_id,
         value=value,
@@ -223,7 +223,7 @@ There is one class which is designed to only interact with the api. This should 
 There's is one endpoint that'll return the entire Free@Home configuration, including all devices. This example shows how to fetch and display that. Keep in mind the devices returned are are just Python `dict` objects.
 
 ```python
-from abbfreeathome.api import FreeAtHomeApi
+from abbfreeathome import FreeAtHomeApi
 import asyncio
 import logging
 
@@ -246,14 +246,13 @@ if __name__ == "__main__":
 
 There an additional class called `FreeAtHome`. This class attempts to put it all together linking the `FreeAtHomeApi` class to usable Python objects.
 
-### Get Devices
+### Get Channels
 
-This example will load the `FreeAtHome` class with all potential devices from the api. Once loaded another function `get_devices_by_class` is used to pull all devices that call under a specific "class".
+This example will load the `FreeAtHome` class with all potential channels from the api. Once loaded another function `get_channels_by_class` is used to pull all channels that fall under a specific "class".
 
 ```python
-from abbfreeathome.api import FreeAtHomeApi
-from abbfreeathome.freeathome import FreeAtHome
-from abbfreeathome.devices.switch_actuator import SwitchActuator
+from abbfreeathome import FreeAtHome, FreeAtHomeApi
+from abbfreeathome.channels.switch_actuator import SwitchActuator
 import logging
 import asyncio
 
@@ -267,11 +266,11 @@ if __name__ == "__main__":
         )
     )
 
-    # Load all devices into the FreeAtHome object.
-    asyncio.run(_free_at_home.load_devices())
+    # Load all channels into the FreeAtHome object.
+    asyncio.run(_free_at_home.load())
 
     # Fetch just the list of switches
-    _switches = _free_at_home.get_devices_by_class(device_class=SwitchActuator)
+    _switches = _free_at_home.get_channels_by_class(channel_class=SwitchActuator)
 
     # Loop through each switch showing the name and whether is On/Off
     for _switch in _switches:
@@ -280,14 +279,13 @@ if __name__ == "__main__":
 
 ### WebSocket
 
-The Free@Home local api also exposes a websocket. With this library you can connect to and lisen to events on the websocket. These events are changes in devices datapoints, parameters, etc. The library will give the ability to listen on the websocket and automatically update a devices state.
+The Free@Home local api also exposes a websocket. With this library you can connect to and listen to events on the websocket. These events are changes in channels datapoints, parameters, etc. The library will give the ability to listen on the websocket and automatically update a channel's state.
 
-In addition, the library "devices" can register and run any callbacks when the state changes. Allowing outside code (e.g. Home Assistant) to get notified on changes.
+In addition, the library "channels" can register and run any callbacks when the state changes. Allowing outside code (e.g. Home Assistant) to get notified on changes.
 
 ```python
-from abbfreeathome.api import FreeAtHomeApi
-from abbfreeathome.freeathome import FreeAtHome
-from abbfreeathome.devices.switch_actuator import SwitchActuator
+from abbfreeathome import FreeAtHome, FreeAtHomeApi
+from abbfreeathome.channels.switch_actuator import SwitchActuator
 import logging
 import asyncio
 
@@ -300,11 +298,11 @@ async def websocket_test():
         # Create an Instance of the FreeAtHome class
         _free_at_home = FreeAtHome(_free_at_home_api)
 
-        # Load all devices into the FreeAtHome Class
-        await _free_at_home.load_devices()
+        # Load all channels into the FreeAtHome Class
+        await _free_at_home.load()
 
         # Add our very own callback
-        for _switch in _free_at_home.get_devices_by_class(device_class=SwitchActuator):
+        for _switch in _free_at_home.get_channels_by_class(channel_class=SwitchActuator):
             _switch.register_callback(
                 callback_attribute="state", callback=my_very_own_callback
             )
@@ -324,15 +322,69 @@ if __name__ == "__main__":
 
 #### Output
 
-In order to see any activity, you'll have you turn on/off a switch in the system.
+In order to see any activity, you'll have to turn on/off a switch in the system.
 
 ```
 INFO:abbfreeathome.api:Websocket attempting to connect ws://<IP or HOSTNAME>/fhapi/v1/api/ws
 INFO:abbfreeathome.api:Websocket connected ws://<IP or HOSTNAME>/fhapi/v1/api/ws
-INFO:abbfreeathome.devices.switch:Office Light received updated data: ABB7F62F6C25/ch0003/idp0000: 1
+INFO:abbfreeathome.channels.base:Office Light received updated data: ABB7F62F6C25/ch0003/idp0000: 1
 The switches datapoints have been updated.
-INFO:abbfreeathome.devices.switch:Office Light received updated data: ABB7F62F6C25/ch0003/odp0000: 1
+INFO:abbfreeathome.channels.base:Office Light received updated data: ABB7F62F6C25/ch0003/odp0000: 1
 The switches datapoints have been updated.
+```
+
+### Devices / Free@Home Overview
+
+Here is example code that'll output all of the devices in your Free@Home setup. Including some general information about the setup (e.g. number of devices, unresponsive devices, counts by interfact)
+
+```python
+import asyncio
+
+from abbfreeathome import FreeAtHome, FreeAtHomeApi
+from abbfreeathome.bin.interface import Interface
+
+
+async def main():
+    # Create an instance of the FreeAtHome class.
+    _free_at_home = FreeAtHome(
+        api=FreeAtHomeApi(
+          host="http://<IP or HOSTNAME>", username="installer", password="<password>"
+        )
+    )
+
+    # Load devices and channels
+    await _free_at_home.load()
+
+    # Get all devices
+    _devices = _free_at_home.get_devices()
+
+    # Iterate through devices
+    for _device in _devices.values():
+        print(str(_device))
+
+    # Number of devices
+    print(f"\nFound {len(_devices)} devices")
+
+    # Unresponsive devices
+    _unresponsive_devices = [
+        device for device in _devices.values() if device.unresponsive
+    ]
+    print(f"Unresponsive devices: {len(_unresponsive_devices)}\n")
+
+    # Filter devices by interface using the Interface enum
+    # Devices by interface
+    for _interface in Interface:
+        _device_by_interface = [
+            _device for _device in _devices.values() if _device.interface == _interface
+        ]
+        print(f"{_interface} devices: {len(_device_by_interface)}")
+
+    # Close api session
+    await _free_at_home.api.close_client_session()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 ## TODO

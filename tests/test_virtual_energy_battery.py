@@ -1,13 +1,14 @@
-"""Test class to test the virtual EnergyBattery device."""
+"""Test class to test the virtual EnergyBattery channel."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
-from src.abbfreeathome.devices.virtual.virtual_energy_battery import (
+from src.abbfreeathome.channels.virtual.virtual_energy_battery import (
     VirtualEnergyBattery,
 )
+from src.abbfreeathome.device import Device
 
 
 @pytest.fixture
@@ -17,8 +18,14 @@ def mock_api():
 
 
 @pytest.fixture
-def virtual_energy_battery(mock_api):
-    """Set up the sensor instance for testing the virtual EnergyBattery device."""
+def mock_device():
+    """Create a mock device function."""
+    return MagicMock(spec=Device)
+
+
+@pytest.fixture
+def virtual_energy_battery(mock_api, mock_device):
+    """Set up the sensor instance for testing the virtual EnergyBattery channel."""
     inputs = {}
     outputs = {
         "odp0000": {"pairingID": 1197, "value": ""},
@@ -31,15 +38,16 @@ def virtual_energy_battery(mock_api):
     }
     parameters = {}
 
+    mock_device.device_serial = "6000702DC087"
+
+    mock_device.api = mock_api
     return VirtualEnergyBattery(
-        device_id="6000702DC087",
-        device_name="Device Name",
+        device=mock_device,
         channel_id="ch0002",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
         parameters=parameters,
-        api=mock_api,
     )
 
 
@@ -47,8 +55,8 @@ def virtual_energy_battery(mock_api):
 async def test_set_battery_power(virtual_energy_battery):
     """Test to set battery_power of the sensor."""
     await virtual_energy_battery.set_battery_power(435.7)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0000",
         value="435.7",
@@ -61,8 +69,8 @@ async def test_set_soc(virtual_energy_battery):
     """Test to set soc of the sensor."""
     """between 0 and 100 is ok"""
     await virtual_energy_battery.set_soc(55)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0001",
         value="55",
@@ -71,8 +79,8 @@ async def test_set_soc(virtual_energy_battery):
 
     """Float values should return integer"""
     await virtual_energy_battery.set_soc(5.5)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0001",
         value="5",
@@ -81,8 +89,8 @@ async def test_set_soc(virtual_energy_battery):
 
     """Below 0 is always 0"""
     await virtual_energy_battery.set_soc(-7.5)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0001",
         value="0",
@@ -91,8 +99,8 @@ async def test_set_soc(virtual_energy_battery):
 
     """Above 100 is always 100"""
     await virtual_energy_battery.set_soc(150)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0001",
         value="100",
@@ -105,8 +113,8 @@ async def test_set_imported_today(virtual_energy_battery):
     """Test to set imported_today of the sensor."""
     """Values greater 0 should always work"""
     await virtual_energy_battery.set_imported_today(25)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0002",
         value="25",
@@ -115,8 +123,8 @@ async def test_set_imported_today(virtual_energy_battery):
 
     """Float values should return integer"""
     await virtual_energy_battery.set_imported_today(13.7)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0002",
         value="13",
@@ -125,8 +133,8 @@ async def test_set_imported_today(virtual_energy_battery):
 
     """Negative values should return 0"""
     await virtual_energy_battery.set_imported_today(-3.4)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0002",
         value="0",
@@ -139,8 +147,8 @@ async def test_set_exported_today(virtual_energy_battery):
     """Test to set exported_today of the sensor."""
     """Values greater 0 should always work"""
     await virtual_energy_battery.set_exported_today(25)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0003",
         value="25",
@@ -149,8 +157,8 @@ async def test_set_exported_today(virtual_energy_battery):
 
     """Float values should return integer"""
     await virtual_energy_battery.set_exported_today(13.7)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0003",
         value="13",
@@ -159,8 +167,8 @@ async def test_set_exported_today(virtual_energy_battery):
 
     """Negative values should return 0"""
     await virtual_energy_battery.set_exported_today(-3.4)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0003",
         value="0",
@@ -173,8 +181,8 @@ async def test_set_imported_total(virtual_energy_battery):
     """Test to set imported_total of the sensor."""
     """Values greater 0 should always work"""
     await virtual_energy_battery.set_imported_total(25)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0004",
         value="25",
@@ -183,8 +191,8 @@ async def test_set_imported_total(virtual_energy_battery):
 
     """Float values should return integer"""
     await virtual_energy_battery.set_imported_total(13.7)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0004",
         value="13",
@@ -193,8 +201,8 @@ async def test_set_imported_total(virtual_energy_battery):
 
     """Negative values should return 0"""
     await virtual_energy_battery.set_imported_total(-3.4)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0004",
         value="0",
@@ -207,8 +215,8 @@ async def test_set_exported_total(virtual_energy_battery):
     """Test to set exported_total of the sensor."""
     """Values greater 0 should always work"""
     await virtual_energy_battery.set_exported_total(25)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0005",
         value="25",
@@ -217,8 +225,8 @@ async def test_set_exported_total(virtual_energy_battery):
 
     """Float values should return integer"""
     await virtual_energy_battery.set_exported_total(13.7)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0005",
         value="13",
@@ -227,8 +235,8 @@ async def test_set_exported_total(virtual_energy_battery):
 
     """Negative values should return 0"""
     await virtual_energy_battery.set_exported_total(-3.4)
-    virtual_energy_battery._api.set_datapoint.assert_called_with(
-        device_id="6000702DC087",
+    virtual_energy_battery.device.api.set_datapoint.assert_called_with(
+        device_serial="6000702DC087",
         channel_id="ch0002",
         datapoint="odp0005",
         value="0",
@@ -236,8 +244,8 @@ async def test_set_exported_total(virtual_energy_battery):
     assert virtual_energy_battery.exported_total == 0
 
 
-def test_update_device(virtual_energy_battery):
-    """Test updating the device state."""
+def test_update_channel(virtual_energy_battery):
+    """Test updating the channel state."""
 
     def test_callback():
         pass
@@ -248,5 +256,5 @@ def test_update_device(virtual_energy_battery):
     )
 
     # Test scenario where websocket sends update not relevant to the state.
-    virtual_energy_battery.update_device("AL_SWITCH_ON_OFF/odp0006", "1")
+    virtual_energy_battery.update_channel("AL_SWITCH_ON_OFF/odp0006", "1")
     assert virtual_energy_battery.soc == 0
