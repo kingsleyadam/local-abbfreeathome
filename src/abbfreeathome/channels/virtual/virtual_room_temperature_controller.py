@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class VirtualRoomTemperatureController(Base):
     """Free@Home Virtual RoomTemperatureController Class."""
 
