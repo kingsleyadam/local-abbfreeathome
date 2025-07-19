@@ -6,6 +6,7 @@ import inspect
 import json
 import logging
 import os
+import ssl
 from typing import Any
 from urllib.parse import urlparse
 
@@ -60,17 +61,37 @@ VIRTUAL_DEVICE_PROPERTIES_SCHEMA = vol.Schema(
 _LOGGER = logging.getLogger(__name__)
 
 
-class FreeAtHomeSettings:
+class SSLContextMixin:
+    """Mixin class to provide SSL context functionality."""
+
+    def _get_ssl_context(self) -> ssl.SSLContext | bool:
+        """Get the SSL context for requests."""
+        if not self._verify_ssl:
+            return False
+        if self._ssl_cert_path:
+            return ssl.create_default_context(cafile=self._ssl_cert_path)
+        return True
+
+
+class FreeAtHomeSettings(SSLContextMixin):
     """Provides a class for fetching the settings from a ABB free@home SysAP."""
 
     _client_session: ClientSession = None
     _close_client_session: bool = False
     _settings: dict = None
 
-    def __init__(self, host: str, client_session: ClientSession = None) -> None:
+    def __init__(
+        self,
+        host: str,
+        client_session: ClientSession = None,
+        verify_ssl: bool = True,
+        ssl_cert_path: str | None = None,
+    ) -> None:
         """Initialize the FreeAtHomeSettings class."""
         self._host: str = host
         self._client_session: ClientSession = client_session
+        self._verify_ssl: bool = verify_ssl
+        self._ssl_cert_path: str | None = ssl_cert_path
 
     async def __aenter__(self):
         """Async enter and return self."""
@@ -89,7 +110,9 @@ class FreeAtHomeSettings:
         """Load settings into the class object."""
         try:
             async with (
-                self._get_client_session().get(f"{self._host}/settings.json") as resp,
+                self._get_client_session().get(
+                    f"{self._host}/settings.json", ssl=self._get_ssl_context()
+                ) as resp,
             ):
                 _response_status = resp.status
                 _response_json = await resp.json()
@@ -154,7 +177,7 @@ class FreeAtHomeSettings:
         return self._client_session
 
 
-class FreeAtHomeApi:
+class FreeAtHomeApi(SSLContextMixin):
     """Provides a class for interacting with the ABB-free@home API."""
 
     _client_session: ClientSession = None
@@ -169,6 +192,8 @@ class FreeAtHomeApi:
         sysap_uuid: str = "00000000-0000-0000-0000-000000000000",
         client_session: ClientSession = None,
         ws_heartbeat: int = 30,
+        verify_ssl: bool = True,
+        ssl_cert_path: str | None = None,
     ) -> None:
         """Initialize the FreeAtHomeApi class."""
         self._host = host.rstrip("/")
@@ -176,6 +201,8 @@ class FreeAtHomeApi:
         self._sysap_uuid = sysap_uuid
         self._client_session = client_session
         self._ws_heartbeat = ws_heartbeat
+        self._verify_ssl: bool = verify_ssl
+        self._ssl_cert_path: None | str = ssl_cert_path
 
     async def __aenter__(self):
         """Async enter and return self."""
@@ -292,6 +319,7 @@ class FreeAtHomeApi:
                     data=data,
                     auth=self._auth,
                     raise_for_status=True,
+                    ssl=self._get_ssl_context(),
                 ) as resp,
             ):
                 _response_status = resp.status
@@ -332,12 +360,16 @@ class FreeAtHomeApi:
             return
 
         _parsed_host = urlparse(self._host)
+        _protocol = "wss" if _parsed_host.scheme == "https" else "ws"
         _full_path = f"{_parsed_host.hostname}/fhapi/{API_VERSION}/api/ws"
-        _url = f"ws://{_full_path}"
+        _url = f"{_protocol}://{_full_path}"
 
         _LOGGER.info("Websocket attempting to connect %s", _url)
         self._ws_response = await self._get_client_session().ws_connect(
-            url=_url, heartbeat=self._ws_heartbeat, auth=self._auth
+            url=_url,
+            heartbeat=self._ws_heartbeat,
+            auth=self._auth,
+            ssl=self._get_ssl_context(),
         )
         _LOGGER.info("Websocket connected %s", _url)
 

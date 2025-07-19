@@ -811,3 +811,47 @@ async def test_ws_receive_unknown_message_type(api):
     # Function should complete without error even for unknown message types
     result = await api.ws_receive()
     assert result is None
+
+
+def test_settings_get_ssl_context_no_verify():
+    """Test _get_ssl_context returns False when verify_ssl is False."""
+    settings = FreeAtHomeSettings(host="http://192.168.1.1", verify_ssl=False)
+    assert settings._get_ssl_context() is False
+
+
+def test_settings_get_ssl_context_with_cert_path():
+    """Test _get_ssl_context returns SSLContext when ssl_cert_path is provided."""
+    settings = FreeAtHomeSettings(
+        host="http://192.168.1.1", verify_ssl=True, ssl_cert_path="dummy_path"
+    )
+    with patch("ssl.create_default_context") as mock_create_context:
+        mock_context = Mock()
+        mock_create_context.return_value = mock_context
+        context = settings._get_ssl_context()
+        assert context is mock_context
+        mock_create_context.assert_called_once_with(cafile="dummy_path")
+
+
+def test_api_get_ssl_context_no_verify():
+    """Test _get_ssl_context returns False when verify_ssl is False."""
+    api = FreeAtHomeApi(
+        host="http://192.168.1.1", username="user", password="pass", verify_ssl=False
+    )
+    assert api._get_ssl_context() is False
+
+
+def test_api_get_ssl_context_with_cert_path():
+    """Test _get_ssl_context returns SSLContext when ssl_cert_path is provided."""
+    api = FreeAtHomeApi(
+        host="http://192.168.1.1",
+        username="user",
+        password="pass",
+        verify_ssl=True,
+        ssl_cert_path="dummy_path",
+    )
+    with patch("ssl.create_default_context") as mock_create_context:
+        mock_context = Mock()
+        mock_create_context.return_value = mock_context
+        context = api._get_ssl_context()
+        assert context is mock_context
+        mock_create_context.assert_called_once_with(cafile="dummy_path")
