@@ -820,9 +820,9 @@ def test_settings_get_ssl_context_no_verify():
 
 
 def test_settings_get_ssl_context_with_cert_path():
-    """Test _get_ssl_context returns SSLContext when ssl_cert_path is provided."""
+    """Test _get_ssl_context returns SSLContext when ssl_cert_ca_file is provided."""
     settings = FreeAtHomeSettings(
-        host="http://192.168.1.1", verify_ssl=True, ssl_cert_path="dummy_path"
+        host="http://192.168.1.1", verify_ssl=True, ssl_cert_ca_file="dummy_path"
     )
     with patch("ssl.create_default_context") as mock_create_context:
         mock_context = Mock()
@@ -841,13 +841,13 @@ def test_api_get_ssl_context_no_verify():
 
 
 def test_api_get_ssl_context_with_cert_path():
-    """Test _get_ssl_context returns SSLContext when ssl_cert_path is provided."""
+    """Test _get_ssl_context returns SSLContext when ssl_cert_ca_file is provided."""
     api = FreeAtHomeApi(
         host="http://192.168.1.1",
         username="user",
         password="pass",
         verify_ssl=True,
-        ssl_cert_path="dummy_path",
+        ssl_cert_ca_file="dummy_path",
     )
     with patch("ssl.create_default_context") as mock_create_context:
         mock_context = Mock()

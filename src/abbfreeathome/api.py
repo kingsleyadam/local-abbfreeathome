@@ -68,8 +68,8 @@ class SSLContextMixin:
         """Get the SSL context for requests."""
         if not self._verify_ssl:
             return False
-        if self._ssl_cert_path:
-            return ssl.create_default_context(cafile=self._ssl_cert_path)
+        if self._ssl_cert_ca_file:
+            return ssl.create_default_context(cafile=self._ssl_cert_ca_file)
         return True
 
 
@@ -85,13 +85,13 @@ class FreeAtHomeSettings(SSLContextMixin):
         host: str,
         client_session: ClientSession = None,
         verify_ssl: bool = True,
-        ssl_cert_path: str | None = None,
+        ssl_cert_ca_file: str | None = None,
     ) -> None:
         """Initialize the FreeAtHomeSettings class."""
         self._host: str = host
         self._client_session: ClientSession = client_session
         self._verify_ssl: bool = verify_ssl
-        self._ssl_cert_path: str | None = ssl_cert_path
+        self._ssl_cert_ca_file: str | None = ssl_cert_ca_file
 
     async def __aenter__(self):
         """Async enter and return self."""
@@ -193,7 +193,7 @@ class FreeAtHomeApi(SSLContextMixin):
         client_session: ClientSession = None,
         ws_heartbeat: int = 30,
         verify_ssl: bool = True,
-        ssl_cert_path: str | None = None,
+        ssl_cert_ca_file: str | None = None,
     ) -> None:
         """Initialize the FreeAtHomeApi class."""
         self._host = host.rstrip("/")
@@ -202,7 +202,7 @@ class FreeAtHomeApi(SSLContextMixin):
         self._client_session = client_session
         self._ws_heartbeat = ws_heartbeat
         self._verify_ssl: bool = verify_ssl
-        self._ssl_cert_path: None | str = ssl_cert_path
+        self._ssl_cert_ca_file: None | str = ssl_cert_ca_file
 
     async def __aenter__(self):
         """Async enter and return self."""
