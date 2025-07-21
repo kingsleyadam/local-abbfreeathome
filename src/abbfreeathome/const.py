@@ -29,6 +29,9 @@ from .channels.virtual.virtual_energy_battery import VirtualEnergyBattery
 from .channels.virtual.virtual_energy_inverter import VirtualEnergyInverter
 from .channels.virtual.virtual_energy_two_way_meter import VirtualEnergyTwoWayMeter
 from .channels.virtual.virtual_rain_sensor import VirtualRainSensor
+from .channels.virtual.virtual_room_temperature_controller import (
+    VirtualRoomTemperatureController,
+)
 from .channels.virtual.virtual_switch_actuator import VirtualSwitchActuator
 from .channels.virtual.virtual_temperature_sensor import VirtualTemperatureSensor
 from .channels.virtual.virtual_wind_sensor import VirtualWindSensor
@@ -131,6 +134,9 @@ FUNCTION_VIRTUAL_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_ENERGY_INVERTER: VirtualEnergyInverter,
     Function.FID_ENERGY_TWO_WAY_METER: VirtualEnergyTwoWayMeter,
     Function.FID_RAIN_SENSOR: VirtualRainSensor,
+    Function.FID_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITHOUT_FAN: (
+        VirtualRoomTemperatureController
+    ),
     Function.FID_SWITCH_ACTUATOR: VirtualSwitchActuator,
     Function.FID_TEMPERATURE_SENSOR: VirtualTemperatureSensor,
     Function.FID_WIND_SENSOR: VirtualWindSensor,
