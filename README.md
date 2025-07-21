@@ -210,6 +210,32 @@ You can run a few tests to ensure everything is working as it should.
 1. In Visual Studio Code, Navigate to the `Testing` tab on the left and click `Run Tests` (Double Play Icon). This should run all Python Unit Tests. You can also run `Run Tests With Coverage` to get the code coverage results.
 2. In a new terminal window you can run `python3 -m build` to build and package up the python code.
 
+## SSL/TLS Support
+
+This library supports secure connections to your SysAP using SSL/TLS for both HTTPS and WebSockets (`wss`). When initializing the `FreeAtHomeApi`, you can control SSL verification using two optional parameters:
+
+- `verify_ssl` (bool): Defaults to `True`. The SysAP uses a self-signed certificate, if you do not want to provide a custom certificate file, you can set this to `False`. **Disabling verification is not recommended as it makes the connection insecure.**
+- `ssl_cert_ca_file` (str): The absolute path to a custom CA certificate file (`.pem` or `.crt`). This is used to verify the SysAP's certificate. You can fetch this certificate from the SysAP Local API connection settings under `Connection`.
+
+### Using the SysAP Self-Signed Certificate
+
+To connect securely to a SysAP using its self-signed certificate, you first need to download the certificate from the SysAP Local Api Settings.
+
+1.  Navigate to your SysAP's web interface (`http://<IP or HOSTNAME>`).
+2.  If you're connecting via https, your browser will warn you about an insecure connection. Proceed anyway.
+3.  Navigate to `Configuration` --> `Settings` --> `free@home - Settings` --> `Local API`.
+4.  Under the `Connection`, you'll have the option to `Generate Certificate`, or `Download certificate`. Download the certificate to your machine (e.g., `sysap.crt`) and provide its path to the `ssl_cert_ca_file` parameter.
+
+```python
+# Example of connecting with a custom certificate
+api = FreeAtHomeApi(
+    host="https://<IP or HOSTNAME>",
+    username="installer",
+    password="<password>",
+    ssl_cert_ca_file="/path/to/your/sysap.crt"
+)
+```
+
 ## Examples
 
 Below are a number of examples on how to use the library. These examples use the above directory and virtual environment.
@@ -232,7 +258,11 @@ if __name__ == "__main__":
 
     # Create an instance of the free@home api
     _fah_api = FreeAtHomeApi(
-        host="http://<IP or HOSTNAME>", username="installer", password="<password>"
+        host="https://<IP or HOSTNAME>",
+        username="installer",
+        password="<password>",
+        verify_ssl=True,
+        ssl_cert_ca_file="/path/to/your/sysap.crt",
     )
 
     # Pull SysAP Configuration
@@ -262,7 +292,11 @@ if __name__ == "__main__":
     # Create an instance of the FreeAtHome class.
     _free_at_home = FreeAtHome(
         api=FreeAtHomeApi(
-          host="http://<IP or HOSTNAME>", username="installer", password="<password>"
+            host="https://<IP or HOSTNAME>",
+            username="installer",
+            password="<password>",
+            verify_ssl=True,
+            ssl_cert_ca_file="/path/to/your/sysap.crt",
         )
     )
 
@@ -293,7 +327,11 @@ import asyncio
 async def websocket_test():
     # Create an instance of the api using context management
     async with FreeAtHomeApi(
-        host="http://<IP or HOSTNAME>", username="installer", password="<password>"
+        host="https://<IP or HOSTNAME>",
+        username="installer",
+        password="<password>",
+        verify_ssl=True,
+        ssl_cert_ca_file="/path/to/your/sysap.crt",
     ) as _free_at_home_api:
         # Create an Instance of the FreeAtHome class
         _free_at_home = FreeAtHome(_free_at_home_api)
@@ -348,7 +386,11 @@ async def main():
     # Create an instance of the FreeAtHome class.
     _free_at_home = FreeAtHome(
         api=FreeAtHomeApi(
-          host="http://<IP or HOSTNAME>", username="installer", password="<password>"
+            host="https://<IP or HOSTNAME>",
+            username="installer",
+            password="<password>",
+            verify_ssl=True,
+            ssl_cert_ca_file="/path/to/your/sysap.crt",
         )
     )
 
@@ -386,14 +428,3 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
-
-## TODO
-
-There are a number of items that still need to be done.
-
-- ~~Implement format and linting checking in a GitHub actions pipeline using Ruff.~~
-  - ~~https://docs.astral.sh/ruff/integrations/~~
-- ~~Add GitHub actions for cutting a release and pushing to PyPi automatically.~~
-- ~~Implement unit testing.~~
-- Implement SSL on both HTTPS and WSS requests.
-  - The Free@Home system will provide a certificate which can be used to validate the connection, can this be used in Home Assistant?
