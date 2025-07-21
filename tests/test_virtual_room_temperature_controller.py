@@ -84,6 +84,7 @@ async def test_turn_off(virtual_room_temperature_controller):
         value="0",
     )
 
+
 @pytest.mark.asyncio
 async def test_turn_on_eco_mode(virtual_room_temperature_controller):
     """Test to turning on the eco-mode of the controller."""
@@ -108,6 +109,7 @@ async def test_turn_off_eco_mode(virtual_room_temperature_controller):
         datapoint="odp0009",
         value="65",
     )
+
 
 @pytest.mark.asyncio
 async def test_set_target_temperature(virtual_room_temperature_controller):
@@ -139,6 +141,7 @@ async def test_set_target_temperature(virtual_room_temperature_controller):
     )
     assert virtual_room_temperature_controller.target_temperature == 35
 
+
 @pytest.mark.asyncio
 async def test_set_current_temperature(virtual_room_temperature_controller):
     """Test to set current temperature of the sensor."""
@@ -150,6 +153,7 @@ async def test_set_current_temperature(virtual_room_temperature_controller):
         value="20",
     )
     assert virtual_room_temperature_controller.current_temperature == 20
+
 
 @pytest.mark.asyncio
 async def test_refresh_state(virtual_room_temperature_controller):
@@ -192,7 +196,6 @@ def test_update_channel(virtual_room_temperature_controller):
     virtual_room_temperature_controller.register_callback(
         callback_attribute="requested_eco_mode", callback=test_callback
     )
-
 
     virtual_room_temperature_controller.update_channel("AL_SWITCH_ON_OFF/odp0008", "1")
     assert virtual_room_temperature_controller.state is True
