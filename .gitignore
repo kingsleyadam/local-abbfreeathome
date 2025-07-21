@@ -168,4 +168,4 @@ cython_debug/
 .DS_Store
 
 # Ignore any tests file in the root of the repo
-test_*
+/test_*
