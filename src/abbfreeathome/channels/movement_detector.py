@@ -13,12 +13,14 @@ class MovementDetector(Base):
     """Free@Home MovementDetector Class."""
 
     _state_refresh_pairings: list[Pairing] = [
-        Pairing.AL_BRIGHTNESS_LEVEL,
         Pairing.AL_TIMED_MOVEMENT,
+        Pairing.AL_BRIGHTNESS_LEVEL,
+        Pairing.AL_INFO_LOCKED_SENSOR,
     ]
     _callback_attributes: list[str] = [
         "state",
         "brightness",
+        "locked",
     ]
 
     def __init__(
@@ -35,6 +37,7 @@ class MovementDetector(Base):
         """Initialize the Free@Home MovementDetector class."""
         self._state: bool | None = None
         self._brightness: float | None = None
+        self._locked: bool | None = None
 
         super().__init__(
             device,
@@ -57,16 +60,46 @@ class MovementDetector(Base):
         """Get the brightness level of the sensor."""
         return self._brightness
 
+    @property
+    def locked(self) -> bool | None:
+        """Get the locked state of the sensor."""
+        return self._locked
+
+    async def lock(self):
+        """Lock the sensor."""
+        await self._set_locking_datapoint("1")
+        self._locked = True
+
+    async def unlock(self):
+        """Unlock the sensor."""
+        await self._set_locking_datapoint("0")
+        self._locked = False
+
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
         """
         Refresh the state of the channel from a given output.
 
         This will return the name of the attribute, which was refreshed or None.
         """
-        if datapoint.get("pairingID") == Pairing.AL_TIMED_MOVEMENT.value:
-            self._state = datapoint.get("value") == "1"
-            return "state"
-        if datapoint.get("pairingID") == Pairing.AL_BRIGHTNESS_LEVEL.value:
-            self._brightness = float(datapoint.get("value"))
-            return "brightness"
-        return None
+        match datapoint.get("pairingID"):
+            case Pairing.AL_TIMED_MOVEMENT.value:
+                self._state = datapoint.get("value") == "1"
+                return "state"
+            case Pairing.AL_BRIGHTNESS_LEVEL.value:
+                self._brightness = float(datapoint.get("value"))
+                return "brightness"
+            case Pairing.AL_INFO_LOCKED_SENSOR.value:
+                self._locked = datapoint.get("value") == "1"
+                return "locked"
+            case _:
+                return None
+
+    async def _set_locking_datapoint(self, value: str):
+        """Set the locking datapoint on the api."""
+        _locking_input_id, _ = self.get_input_by_pairing(pairing=Pairing.AL_LOCK_SENSOR)
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
+            channel_id=self.channel_id,
+            datapoint=_locking_input_id,
+            value=value,
+        )

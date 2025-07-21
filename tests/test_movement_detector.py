@@ -1,6 +1,6 @@
 """Test class to test the SwitchActuator channel."""
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 
@@ -11,11 +11,14 @@ from src.abbfreeathome.device import Device
 
 def get_movement_detector(type: str, mock_api, mock_device):
     """Get the MovementDetector class to be tested against."""
-    inputs = {"idp0000": {"pairingID": 256, "value": "0"}}
+    inputs = {
+        "idp0000": {"pairingID": 256, "value": "0"},
+        "idp0004": {"pairingID": 359, "value": "0"},
+    }
     outputs = {
         "odp0000": {"pairingID": 6, "value": "0"},
-        "odp0001": {"pairingID": 7, "value": "0"},
         "odp0002": {"pairingID": 1027, "value": "1.6"},
+        "odp0005": {"pairingID": 360, "value": "0"},
     }
     parameters = {"par0034": "1", "par00d5": "100"}
 
@@ -65,6 +68,7 @@ async def test_initial_state_indoor(movement_detector_indoor):
     """Test the intial state."""
     assert movement_detector_indoor.state is False
     assert movement_detector_indoor.brightness == 1.6
+    assert movement_detector_indoor.locked is False
 
 
 @pytest.mark.asyncio
@@ -72,20 +76,27 @@ async def test_initial_state_outdoor(movement_detector_outdoor):
     """Test the intial state."""
     assert movement_detector_outdoor.state is False
     assert movement_detector_outdoor.brightness is None
+    assert movement_detector_outdoor.locked is False
 
 
 @pytest.mark.asyncio
 async def test_refresh_state(movement_detector_indoor):
     """Test refreshing the state."""
-    movement_detector_indoor.device.api.get_datapoint.return_value = ["1"]
+    movement_detector_indoor.device.api.get_datapoint.side_effect = [
+        ["1"],
+        ["42.1"],
+        ["1"],
+    ]
     await movement_detector_indoor.refresh_state()
     assert movement_detector_indoor.state is True
-    assert movement_detector_indoor.brightness == 1.0
-    movement_detector_indoor.device.api.get_datapoint.assert_called_with(
-        device_serial="ABB7F500E17A",
-        channel_id="ch0003",
-        datapoint="odp0000",
-    )
+    assert movement_detector_indoor.brightness == 42.1
+    assert movement_detector_indoor.locked is True
+    _expected_calls = [
+        call(device_serial="ABB7F500E17A", channel_id="ch0003", datapoint="odp0000"),
+        call(device_serial="ABB7F500E17A", channel_id="ch0003", datapoint="odp0002"),
+        call(device_serial="ABB7F500E17A", channel_id="ch0003", datapoint="odp0005"),
+    ]
+    movement_detector_indoor.device.api.get_datapoint.assert_has_calls(_expected_calls)
 
 
 def test_refresh_state_from_datapoint(movement_detector_indoor):
@@ -107,3 +118,29 @@ def test_refresh_state_from_datapoint(movement_detector_indoor):
         datapoint={"pairingID": 6, "value": "0"},
     )
     assert movement_detector_indoor.brightness == 52.3
+
+
+@pytest.mark.asyncio
+async def test_lock(movement_detector_indoor):
+    """Test for locking the sensor."""
+    await movement_detector_indoor.lock()
+    assert movement_detector_indoor.locked is True
+    movement_detector_indoor.device.api.set_datapoint.assert_called_with(
+        device_serial="ABB7F500E17A",
+        channel_id="ch0003",
+        datapoint="idp0004",
+        value="1",
+    )
+
+
+@pytest.mark.asyncio
+async def test_unlock(movement_detector_indoor):
+    """Test for unlocking the sensor."""
+    await movement_detector_indoor.unlock()
+    assert movement_detector_indoor.locked is False
+    movement_detector_indoor.device.api.set_datapoint.assert_called_with(
+        device_serial="ABB7F500E17A",
+        channel_id="ch0003",
+        datapoint="idp0004",
+        value="0",
+    )
