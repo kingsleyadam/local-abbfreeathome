@@ -19,6 +19,7 @@ from src.abbfreeathome.exceptions import (
     InvalidCredentialsException,
     InvalidHostException,
     SetDatapointFailureException,
+    SslErrorException,
     UserNotFoundException,
 )
 
@@ -125,6 +126,47 @@ async def test_get_settings_client_connection_error(settings):
     finally:
         # Cleanup any client session that might have been created during failed request
         await settings.close_client_session()
+
+
+@pytest.mark.asyncio
+async def test_get_settings_ssl_certificate_error(settings):
+    """Test the load function for SSL certificate error."""
+    with patch.object(settings, "_get_client_session") as mock_get_session:
+        connection_key = Mock()
+        ssl_error = Mock()
+        mock_get_session.return_value.get.side_effect = (
+            aiohttp.client_exceptions.ClientConnectorCertificateError(
+                connection_key, ssl_error
+            )
+        )
+        with pytest.raises(SslErrorException):
+            await settings.load()
+
+
+@pytest.mark.asyncio
+async def test_get_settings_ssl_connector_error(settings):
+    """Test the load function for SSL connector error."""
+    with patch.object(settings, "_get_client_session") as mock_get_session:
+        connection_key = Mock()
+        ssl_error = Mock()
+        mock_get_session.return_value.get.side_effect = (
+            aiohttp.client_exceptions.ClientConnectorSSLError(connection_key, ssl_error)
+        )
+        with pytest.raises(SslErrorException):
+            await settings.load()
+
+
+@pytest.mark.asyncio
+async def test_get_settings_client_ssl_error(settings):
+    """Test the load function for client SSL error."""
+    with patch.object(settings, "_get_client_session") as mock_get_session:
+        connection_key = Mock()
+        ssl_error = Mock()
+        mock_get_session.return_value.get.side_effect = (
+            aiohttp.client_exceptions.ClientSSLError(connection_key, ssl_error)
+        )
+        with pytest.raises(SslErrorException):
+            await settings.load()
 
 
 def test_get_user(settings):
@@ -483,6 +525,31 @@ async def test_ws_receive_error(api):
 
 
 @pytest.mark.asyncio
+async def test_ws_receive_ssl_error(api):
+    """Test the ws_receive function for SSL error during connection."""
+    with patch.object(
+        FreeAtHomeApi, "ws_connected", new_callable=PropertyMock
+    ) as mock_ws_connected:
+        mock_ws_connected.return_value = False
+        with patch.object(
+            FreeAtHomeApi, "_ws_response", new_callable=PropertyMock
+        ) as mock_ws_response:
+            mock_ws_response.return_value = None
+
+            connection_key = Mock()
+            ssl_error = Mock()
+            with patch.object(
+                FreeAtHomeApi, "ws_connect", new_callable=AsyncMock
+            ) as mock_ws_connect:
+                mock_ws_connect.side_effect = aiohttp.client_exceptions.ClientSSLError(
+                    connection_key, ssl_error
+                )
+
+                with pytest.raises(SslErrorException):
+                    await api.ws_receive()
+
+
+@pytest.mark.asyncio
 async def test_request_success_json(api):
     """Test the _request function for json response."""
     with aioresponses() as m:
@@ -550,6 +617,56 @@ async def test_request_client_connection_error(api):
     finally:
         # Cleanup any client session that might have been created during failed request
         await api.close_client_session()
+
+
+@pytest.mark.asyncio
+async def test_request_ssl_certificate_error(api):
+    """Test the _request function for SSL certificate error."""
+    with patch.object(api, "_get_client_session") as mock_get_session:
+        mock_session = Mock()
+        connection_key = Mock()
+        ssl_error = Mock()
+        mock_session.request.side_effect = (
+            aiohttp.client_exceptions.ClientConnectorCertificateError(
+                connection_key, ssl_error
+            )
+        )
+        mock_get_session.return_value = mock_session
+
+        with pytest.raises(SslErrorException):
+            await api._request("/test")
+
+
+@pytest.mark.asyncio
+async def test_request_ssl_connector_error(api):
+    """Test the _request function for SSL connector error."""
+    with patch.object(api, "_get_client_session") as mock_get_session:
+        mock_session = Mock()
+        connection_key = Mock()
+        ssl_error = Mock()
+        mock_session.request.side_effect = (
+            aiohttp.client_exceptions.ClientConnectorSSLError(connection_key, ssl_error)
+        )
+        mock_get_session.return_value = mock_session
+
+        with pytest.raises(SslErrorException):
+            await api._request("/test")
+
+
+@pytest.mark.asyncio
+async def test_request_client_ssl_error(api):
+    """Test the _request function for client SSL error."""
+    with patch.object(api, "_get_client_session") as mock_get_session:
+        mock_session = Mock()
+        connection_key = Mock()
+        ssl_error = Mock()
+        mock_session.request.side_effect = aiohttp.client_exceptions.ClientSSLError(
+            connection_key, ssl_error
+        )
+        mock_get_session.return_value = mock_session
+
+        with pytest.raises(SslErrorException):
+            await api._request("/test")
 
 
 @pytest.mark.asyncio
