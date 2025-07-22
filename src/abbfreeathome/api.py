@@ -14,6 +14,7 @@ from aiohttp.client import ClientSession, ClientWebSocketResponse
 from aiohttp.client_exceptions import (
     ClientConnectionError as AioHttpClientConnectionError,
     ClientResponseError as AioHttpClientResponseError,
+    ClientSSLError as AioClientSSLError,
     InvalidUrlClientError as AioHttpInvalidUrlClientError,
     WSServerHandshakeError as AioHttpWSServerHandshakeError,
 )
@@ -32,6 +33,7 @@ from .exceptions import (
     InvalidCredentialsException,
     InvalidHostException,
     SetDatapointFailureException,
+    SslErrorException,
     UserNotFoundException,
 )
 
@@ -118,6 +120,8 @@ class FreeAtHomeSettings(SSLContextMixin):
                 _response_json = await resp.json()
         except AioHttpInvalidUrlClientError as e:
             raise InvalidHostException(self._host) from e
+        except AioClientSSLError as e:
+            raise SslErrorException(self._host) from e
         except AioHttpClientConnectionError as e:
             raise ClientConnectionError(self._host) from e
 
@@ -330,6 +334,8 @@ class FreeAtHomeApi(SSLContextMixin):
                     _response_data = await resp.text()
         except AioHttpInvalidUrlClientError as e:
             raise InvalidHostException(self._host) from e
+        except AioClientSSLError as e:
+            raise SslErrorException(self._host) from e
         except AioHttpClientConnectionError as e:
             raise ClientConnectionError(self._host) from e
         except AioHttpClientResponseError as e:
@@ -398,6 +404,8 @@ class FreeAtHomeApi(SSLContextMixin):
                 _LOGGER.exception("Websocket Handshake Connection Error.")
                 await asyncio.sleep(retry_interval)
                 return
+            except AioClientSSLError as e:
+                raise SslErrorException(self._host) from e
             except AioHttpClientConnectionError:
                 _LOGGER.exception("Websocket Client Connection Error.")
                 await asyncio.sleep(retry_interval)
