@@ -27,6 +27,7 @@ The current channels implemented within the library.
 | Name | Primary Functions | Properties |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | BlindSensor | | `state`, `step_state`, `move_state` |
+| BlockableMovementDetector | `turn_on_blocked()`, `turn_off_blocked()` | `state`, `brightness`, `blocked` |
 | BrightnessSensor | | `state`, `alarm` |
 | CarbonMonoxideSensor | | `state` |
 | ColorTemperatureActuator | `turn_on()`, `turn_off()`, `set_brightness()`, `set_forced_position()`, `set_color_temperature()` | `state`, `brightness`, `forced_position`, `color_temperature`, `color_temperature_coolest`, `color_temperature_warmest` |
