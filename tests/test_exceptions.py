@@ -4,6 +4,7 @@ import pytest
 
 from src.abbfreeathome.exceptions import (
     BadRequestException,
+    ClientConnectionError,
     ConnectionTimeoutException,
     ForbiddenAuthException,
     InvalidApiResponseException,
@@ -12,6 +13,7 @@ from src.abbfreeathome.exceptions import (
     InvalidDeviceChannelParameter,
     InvalidHostException,
     SetDatapointFailureException,
+    SslErrorException,
     UnknownCallbackAttributeException,
     UserNotFoundException,
 )
@@ -22,6 +24,13 @@ def test_connection_timeout_exception():
     with pytest.raises(ConnectionTimeoutException) as excinfo:
         raise ConnectionTimeoutException("192.168.1.1")
     assert str(excinfo.value) == "Connection timeout to host: 192.168.1.1"
+
+
+def test_client_connection_error():
+    """Test client connection error exception."""
+    with pytest.raises(ClientConnectionError) as excinfo:
+        raise ClientConnectionError("https://192.168.1.1")
+    assert str(excinfo.value) == "Cannot connect to host https://192.168.1.1"
 
 
 def test_forbidden_auth_exception():
@@ -118,4 +127,14 @@ def test_invalid_device_channel_parameter():
     assert str(excinfo.value) == (
         "Could not find parameter id for "
         "device: device1; channel: channel1; parameter id: 123"
+    )
+
+
+def test_ssl_error_exception():
+    """Test SSL error exception."""
+    with pytest.raises(SslErrorException) as excinfo:
+        raise SslErrorException("https://192.168.1.1")
+    assert (
+        str(excinfo.value)
+        == "SSL certificate verification failed for host https://192.168.1.1"
     )

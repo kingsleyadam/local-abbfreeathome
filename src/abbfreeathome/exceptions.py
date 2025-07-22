@@ -14,6 +14,15 @@ class ClientConnectionError(FreeAtHomeException):
         super().__init__(self.message)
 
 
+class SslErrorException(FreeAtHomeException):
+    """Raise an exception for SSL certificate verification errors."""
+
+    def __init__(self, url: str) -> None:
+        """Initialize the SslErrorException class."""
+        self.message = f"SSL certificate verification failed for host {url}"
+        super().__init__(self.message)
+
+
 class ConnectionTimeoutException(FreeAtHomeException):
     """Raise an exception if the connection times out."""
 
