@@ -19,8 +19,8 @@ class SwitchActuatorForcedPosition(enum.Enum):
     forced_off = "5"
 
 
-class WelcomeIPMuteActuator(Base):
-    """Free@Home WelcomeIPMuteActuator Class."""
+class SimpleSwitchActuator(Base):
+    """Free@Home SimpleSwitchActuator Class."""
 
     _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_INFO_ON_OFF,
@@ -40,7 +40,7 @@ class WelcomeIPMuteActuator(Base):
         floor_name: str | None = None,
         room_name: str | None = None,
     ) -> None:
-        """Initialize the Free@Home WelcomeIPMuteActuator class."""
+        """Initialize the Free@Home SimpleSwitchActuator class."""
         self._state: bool | None = None
 
         super().__init__(
@@ -93,7 +93,7 @@ class WelcomeIPMuteActuator(Base):
         )
 
 
-class SwitchActuator(WelcomeIPMuteActuator):
+class SwitchActuator(SimpleSwitchActuator):
     """Free@Home SwitchActuator Class."""
 
     _state_refresh_pairings: list[Pairing] = [
