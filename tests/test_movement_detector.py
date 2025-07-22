@@ -114,7 +114,6 @@ async def test_refresh_state(indoor_movement_detector):
     indoor_movement_detector.device.api.get_datapoint.side_effect = [
         ["1"],
         ["42.1"],
-        # ["1"],
     ]
     await indoor_movement_detector.refresh_state()
     assert indoor_movement_detector.state is True
@@ -155,17 +154,20 @@ def test_refresh_state_from_datapoint(indoor_movement_detector):
         datapoint={"pairingID": 6, "value": "1"},
     )
     assert indoor_movement_detector.state is True
+    assert indoor_movement_detector.brightness == 1.6
 
     # Check output that affects the state.
     indoor_movement_detector._refresh_state_from_datapoint(
         datapoint={"pairingID": 1027, "value": "52.3"},
     )
+    assert indoor_movement_detector.state is True
     assert indoor_movement_detector.brightness == 52.3
 
     # Check output that does NOT affect the state.
     indoor_movement_detector._refresh_state_from_datapoint(
-        datapoint={"pairingID": 6, "value": "0"},
+        datapoint={"pairingID": 12, "value": "0"},
     )
+    assert indoor_movement_detector.state is True
     assert indoor_movement_detector.brightness == 52.3
 
 
@@ -176,24 +178,32 @@ def test_refresh_state_from_datapoint_blockable(blockable_movement_detector):
         datapoint={"pairingID": 6, "value": "1"},
     )
     assert blockable_movement_detector.state is True
+    assert blockable_movement_detector.brightness == 1.6
+    assert blockable_movement_detector.blocked is False
 
     # Check output that affects the state.
     blockable_movement_detector._refresh_state_from_datapoint(
         datapoint={"pairingID": 1027, "value": "52.3"},
     )
+    assert blockable_movement_detector.state is True
     assert blockable_movement_detector.brightness == 52.3
+    assert blockable_movement_detector.blocked is False
 
     # Check output that affects the state.
     blockable_movement_detector._refresh_state_from_datapoint(
         datapoint={"pairingID": 360, "value": "1"},
     )
+    assert blockable_movement_detector.state is True
+    assert blockable_movement_detector.brightness == 52.3
     assert blockable_movement_detector.blocked is True
 
     # Check output that does NOT affect the state.
     blockable_movement_detector._refresh_state_from_datapoint(
-        datapoint={"pairingID": 6, "value": "0"},
+        datapoint={"pairingID": 12, "value": "0"},
     )
+    assert blockable_movement_detector.state is True
     assert blockable_movement_detector.brightness == 52.3
+    assert blockable_movement_detector.blocked is True
 
 
 @pytest.mark.asyncio
