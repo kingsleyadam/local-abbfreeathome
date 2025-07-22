@@ -20,7 +20,7 @@ from .channels.movement_detector import BlockableMovementDetector, MovementDetec
 from .channels.rain_sensor import RainSensor
 from .channels.room_temperature_controller import RoomTemperatureController
 from .channels.smoke_detector import SmokeDetector
-from .channels.switch_actuator import SwitchActuator
+from .channels.switch_actuator import SimpleSwitchActuator, SwitchActuator
 from .channels.switch_sensor import DimmingSensor, SwitchSensor
 from .channels.temperature_sensor import TemperatureSensor
 from .channels.trigger import Trigger
@@ -123,6 +123,8 @@ FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_TEMPERATURE_SENSOR: TemperatureSensor,
     Function.FID_TRIGGER: Trigger,
     Function.FID_WELCOME_IP_BELL_INDICATOR_SENSOR: DesDoorRingingSensor,
+    Function.FID_WELCOME_IP_MUTE_ACTUATOR: SimpleSwitchActuator,
+    Function.FID_WELCOME_IP_MUTE_SENSOR: SwitchSensor,
     Function.FID_WIND_SENSOR: WindSensor,
     Function.FID_WINDOW_DOOR_POSITION_SENSOR: WindowDoorSensor,
     Function.FID_WINDOW_DOOR_SENSOR: WindowDoorSensor,
