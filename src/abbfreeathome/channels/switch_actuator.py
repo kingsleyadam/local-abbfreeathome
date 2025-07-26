@@ -93,6 +93,10 @@ class SimpleSwitchActuator(Base):
         )
 
 
+class WelcomeIPMuteActuator(SimpleSwitchActuator):
+    """Free@Home WelcomeIPMuteActuator Class."""
+
+
 class SwitchActuator(SimpleSwitchActuator):
     """Free@Home SwitchActuator Class."""
 
