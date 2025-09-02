@@ -76,7 +76,7 @@ class SSLContextMixin:
             return False
         if self._ssl_cert_ca_file:
             # Run SSL context creation in executor to avoid blocking the event loop
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             return await loop.run_in_executor(
                 None, self._create_ssl_context_sync, self._ssl_cert_ca_file
             )
