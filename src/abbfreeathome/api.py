@@ -66,12 +66,20 @@ _LOGGER = logging.getLogger(__name__)
 class SSLContextMixin:
     """Mixin class to provide SSL context functionality."""
 
-    def _get_ssl_context(self) -> ssl.SSLContext | bool:
+    def _create_ssl_context_sync(self, cafile: str) -> ssl.SSLContext:
+        """Create SSL context synchronously (for use in executor)."""
+        return ssl.create_default_context(cafile=cafile)
+
+    async def _get_ssl_context(self) -> ssl.SSLContext | bool:
         """Get the SSL context for requests."""
         if not self._verify_ssl:
             return False
         if self._ssl_cert_ca_file:
-            return ssl.create_default_context(cafile=self._ssl_cert_ca_file)
+            # Run SSL context creation in executor to avoid blocking the event loop
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(
+                None, self._create_ssl_context_sync, self._ssl_cert_ca_file
+            )
         return True
 
 
@@ -110,10 +118,11 @@ class FreeAtHomeSettings(SSLContextMixin):
 
     async def load(self):
         """Load settings into the class object."""
+        ssl_context = await self._get_ssl_context()
         try:
             async with (
                 self._get_client_session().get(
-                    f"{self._host}/settings.json", ssl=self._get_ssl_context()
+                    f"{self._host}/settings.json", ssl=ssl_context
                 ) as resp,
             ):
                 _response_status = resp.status
@@ -315,6 +324,7 @@ class FreeAtHomeApi(SSLContextMixin):
             path = f"/{path}"
         _full_path = f"/fhapi/{API_VERSION}{path}"
 
+        ssl_context = await self._get_ssl_context()
         try:
             async with (
                 self._get_client_session().request(
@@ -323,7 +333,7 @@ class FreeAtHomeApi(SSLContextMixin):
                     data=data,
                     auth=self._auth,
                     raise_for_status=True,
-                    ssl=self._get_ssl_context(),
+                    ssl=ssl_context,
                 ) as resp,
             ):
                 _response_status = resp.status
@@ -370,12 +380,13 @@ class FreeAtHomeApi(SSLContextMixin):
         _full_path = f"{_parsed_host.hostname}/fhapi/{API_VERSION}/api/ws"
         _url = f"{_protocol}://{_full_path}"
 
+        ssl_context = await self._get_ssl_context()
         _LOGGER.info("Websocket attempting to connect %s", _url)
         self._ws_response = await self._get_client_session().ws_connect(
             url=_url,
             heartbeat=self._ws_heartbeat,
             auth=self._auth,
-            ssl=self._get_ssl_context(),
+            ssl=ssl_context,
         )
         _LOGGER.info("Websocket connected %s", _url)
 
