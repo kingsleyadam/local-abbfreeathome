@@ -385,7 +385,7 @@ def test_device_load_channels_with_valid_data(mock_floorplan):
             "displayName": "Test Switch",
             "floor": "01",
             "room": "18",
-            "functionID": hex(Function.FID_SWITCH_ACTUATOR.value)[2:].upper().zfill(4),
+            "functionID": f"{Function.FID_SWITCH_ACTUATOR.value:04X}",
             "inputs": {"idp0000": {"pairingID": 1, "value": "0"}},
             "outputs": {"odp0000": {"pairingID": 256, "value": "0"}},
             "parameters": {},
@@ -420,7 +420,7 @@ def test_device_load_channels_with_existing_floor_room_names(mock_floorplan):
     channels_data = {
         "ch0000": {
             "displayName": "Test Switch",
-            "functionID": hex(Function.FID_SWITCH_ACTUATOR.value)[2:].upper().zfill(4),
+            "functionID": f"{Function.FID_SWITCH_ACTUATOR.value:04X}",
             "inputs": {"idp0000": {"pairingID": 1, "value": "0"}},
             "outputs": {"odp0000": {"pairingID": 256, "value": "0"}},
             "parameters": {},
@@ -493,7 +493,7 @@ def test_device_load_channels_virtual_device(mock_floorplan):
     channels_data = {
         "ch0000": {
             "displayName": "Virtual Switch",
-            "functionID": hex(Function.FID_SWITCH_ACTUATOR.value)[2:].upper().zfill(4),
+            "functionID": f"{Function.FID_SWITCH_ACTUATOR.value:04X}",
             "inputs": {"idp0000": {"pairingID": 1, "value": "0"}},
             "outputs": {"odp0000": {"pairingID": 256, "value": "0"}},
             "parameters": {},
@@ -523,21 +523,21 @@ def test_device_load_channels_special_channel_names(mock_floorplan):
     channels_data = {
         "ch0000": {
             "displayName": "Ⓐ",  # Special character
-            "functionID": hex(Function.FID_SWITCH_ACTUATOR.value)[2:].upper().zfill(4),
+            "functionID": f"{Function.FID_SWITCH_ACTUATOR.value:04X}",
             "inputs": {},
             "outputs": {},
             "parameters": {},
         },
         "ch0001": {
             "displayName": "ⓑ",  # Special character
-            "functionID": hex(Function.FID_SWITCH_ACTUATOR.value)[2:].upper().zfill(4),
+            "functionID": f"{Function.FID_SWITCH_ACTUATOR.value:04X}",
             "inputs": {},
             "outputs": {},
             "parameters": {},
         },
         "ch0002": {
             "displayName": None,  # None name
-            "functionID": hex(Function.FID_SWITCH_ACTUATOR.value)[2:].upper().zfill(4),
+            "functionID": f"{Function.FID_SWITCH_ACTUATOR.value:04X}",
             "inputs": {},
             "outputs": {},
             "parameters": {},
