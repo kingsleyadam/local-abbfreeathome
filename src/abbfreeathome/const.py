@@ -1,6 +1,7 @@
 """Constants for the FreeAtHome package."""
 
 from .bin.function import Function
+from .channels.air_quality_sensor import AirQualitySensor
 from .channels.base import Base
 from .channels.blind_sensor import BlindSensor
 from .channels.brightness_sensor import BrightnessSensor
@@ -40,6 +41,9 @@ from .channels.wind_sensor import WindSensor
 from .channels.window_door_sensor import WindowDoorSensor
 
 FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
+    Function.FID_AIRQUALITY_SENSOR: AirQualitySensor,
+    Function.FID_AIRQUALITY_SENSOR_TYPE1: AirQualitySensor,
+    Function.FID_AIRQUALITY_SENSOR_TYPE2: AirQualitySensor,
     Function.FID_ATTIC_WINDOW_ACTUATOR: AtticWindowActuator,
     Function.FID_AWNING_ACTUATOR: AwningActuator,
     Function.FID_BLIND_ACTUATOR: BlindActuator,
