@@ -16,7 +16,6 @@ from .channels.des_door_opener_actuator import DesDoorOpenerActuator
 from .channels.des_door_ringing_sensor import DesDoorRingingSensor
 from .channels.dimming_actuator import ColorTemperatureActuator, DimmingActuator
 from .channels.force_on_off_sensor import ForceOnOffSensor
-from .channels.heating_actuator import HeatingActuator
 from .channels.movement_detector import BlockableMovementDetector, MovementDetector
 from .channels.rain_sensor import RainSensor
 from .channels.room_temperature_controller import RoomTemperatureController
@@ -25,6 +24,11 @@ from .channels.switch_actuator import SwitchActuator, WelcomeIPMuteActuator
 from .channels.switch_sensor import DimmingSensor, SwitchSensor
 from .channels.temperature_sensor import TemperatureSensor
 from .channels.trigger import Trigger
+from .channels.valve_actuator import (
+    CoolingActuator,
+    HeatingActuator,
+    HeatingCoolingActuator,
+)
 from .channels.virtual.virtual_brightness_sensor import VirtualBrightnessSensor
 from .channels.virtual.virtual_energy_battery import VirtualEnergyBattery
 from .channels.virtual.virtual_energy_inverter import VirtualEnergyInverter
@@ -93,7 +97,11 @@ FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_DIMMING_SENSOR_ROCKER_TYPE6: DimmingSensor,
     Function.FID_DIMMING_SENSOR_ROCKER_TYPE7: DimmingSensor,
     Function.FID_FORCE_ON_OFF_SENSOR: ForceOnOffSensor,
+    Function.FID_COOLING_ACTUATOR: CoolingActuator,
+    Function.FID_COOLING_ACTUATOR_TYPE1: CoolingActuator,
     Function.FID_HEATING_ACTUATOR: HeatingActuator,
+    Function.FID_HEATING_COOLING_ACTUATOR: HeatingCoolingActuator,
+    Function.FID_HEATING_COOLING_ACTUATOR_TYPE1: HeatingCoolingActuator,
     Function.FID_MOVEMENT_DETECTOR: MovementDetector,
     Function.FID_MOVEMENT_DETECTOR_TYPE0: BlockableMovementDetector,
     Function.FID_MOVEMENT_DETECTOR_TYPE7: MovementDetector,
