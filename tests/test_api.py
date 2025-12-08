@@ -1,5 +1,6 @@
 """Test code to test all FreeAtHome class."""
 
+import asyncio
 from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 
 import aiohttp
@@ -351,6 +352,76 @@ async def test_set_datapoint_failure(api):
         mock_request.return_value.get.return_value = {"result": "fail"}
         with pytest.raises(SetDatapointFailureException):
             await api.set_datapoint("device_serial", "channel_id", "datapoint", "value")
+
+
+@pytest.mark.asyncio
+async def test_set_datapoint_fire_and_forget(api):
+    """Test the set_datapoint function with fire and forget mode."""
+    with patch.object(api, "_request", return_value=Mock()) as mock_request:
+        mock_request.return_value.get.return_value = {"result": "ok"}
+
+        # Verify the background task set is initially empty
+        assert len(api._background_tasks) == 0
+
+        result = await api.set_datapoint(
+            "device_serial", "channel_id", "datapoint", "value", wait_for_result=False
+        )
+        assert result is True
+
+        # Verify task was added to the set
+        assert len(api._background_tasks) == 1
+
+        # Give background task a chance to execute and be removed
+        await asyncio.sleep(0.1)
+
+        # Verify task was removed from the set after completion
+        assert len(api._background_tasks) == 0
+
+
+@pytest.mark.asyncio
+async def test_set_datapoint_background_exception(api):
+    """Test the set_datapoint background exception handling."""
+    with patch.object(api, "_request", side_effect=Exception("Test error")):
+        # Verify the background task set is initially empty
+        assert len(api._background_tasks) == 0
+
+        result = await api.set_datapoint(
+            "device_serial", "channel_id", "datapoint", "value", wait_for_result=False
+        )
+        assert result is True
+
+        # Verify task was added to the set
+        assert len(api._background_tasks) == 1
+
+        # Give background task a chance to execute and log the exception
+        await asyncio.sleep(0.1)
+
+        # Verify task was removed from the set even after exception
+        assert len(api._background_tasks) == 0
+
+
+@pytest.mark.asyncio
+async def test_api_class_level_wait_for_result():
+    """Test the api with class-level wait_for_result set to False."""
+    api_fire_and_forget = FreeAtHomeApi(
+        host="http://192.168.1.1",
+        username="user",
+        password="pass",
+        wait_for_result=False,
+    )
+    try:
+        with patch.object(
+            api_fire_and_forget, "_request", return_value=Mock()
+        ) as mock_request:
+            mock_request.return_value.get.return_value = {"result": "ok"}
+            result = await api_fire_and_forget.set_datapoint(
+                "device_serial", "channel_id", "datapoint", "value"
+            )
+            assert result is True
+            # Give background task a chance to execute
+            await asyncio.sleep(0.1)
+    finally:
+        await api_fire_and_forget.close_client_session()
 
 
 @pytest.mark.asyncio
