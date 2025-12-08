@@ -10,6 +10,7 @@ import ssl
 from typing import Any
 from urllib.parse import urlparse
 
+from aiohttp import TCPConnector
 from aiohttp.client import ClientSession, ClientWebSocketResponse
 from aiohttp.client_exceptions import (
     ClientConnectionError as AioHttpClientConnectionError,
@@ -66,21 +67,31 @@ _LOGGER = logging.getLogger(__name__)
 class SSLContextMixin:
     """Mixin class to provide SSL context functionality."""
 
+    def __init__(self):
+        """Initialize the mixin."""
+        self._ssl_context_cache: ssl.SSLContext | bool | None = None
+
     def _create_ssl_context_sync(self, cafile: str) -> ssl.SSLContext:
         """Create SSL context synchronously (for use in executor)."""
         return ssl.create_default_context(cafile=cafile)
 
     async def _get_ssl_context(self) -> ssl.SSLContext | bool:
-        """Get the SSL context for requests."""
+        """Get the SSL context for requests (cached after first call)."""
+        if self._ssl_context_cache is not None:
+            return self._ssl_context_cache
+
         if not self._verify_ssl:
-            return False
-        if self._ssl_cert_ca_file:
+            self._ssl_context_cache = False
+        elif self._ssl_cert_ca_file:
             # Run SSL context creation in executor to avoid blocking the event loop
             loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(
+            self._ssl_context_cache = await loop.run_in_executor(
                 None, self._create_ssl_context_sync, self._ssl_cert_ca_file
             )
-        return True
+        else:
+            self._ssl_context_cache = True
+
+        return self._ssl_context_cache
 
 
 class FreeAtHomeSettings(SSLContextMixin):
@@ -98,6 +109,7 @@ class FreeAtHomeSettings(SSLContextMixin):
         ssl_cert_ca_file: str | None = None,
     ) -> None:
         """Initialize the FreeAtHomeSettings class."""
+        super().__init__()
         self._host: str = host
         self._client_session: ClientSession = client_session
         self._verify_ssl: bool = verify_ssl
@@ -184,7 +196,13 @@ class FreeAtHomeSettings(SSLContextMixin):
     def _get_client_session(self) -> ClientSession:
         """Get the aiohttp ClientSession object."""
         if self._client_session is None:
-            self._client_session = ClientSession()
+            # Create connector with optimized settings for better performance
+            connector = TCPConnector(
+                limit=10,  # Max connections
+                limit_per_host=5,  # Max connections per host
+                ttl_dns_cache=300,  # DNS cache for 5 minutes
+            )
+            self._client_session = ClientSession(connector=connector)
             self._close_client_session = True
 
         return self._client_session
@@ -207,8 +225,10 @@ class FreeAtHomeApi(SSLContextMixin):
         ws_heartbeat: int = 30,
         verify_ssl: bool = True,
         ssl_cert_ca_file: str | None = None,
+        use_fire_and_forget: bool = False,
     ) -> None:
         """Initialize the FreeAtHomeApi class."""
+        super().__init__()
         self._host = host.rstrip("/")
         self._auth = BasicAuth(username, password)
         self._sysap_uuid = sysap_uuid
@@ -216,6 +236,7 @@ class FreeAtHomeApi(SSLContextMixin):
         self._ws_heartbeat = ws_heartbeat
         self._verify_ssl: bool = verify_ssl
         self._ssl_cert_ca_file: None | str = ssl_cert_ca_file
+        self._use_fire_and_forget: bool = use_fire_and_forget
 
     async def __aenter__(self):
         """Async enter and return self."""
@@ -267,9 +288,46 @@ class FreeAtHomeApi(SSLContextMixin):
         return await self._request(path="/api/rest/sysap")
 
     async def set_datapoint(
-        self, device_serial: str, channel_id: str, datapoint: str, value: str
+        self,
+        device_serial: str,
+        channel_id: str,
+        datapoint: str,
+        value: str,
+        wait_for_response: bool | None = None,
     ) -> bool:
-        """Set a specific datapoint in the api. This is used to control channels."""
+        """
+        Set a specific datapoint in the api. This is used to control channels.
+
+        Args:
+            device_serial: The serial number of the device
+            channel_id: The channel ID
+            datapoint: The datapoint ID
+            value: The value to set
+            wait_for_response: If True, waits for API confirmation. If False, returns
+                immediately after sending (fire-and-forget). If None (default), uses
+                the instance's use_fire_and_forget setting. Use False for better
+                performance when you have a websocket connection for state updates.
+
+        Returns:
+            True if successful (or if wait_for_response=False)
+
+        """
+        # Use instance default if not explicitly specified
+        if wait_for_response is None:
+            wait_for_response = not self._use_fire_and_forget
+
+        if not wait_for_response:
+            # Fire and forget - schedule the request but don't wait
+            # Store reference to prevent task from being garbage collected
+            task = asyncio.create_task(
+                self._set_datapoint_fire_and_forget(
+                    device_serial, channel_id, datapoint, value
+                )
+            )
+            # Add done callback to log any exceptions
+            task.add_done_callback(self._handle_fire_and_forget_exception)
+            return True
+
         _response = await self._request(
             path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_serial}.{channel_id}.{datapoint}",
             method="put",
@@ -299,10 +357,68 @@ class FreeAtHomeApi(SSLContextMixin):
         _key, _items = list(_response[self._sysap_uuid]["devices"].items())[0]
         return {serial: _key}
 
+    async def _set_datapoint_fire_and_forget(
+        self, device_serial: str, channel_id: str, datapoint: str, value: str
+    ):
+        """Execute set_datapoint in fire-and-forget mode with proper error handling."""
+        try:
+            _response = await self._request(
+                path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_serial}.{channel_id}.{datapoint}",
+                method="put",
+                data=value,
+            )
+
+            result = _response.get(self._sysap_uuid).get("result")
+            if result.lower() != "ok":
+                # Log the failure and raise for the callback to handle
+                _LOGGER.error(
+                    "Fire-and-forget set_datapoint failed for %s/%s/%s=%s: "
+                    "API returned '%s'",
+                    device_serial,
+                    channel_id,
+                    datapoint,
+                    value,
+                    result,
+                )
+                # Raise exception so it gets logged with full traceback below
+                self._raise_datapoint_failure(
+                    device_serial, channel_id, datapoint, value
+                )
+        except Exception:
+            # Log with full traceback for debugging
+            _LOGGER.exception(
+                "Fire-and-forget set_datapoint failed for %s/%s/%s=%s",
+                device_serial,
+                channel_id,
+                datapoint,
+                value,
+            )
+            raise  # Re-raise so the callback can handle it
+
+    @staticmethod
+    def _raise_datapoint_failure(
+        device_serial: str, channel_id: str, datapoint: str, value: str
+    ):
+        """Raise SetDatapointFailureException (extracted to satisfy linter)."""
+        raise SetDatapointFailureException(device_serial, channel_id, datapoint, value)
+
+    def _handle_fire_and_forget_exception(self, task: asyncio.Task):
+        """Handle exceptions from fire-and-forget tasks."""
+        if not task.cancelled():
+            # Retrieve exception to prevent "exception was never retrieved" warning
+            task.exception()
+            # Exception already logged in _set_datapoint_fire_and_forget
+
     def _get_client_session(self) -> ClientSession:
         """Get the ClientSession aiohttp object."""
         if self._client_session is None:
-            self._client_session = ClientSession()
+            # Create connector with optimized settings for better performance
+            connector = TCPConnector(
+                limit=10,  # Max connections
+                limit_per_host=5,  # Max connections per host
+                ttl_dns_cache=300,  # DNS cache for 5 minutes
+            )
+            self._client_session = ClientSession(connector=connector)
             self._close_client_session = True
 
         return self._client_session

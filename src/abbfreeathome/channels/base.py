@@ -96,22 +96,26 @@ class Base:
 
     def get_input_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
         """Get the channel input by pairing id."""
+        # Cache pairing value to avoid repeated attribute access
+        pairing_value = pairing.value
         for _input_id, _input in self._inputs.items():
-            if _input.get("pairingID") == pairing.value:
+            if _input.get("pairingID") == pairing_value:
                 return _input_id, _input.get("value")
 
         raise InvalidDeviceChannelPairing(
-            self.device_serial, self.channel_id, pairing.value
+            self.device_serial, self.channel_id, pairing_value
         )
 
     def get_output_by_pairing(self, pairing: Pairing) -> tuple[str, Any]:
         """Get the channel output by pairing id."""
+        # Cache pairing value to avoid repeated attribute access
+        pairing_value = pairing.value
         for _output_id, _output in self._outputs.items():
-            if _output.get("pairingID") == pairing.value:
+            if _output.get("pairingID") == pairing_value:
                 return _output_id, _output.get("value")
 
         raise InvalidDeviceChannelPairing(
-            self.device_serial, self.channel_id, pairing.value
+            self.device_serial, self.channel_id, pairing_value
         )
 
     def get_channel_parameter(self, parameter: Parameter) -> tuple[str, Any]:

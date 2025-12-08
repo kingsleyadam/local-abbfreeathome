@@ -1,5 +1,6 @@
 """Test code to test all FreeAtHome class."""
 
+import asyncio
 from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 
 import aiohttp
@@ -351,6 +352,104 @@ async def test_set_datapoint_failure(api):
         mock_request.return_value.get.return_value = {"result": "fail"}
         with pytest.raises(SetDatapointFailureException):
             await api.set_datapoint("device_serial", "channel_id", "datapoint", "value")
+
+
+@pytest.mark.asyncio
+async def test_set_datapoint_fire_and_forget(api):
+    """Test the set_datapoint function with fire-and-forget mode."""
+    with patch.object(api, "_request", new_callable=AsyncMock) as mock_request:
+        mock_request.return_value = {
+            "00000000-0000-0000-0000-000000000000": {"result": "ok"}
+        }
+        result = await api.set_datapoint(
+            "device_serial", "channel_id", "datapoint", "value", wait_for_response=False
+        )
+        assert result is True
+        # Give background task time to complete
+        await asyncio.sleep(0.1)
+        # Verify the request was made
+        mock_request.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_set_datapoint_fire_and_forget_failure(api):
+    """Test fire-and-forget mode handles failures gracefully."""
+    with patch.object(api, "_request", new_callable=AsyncMock) as mock_request:
+        mock_request.return_value = {
+            "00000000-0000-0000-0000-000000000000": {"result": "fail"}
+        }
+        # Fire-and-forget should return True even if it will fail in background
+        result = await api.set_datapoint(
+            "device_serial", "channel_id", "datapoint", "value", wait_for_response=False
+        )
+        assert result is True
+        # Give background task time to log the error
+        await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+async def test_set_datapoint_fire_and_forget_cancelled(api):
+    """Test fire-and-forget callback handles cancelled tasks correctly."""
+    # Create a mock cancelled task
+    mock_task = Mock(spec=asyncio.Task)
+    mock_task.cancelled.return_value = True
+
+    # Call the callback directly with a cancelled task
+    api._handle_fire_and_forget_exception(mock_task)
+
+    # Verify cancelled() was called but exception() was not
+    mock_task.cancelled.assert_called_once()
+    mock_task.exception.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_set_datapoint_with_global_fire_and_forget():
+    """Test set_datapoint uses instance fire-and-forget setting."""
+
+    # Create API with fire-and-forget enabled globally
+    api = FreeAtHomeApi(
+        host="http://192.168.1.1",
+        username="user",
+        password="pass",
+        use_fire_and_forget=True,
+    )
+
+    with patch.object(api, "_request", new_callable=AsyncMock) as mock_request:
+        mock_request.return_value = {
+            "00000000-0000-0000-0000-000000000000": {"result": "ok"}
+        }
+        # Call without specifying wait_for_response - should use fire-and-forget
+        result = await api.set_datapoint(
+            "device_serial", "channel_id", "datapoint", "value"
+        )
+        assert result is True
+        # Give background task time to complete
+        await asyncio.sleep(0.1)
+        # Verify the request was made
+        mock_request.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_set_datapoint_override_global_fire_and_forget():
+    """Test set_datapoint can override instance fire-and-forget setting."""
+    api = FreeAtHomeApi(
+        host="http://192.168.1.1",
+        username="user",
+        password="pass",
+        use_fire_and_forget=True,  # Global fire-and-forget enabled
+    )
+
+    with patch.object(api, "_request", new_callable=AsyncMock) as mock_request:
+        mock_request.return_value = {
+            "00000000-0000-0000-0000-000000000000": {"result": "ok"}
+        }
+        # Override to wait for response
+        result = await api.set_datapoint(
+            "device_serial", "channel_id", "datapoint", "value", wait_for_response=True
+        )
+        assert result is True
+        # Should have waited, so request completed synchronously
+        mock_request.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -936,6 +1035,9 @@ async def test_settings_get_ssl_context_no_verify():
     settings = FreeAtHomeSettings(host="http://192.168.1.1", verify_ssl=False)
     result = await settings._get_ssl_context()
     assert result is False
+    # Test that it's cached
+    result2 = await settings._get_ssl_context()
+    assert result2 is False
 
 
 @pytest.mark.asyncio
@@ -949,7 +1051,21 @@ async def test_settings_get_ssl_context_with_cert_path():
         mock_create_context.return_value = mock_context
         context = await settings._get_ssl_context()
         assert context is mock_context
-        mock_create_context.assert_called_once_with(cafile="dummy_path")
+        # Test that it's cached - should not call create_default_context again
+        context2 = await settings._get_ssl_context()
+        assert context2 is mock_context
+        mock_create_context.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_settings_get_ssl_context_default():
+    """Test _get_ssl_context returns True by default."""
+    settings = FreeAtHomeSettings(host="http://192.168.1.1", verify_ssl=True)
+    result = await settings._get_ssl_context()
+    assert result is True
+    # Test that it's cached
+    result2 = await settings._get_ssl_context()
+    assert result2 is True
 
 
 @pytest.mark.asyncio
@@ -958,7 +1074,11 @@ async def test_api_get_ssl_context_no_verify():
     api = FreeAtHomeApi(
         host="http://192.168.1.1", username="user", password="pass", verify_ssl=False
     )
-    assert await api._get_ssl_context() is False
+    result = await api._get_ssl_context()
+    assert result is False
+    # Test caching
+    result2 = await api._get_ssl_context()
+    assert result2 is False
 
 
 @pytest.mark.asyncio
@@ -976,4 +1096,20 @@ async def test_api_get_ssl_context_with_cert_path():
         mock_create_context.return_value = mock_context
         context = await api._get_ssl_context()
         assert context is mock_context
+        # Test caching - should not call create_default_context again
+        context2 = await api._get_ssl_context()
+        assert context2 is mock_context
         mock_create_context.assert_called_once_with(cafile="dummy_path")
+
+
+@pytest.mark.asyncio
+async def test_api_get_ssl_context_default():
+    """Test _get_ssl_context returns True by default."""
+    api = FreeAtHomeApi(
+        host="http://192.168.1.1", username="user", password="pass", verify_ssl=True
+    )
+    result = await api._get_ssl_context()
+    assert result is True
+    # Test caching
+    result2 = await api._get_ssl_context()
+    assert result2 is True

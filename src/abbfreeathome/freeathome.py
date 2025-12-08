@@ -128,7 +128,15 @@ class FreeAtHome:
         """Build a filtered dictionary of channels based on current filters."""
         _all_channels = {}
 
+        # Convert channel_classes to set for O(1) lookup instead of O(n)
+        _channel_class_set = (
+            set(self._channel_classes) if self._channel_classes else None
+        )
+
         for device_serial, device in self._devices.items():
+            # Cache device.channels lookup
+            device_channels = device.channels
+
             for channel_id, channel_data in device.channels_data.items():
                 # Filter out any channels not on the Free@Home floorplan
                 if (
@@ -139,14 +147,13 @@ class FreeAtHome:
                     continue
 
                 # Get the actual Channel object from device.channels
-                device_channels = device.channels
                 if channel_id not in device_channels:
                     continue
 
                 channel = device_channels[channel_id]
 
-                # Filter by channel class if provided
-                if self._channel_classes and type(channel) not in self._channel_classes:
+                # Filter by channel class if provided (use isinstance for speed)
+                if _channel_class_set and type(channel) not in _channel_class_set:
                     continue
 
                 # Use the same key format as before: "device_serial/channel_id"
