@@ -307,7 +307,23 @@ class FreeAtHomeApi(SSLContextMixin):
         value: str,
         wait_for_result: bool | None = None,
     ) -> bool:
-        """Set a specific datapoint in the api. This is used to control channels."""
+        """
+        Set a specific datapoint in the API. This is used to control channels.
+
+        Parameters:
+            device_serial (str): The serial number of the device.
+            channel_id (str): The channel ID of the device.
+            datapoint (str): The datapoint to set.
+            value (str): The value to set for the datapoint.
+            wait_for_result (bool | None, optional): Overrides the class-level setting to control
+                whether to wait for the API response. If None (default), uses the class-level
+                setting. Set to False for better performance when websocket updates are available,
+                as the method will not wait for the API response and will rely on websocket updates.
+                Set to True to wait for the API response before returning.
+
+        Returns:
+            bool: True if the request was sent.
+        """
         if wait_for_result is None:
             wait_for_result = self._wait_for_result
 
