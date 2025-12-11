@@ -68,6 +68,7 @@ class SSLContextMixin:
     """Mixin class to provide SSL context functionality."""
 
     def __init__(self):
+        """Initialize the SSL context mixin."""
         self._ssl_context: ssl.SSLContext | bool | None = None
 
     def _create_ssl_context_sync(self, cafile: str) -> ssl.SSLContext:
@@ -108,6 +109,7 @@ class FreeAtHomeSettings(SSLContextMixin):
         ssl_cert_ca_file: str | None = None,
     ) -> None:
         """Initialize the FreeAtHomeSettings class."""
+        super().__init__()
         self._host: str = host
         self._client_session: ClientSession = client_session
         self._verify_ssl: bool = verify_ssl
@@ -228,17 +230,26 @@ class FreeAtHomeApi(SSLContextMixin):
         Initialize the FreeAtHomeApi class.
 
         Args:
-            host (str): The hostname or IP address of the SysAP.
-            username (str): The username for authentication.
-            password (str): The password for authentication.
-            sysap_uuid (str, optional): The UUID of the SysAP. Defaults to "00000000-0000-0000-0000-000000000000".
-            client_session (ClientSession, optional): An existing aiohttp ClientSession. Defaults to None.
-            ws_heartbeat (int, optional): Interval for websocket heartbeat in seconds. Defaults to 30.
-            verify_ssl (bool, optional): Whether to verify SSL certificates. Defaults to True.
-            ssl_cert_ca_file (str | None, optional): Path to custom CA file for SSL verification. Defaults to None.
-            wait_for_result (bool, optional): Controls whether to wait for API response (True) or use fire-and-forget mode (False).
-                If set to False, relies on websocket for state updates and errors are only logged. Defaults to True.
+            host: The hostname or IP address of the SysAP.
+            username: The username for authentication.
+            password: The password for authentication.
+            sysap_uuid: The UUID of the SysAP.
+                Defaults to "00000000-0000-0000-0000-000000000000".
+            client_session: An existing aiohttp ClientSession.
+                Defaults to None.
+            ws_heartbeat: Interval for websocket heartbeat in seconds.
+                Defaults to 30.
+            verify_ssl: Whether to verify SSL certificates.
+                Defaults to True.
+            ssl_cert_ca_file: Path to custom CA file for SSL verification.
+                Defaults to None.
+            wait_for_result: Controls whether to wait for API response
+                (True) or use fire-and-forget mode (False). If set to
+                False, relies on websocket for state updates and errors
+                are only logged. Defaults to True.
+
         """
+        super().__init__()
         self._host = host.rstrip("/")
         self._auth = BasicAuth(username, password)
         self._headers = {"Authorization": self._auth.encode()}
@@ -308,21 +319,24 @@ class FreeAtHomeApi(SSLContextMixin):
         wait_for_result: bool | None = None,
     ) -> bool:
         """
-        Set a specific datapoint in the API. This is used to control channels.
+        Set a specific datapoint in the API to control channels.
 
-        Parameters:
-            device_serial (str): The serial number of the device.
-            channel_id (str): The channel ID of the device.
-            datapoint (str): The datapoint to set.
-            value (str): The value to set for the datapoint.
-            wait_for_result (bool | None, optional): Overrides the class-level setting to control
-                whether to wait for the API response. If None (default), uses the class-level
-                setting. Set to False for better performance when websocket updates are available,
-                as the method will not wait for the API response and will rely on websocket updates.
-                Set to True to wait for the API response before returning.
+        Args:
+            device_serial: The serial number of the device.
+            channel_id: The channel ID of the device.
+            datapoint: The datapoint to set.
+            value: The value to set for the datapoint.
+            wait_for_result: Overrides the class-level setting to
+                control whether to wait for the API response. If None
+                (default), uses the class-level setting. Set to False
+                for better performance when websocket updates are
+                available, as the method will not wait for the API
+                response and will rely on websocket updates. Set to
+                True to wait for the API response before returning.
 
         Returns:
             bool: True if the request was sent.
+
         """
         if wait_for_result is None:
             wait_for_result = self._wait_for_result
@@ -336,11 +350,34 @@ class FreeAtHomeApi(SSLContextMixin):
         # We don't want to wait for the api to return our request, instead send the
         # request off into a background task and rely on the websocket for updates
         task = asyncio.create_task(
-            self._set_datapoint_background(device_serial, channel_id, datapoint, value)
+            self._set_datapoint_background(device_serial, channel_id, datapoint, value),
+            name=f"set_datapoint_{device_serial}_{channel_id}_{datapoint}",
         )
         self._background_tasks.add(task)
-        task.add_done_callback(self._background_tasks.discard)
+        task.add_done_callback(self._set_datapoint_done_callback)
         return True
+
+    def _set_datapoint_done_callback(self, task: asyncio.Task) -> None:
+        """Handle cleanup when a background task completes."""
+        self._background_tasks.discard(task)
+        task_name = task.get_name()
+
+        if task.exception():
+            _LOGGER.debug(
+                (
+                    "Background task '%s' completed with exception "
+                    "and removed from tracking set"
+                ),
+                task_name,
+            )
+        else:
+            _LOGGER.debug(
+                (
+                    "Background task '%s' completed successfully "
+                    "and removed from tracking set"
+                ),
+                task_name,
+            )
 
     async def _set_datapoint_background(
         self, device_serial: str, channel_id: str, datapoint: str, value: str
