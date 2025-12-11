@@ -371,8 +371,8 @@ async def test_set_datapoint_fire_and_forget(api):
         # Verify task was added to the set
         assert len(api._background_tasks) == 1
 
-        # Give background task a chance to execute and be removed
-        await asyncio.sleep(0.1)
+        # Wait for background tasks to complete deterministically
+        await asyncio.gather(*api._background_tasks)
 
         # Verify task was removed from the set after completion
         assert len(api._background_tasks) == 0
@@ -393,8 +393,8 @@ async def test_set_datapoint_background_exception(api):
         # Verify task was added to the set
         assert len(api._background_tasks) == 1
 
-        # Give background task a chance to execute and log the exception
-        await asyncio.sleep(0.1)
+        # Wait for background tasks to complete (even with exceptions)
+        await asyncio.gather(*api._background_tasks, return_exceptions=True)
 
         # Verify task was removed from the set even after exception
         assert len(api._background_tasks) == 0
@@ -418,8 +418,8 @@ async def test_api_class_level_wait_for_result():
                 "device_serial", "channel_id", "datapoint", "value"
             )
             assert result is True
-            # Give background task a chance to execute
-            await asyncio.sleep(0.1)
+            # Wait for background tasks to complete deterministically
+            await asyncio.gather(*api_fire_and_forget._background_tasks)
     finally:
         await api_fire_and_forget.close_client_session()
 
