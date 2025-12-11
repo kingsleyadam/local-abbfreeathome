@@ -248,6 +248,10 @@ class FreeAtHomeApi(SSLContextMixin):
                 False, relies on websocket for state updates and errors
                 are only logged. Defaults to True.
 
+        Note:
+            When using fire-and-forget mode (i.e., ``wait_for_result=False``), background tasks may be created to handle API requests.
+            Before closing the API instance, you must ensure that all pending background tasks are properly awaited or cancelled to avoid resource leaks.
+            This can be done by using the API instance as an async context manager (i.e., via ``async with`` which calls ``__aexit__``), or by explicitly calling ``close_client_session()`` before program exit.
         """
         super().__init__()
         self._host = host.rstrip("/")
