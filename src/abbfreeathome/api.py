@@ -361,7 +361,7 @@ class FreeAtHomeApi(SSLContextMixin):
         """Handle cleanup when a background task completes."""
         self._background_tasks.discard(task)
         _LOGGER.debug(
-            ("Background task '%s' completed and removed from tracking set"),
+            "Background task '%s' completed and removed from tracking set",
             task.get_name(),
         )
 
