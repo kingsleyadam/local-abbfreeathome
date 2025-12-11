@@ -360,24 +360,10 @@ class FreeAtHomeApi(SSLContextMixin):
     def _set_datapoint_done_callback(self, task: asyncio.Task) -> None:
         """Handle cleanup when a background task completes."""
         self._background_tasks.discard(task)
-        task_name = task.get_name()
-
-        if task.exception():
-            _LOGGER.debug(
-                (
-                    "Background task '%s' completed with exception "
-                    "and removed from tracking set"
-                ),
-                task_name,
-            )
-        else:
-            _LOGGER.debug(
-                (
-                    "Background task '%s' completed successfully "
-                    "and removed from tracking set"
-                ),
-                task_name,
-            )
+        _LOGGER.debug(
+            ("Background task '%s' completed and removed from tracking set"),
+            task.get_name(),
+        )
 
     async def _set_datapoint_background(
         self, device_serial: str, channel_id: str, datapoint: str, value: str
