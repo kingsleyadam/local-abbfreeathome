@@ -224,7 +224,21 @@ class FreeAtHomeApi(SSLContextMixin):
         ssl_cert_ca_file: str | None = None,
         wait_for_result: bool = True,
     ) -> None:
-        """Initialize the FreeAtHomeApi class."""
+        """
+        Initialize the FreeAtHomeApi class.
+
+        Args:
+            host (str): The hostname or IP address of the SysAP.
+            username (str): The username for authentication.
+            password (str): The password for authentication.
+            sysap_uuid (str, optional): The UUID of the SysAP. Defaults to "00000000-0000-0000-0000-000000000000".
+            client_session (ClientSession, optional): An existing aiohttp ClientSession. Defaults to None.
+            ws_heartbeat (int, optional): Interval for websocket heartbeat in seconds. Defaults to 30.
+            verify_ssl (bool, optional): Whether to verify SSL certificates. Defaults to True.
+            ssl_cert_ca_file (str | None, optional): Path to custom CA file for SSL verification. Defaults to None.
+            wait_for_result (bool, optional): Controls whether to wait for API response (True) or use fire-and-forget mode (False).
+                If set to False, relies on websocket for state updates and errors are only logged. Defaults to True.
+        """
         self._host = host.rstrip("/")
         self._auth = BasicAuth(username, password)
         self._headers = {"Authorization": self._auth.encode()}
