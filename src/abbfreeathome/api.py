@@ -67,7 +67,8 @@ _LOGGER = logging.getLogger(__name__)
 class SSLContextMixin:
     """Mixin class to provide SSL context functionality."""
 
-    _ssl_context: ssl.SSLContext | bool | None = None
+    def __init__(self):
+        self._ssl_context: ssl.SSLContext | bool | None = None
 
     def _create_ssl_context_sync(self, cafile: str) -> ssl.SSLContext:
         """Create SSL context synchronously (for use in executor)."""
