@@ -425,6 +425,37 @@ async def test_api_class_level_wait_for_result():
 
 
 @pytest.mark.asyncio
+async def test_api_class_level_wait_for_result_with_override():
+    """Test overriding class-level wait_for_result=False with explicit True."""
+    api_fire_and_forget = FreeAtHomeApi(
+        host="http://192.168.1.1",
+        username="user",
+        password="pass",
+        wait_for_result=False,
+    )
+    try:
+        with patch.object(api_fire_and_forget, "_request") as mock_request:
+            mock_request.return_value = {
+                "00000000-0000-0000-0000-000000000000": {"result": "ok"}
+            }
+            # Override class default and use synchronous mode
+            result = await api_fire_and_forget.set_datapoint(
+                "device_serial",
+                "channel_id",
+                "datapoint",
+                "value",
+                wait_for_result=True,
+            )
+            assert result is True
+            # Verify no background tasks were created (synchronous mode)
+            assert len(api_fire_and_forget._background_tasks) == 0
+            # Verify request was called directly (not in background)
+            mock_request.assert_called_once()
+    finally:
+        await api_fire_and_forget.close_client_session()
+
+
+@pytest.mark.asyncio
 async def test_ws_connect(api):
     """Test the ws_connect function."""
     with patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock):
