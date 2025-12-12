@@ -10,6 +10,7 @@ import ssl
 from typing import Any
 from urllib.parse import urlparse
 
+from aiohttp import TCPConnector
 from aiohttp.client import ClientSession, ClientWebSocketResponse
 from aiohttp.client_exceptions import (
     ClientConnectionError as AioHttpClientConnectionError,
@@ -66,21 +67,31 @@ _LOGGER = logging.getLogger(__name__)
 class SSLContextMixin:
     """Mixin class to provide SSL context functionality."""
 
+    def __init__(self):
+        """Initialize the SSL context mixin."""
+        self._ssl_context: ssl.SSLContext | bool | None = None
+
     def _create_ssl_context_sync(self, cafile: str) -> ssl.SSLContext:
         """Create SSL context synchronously (for use in executor)."""
         return ssl.create_default_context(cafile=cafile)
 
     async def _get_ssl_context(self) -> ssl.SSLContext | bool:
         """Get the SSL context for requests."""
+        if self._ssl_context is not None:
+            return self._ssl_context
+
         if not self._verify_ssl:
-            return False
-        if self._ssl_cert_ca_file:
+            self._ssl_context = False
+        elif self._ssl_cert_ca_file:
             # Run SSL context creation in executor to avoid blocking the event loop
             loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(
+            self._ssl_context = await loop.run_in_executor(
                 None, self._create_ssl_context_sync, self._ssl_cert_ca_file
             )
-        return True
+        else:
+            self._ssl_context = True
+
+        return self._ssl_context
 
 
 class FreeAtHomeSettings(SSLContextMixin):
@@ -98,6 +109,7 @@ class FreeAtHomeSettings(SSLContextMixin):
         ssl_cert_ca_file: str | None = None,
     ) -> None:
         """Initialize the FreeAtHomeSettings class."""
+        super().__init__()
         self._host: str = host
         self._client_session: ClientSession = client_session
         self._verify_ssl: bool = verify_ssl
@@ -184,7 +196,12 @@ class FreeAtHomeSettings(SSLContextMixin):
     def _get_client_session(self) -> ClientSession:
         """Get the aiohttp ClientSession object."""
         if self._client_session is None:
-            self._client_session = ClientSession()
+            _tcp_connector = TCPConnector(
+                limit=10,
+                limit_per_host=5,
+                ttl_dns_cache=300,
+            )
+            self._client_session = ClientSession(connector=_tcp_connector)
             self._close_client_session = True
 
         return self._client_session
@@ -207,15 +224,53 @@ class FreeAtHomeApi(SSLContextMixin):
         ws_heartbeat: int = 30,
         verify_ssl: bool = True,
         ssl_cert_ca_file: str | None = None,
+        wait_for_result: bool = True,
     ) -> None:
-        """Initialize the FreeAtHomeApi class."""
+        """
+        Initialize the FreeAtHomeApi class.
+
+        Args:
+            host: The hostname or IP address of the SysAP.
+            username: The username for authentication.
+            password: The password for authentication.
+            sysap_uuid: The UUID of the SysAP.
+                Defaults to "00000000-0000-0000-0000-000000000000".
+            client_session: An existing aiohttp ClientSession.
+                Defaults to None.
+            ws_heartbeat: Interval for websocket heartbeat in seconds.
+                Defaults to 30.
+            verify_ssl: Whether to verify SSL certificates.
+                Defaults to True.
+            ssl_cert_ca_file: Path to custom CA file for SSL verification.
+                Defaults to None.
+            wait_for_result: Controls whether to wait for API response
+                (True) or use fire-and-forget mode (False). If set to
+                False, relies on websocket for state updates and errors
+                are only logged. Defaults to True.
+
+        Note:
+            When using fire-and-forget mode (i.e.,
+            ``wait_for_result=False``), background tasks may be created
+            to handle API requests. Before closing the API instance, you
+            must ensure that all pending background tasks are properly
+            awaited or cancelled to avoid resource leaks. This can be
+            done by using the API instance as an async context manager
+            (i.e., via ``async with`` which calls ``__aexit__``), or by
+            explicitly calling ``close_client_session()`` before program
+            exit.
+
+        """
+        super().__init__()
         self._host = host.rstrip("/")
         self._auth = BasicAuth(username, password)
+        self._headers = {"Authorization": self._auth.encode()}
         self._sysap_uuid = sysap_uuid
         self._client_session = client_session
         self._ws_heartbeat = ws_heartbeat
         self._verify_ssl: bool = verify_ssl
         self._ssl_cert_ca_file: None | str = ssl_cert_ca_file
+        self._background_tasks: set[asyncio.Task] = set()
+        self._wait_for_result = wait_for_result
 
     async def __aenter__(self):
         """Async enter and return self."""
@@ -267,9 +322,80 @@ class FreeAtHomeApi(SSLContextMixin):
         return await self._request(path="/api/rest/sysap")
 
     async def set_datapoint(
-        self, device_serial: str, channel_id: str, datapoint: str, value: str
+        self,
+        device_serial: str,
+        channel_id: str,
+        datapoint: str,
+        value: str,
+        wait_for_result: bool | None = None,
     ) -> bool:
-        """Set a specific datapoint in the api. This is used to control channels."""
+        """
+        Set a specific datapoint in the API to control channels.
+
+        Args:
+            device_serial: The serial number of the device.
+            channel_id: The channel ID of the device.
+            datapoint: The datapoint to set.
+            value: The value to set for the datapoint.
+            wait_for_result: Overrides the class-level setting to
+                control whether to wait for the API response. If None
+                (default), uses the class-level setting. Set to False
+                for better performance when websocket updates are
+                available, as the method will not wait for the API
+                response and will rely on websocket updates. Set to
+                True to wait for the API response before returning.
+
+        Returns:
+            bool: True if the request was sent.
+
+        """
+        if wait_for_result is None:
+            wait_for_result = self._wait_for_result
+
+        if wait_for_result:
+            await self._set_datapoint_request(
+                device_serial, channel_id, datapoint, value
+            )
+            return True
+
+        # We don't want to wait for the api to return our request, instead send the
+        # request off into a background task and rely on the websocket for updates
+        task = asyncio.create_task(
+            self._set_datapoint_background(device_serial, channel_id, datapoint, value),
+            name=f"set_datapoint_{device_serial}_{channel_id}_{datapoint}",
+        )
+        self._background_tasks.add(task)
+        task.add_done_callback(self._set_datapoint_done_callback)
+        return True
+
+    def _set_datapoint_done_callback(self, task: asyncio.Task) -> None:
+        """Handle cleanup when a background task completes."""
+        self._background_tasks.discard(task)
+        _LOGGER.debug(
+            "Background task '%s' completed and removed from tracking set",
+            task.get_name(),
+        )
+
+    async def _set_datapoint_background(
+        self, device_serial: str, channel_id: str, datapoint: str, value: str
+    ):
+        """Set a specific datapoint in the api in the background."""
+        try:
+            await self._set_datapoint_request(
+                device_serial, channel_id, datapoint, value
+            )
+        except Exception:  # noqa: BLE001
+            _LOGGER.exception(
+                "Failed to set datapoint %s/%s/%s",
+                device_serial,
+                channel_id,
+                datapoint,
+            )
+
+    async def _set_datapoint_request(
+        self, device_serial: str, channel_id: str, datapoint: str, value: str
+    ):
+        """Set a specific datapoint in the api."""
         _response = await self._request(
             path=f"/api/rest/datapoint/{self._sysap_uuid}/{device_serial}.{channel_id}.{datapoint}",
             method="put",
@@ -280,8 +406,6 @@ class FreeAtHomeApi(SSLContextMixin):
             raise SetDatapointFailureException(
                 device_serial, channel_id, datapoint, value
             )
-
-        return True
 
     async def virtualdevice(self, serial: str, data: dict[str, Any]):
         """Create or modify a virtualdevice in the api."""
@@ -302,10 +426,29 @@ class FreeAtHomeApi(SSLContextMixin):
     def _get_client_session(self) -> ClientSession:
         """Get the ClientSession aiohttp object."""
         if self._client_session is None:
-            self._client_session = ClientSession()
+            _tcp_connector = TCPConnector(
+                limit=10,
+                limit_per_host=5,
+                ttl_dns_cache=300,
+            )
+            self._client_session = ClientSession(connector=_tcp_connector)
             self._close_client_session = True
 
         return self._client_session
+
+    def _handle_response_error(
+        self, error: AioHttpClientResponseError, data: Any, path: str
+    ):
+        """Handle response errors."""
+        if error.status == 400:
+            raise BadRequestException(data) from error
+        if error.status == 401:
+            raise InvalidCredentialsException(self._auth.login) from error
+        if error.status == 403:
+            raise ForbiddenAuthException(path, error.status) from error
+        if error.status == 502:
+            raise ConnectionTimeoutException(self._host) from error
+        raise InvalidApiResponseException(error.status) from error
 
     @backoff.on_exception(
         backoff.expo,
@@ -325,13 +468,14 @@ class FreeAtHomeApi(SSLContextMixin):
         _full_path = f"/fhapi/{API_VERSION}{path}"
 
         ssl_context = await self._get_ssl_context()
+
         try:
             async with (
                 self._get_client_session().request(
                     method=method,
                     url=f"{self._host}{_full_path}",
                     data=data,
-                    auth=self._auth,
+                    headers=self._headers,
                     raise_for_status=True,
                     ssl=ssl_context,
                 ) as resp,
@@ -349,15 +493,7 @@ class FreeAtHomeApi(SSLContextMixin):
         except AioHttpClientConnectionError as e:
             raise ClientConnectionError(self._host) from e
         except AioHttpClientResponseError as e:
-            if e.status == 400:
-                raise BadRequestException(data) from e
-            if e.status == 401:
-                raise InvalidCredentialsException(self._auth.login) from e
-            if e.status == 403:
-                raise ForbiddenAuthException(path, e.status) from e
-            if e.status == 502:
-                raise ConnectionTimeoutException(self._host) from e
-            raise InvalidApiResponseException(e.status) from e
+            self._handle_response_error(e, data, path)
 
         return _response_data
 
@@ -381,11 +517,12 @@ class FreeAtHomeApi(SSLContextMixin):
         _url = f"{_protocol}://{_full_path}"
 
         ssl_context = await self._get_ssl_context()
+
         _LOGGER.info("Websocket attempting to connect %s", _url)
         self._ws_response = await self._get_client_session().ws_connect(
             url=_url,
             heartbeat=self._ws_heartbeat,
-            auth=self._auth,
+            headers=self._headers,
             ssl=ssl_context,
         )
         _LOGGER.info("Websocket connected %s", _url)
