@@ -108,3 +108,39 @@ def test_refresh_state_from_datapoint_invalid(cooling_actuator):
     assert result is None
     # Position should remain unchanged at 75
     assert cooling_actuator.position == 75
+
+
+def test_refresh_state_from_datapoint_empty_string(cooling_actuator):
+    """Test the _refresh_state_from_datapoint function with empty string value."""
+    # Set initial position
+    cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 306, "value": "50"}
+    )
+    assert cooling_actuator.position == 50
+
+    # Test with empty string - should set position to None
+    cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 306, "value": ""}
+    )
+    assert cooling_actuator.position is None
+
+
+def test_refresh_state_from_datapoint_invalid_values(cooling_actuator):
+    """Test the _refresh_state_from_datapoint function with various invalid values."""
+    # Test with non-numeric string
+    cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 306, "value": "not_a_number"}
+    )
+    assert cooling_actuator.position is None
+
+    # Test with None value
+    cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 306, "value": None}
+    )
+    assert cooling_actuator.position is None
+
+    # Verify valid value still works
+    cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 306, "value": "25"}
+    )
+    assert cooling_actuator.position == 25

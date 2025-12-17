@@ -103,3 +103,41 @@ async def test_refresh_state_from_datapoint(heating_actuator):
         datapoint={"pairingID": 273, "value": "1"},
     )
     assert heating_actuator.position == 3
+
+
+@pytest.mark.asyncio
+async def test_refresh_state_from_datapoint_empty_string(heating_actuator):
+    """Test the _refresh_state_from_datapoint function with empty string value."""
+    # Set initial position
+    heating_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 305, "value": "50"}
+    )
+    assert heating_actuator.position == 50
+
+    # Test with empty string - should set position to None
+    heating_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 305, "value": ""}
+    )
+    assert heating_actuator.position is None
+
+
+@pytest.mark.asyncio
+async def test_refresh_state_from_datapoint_invalid_values(heating_actuator):
+    """Test the _refresh_state_from_datapoint function with various invalid values."""
+    # Test with non-numeric string
+    heating_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 305, "value": "invalid"}
+    )
+    assert heating_actuator.position is None
+
+    # Test with None value
+    heating_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 305, "value": None}
+    )
+    assert heating_actuator.position is None
+
+    # Verify valid value still works
+    heating_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 305, "value": "75"}
+    )
+    assert heating_actuator.position == 75
