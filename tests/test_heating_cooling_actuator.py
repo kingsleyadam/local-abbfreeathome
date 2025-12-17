@@ -210,3 +210,63 @@ def test_cooling_position_with_float_value(heating_cooling_actuator):
     )
     assert result == "cooling_position"
     assert heating_cooling_actuator.cooling_position == 50
+
+
+def test_heating_position_empty_string(heating_cooling_actuator):
+    """Test heating position with empty string value."""
+    # Set initial position
+    heating_cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 305, "value": "50"}
+    )
+    assert heating_cooling_actuator.heating_position == 50
+
+    # Test with empty string - should set position to None
+    heating_cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 305, "value": ""}
+    )
+    assert heating_cooling_actuator.heating_position is None
+
+
+def test_cooling_position_empty_string(heating_cooling_actuator):
+    """Test cooling position with empty string value."""
+    # Set initial position
+    heating_cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 306, "value": "50"}
+    )
+    assert heating_cooling_actuator.cooling_position == 50
+
+    # Test with empty string - should set position to None
+    heating_cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 306, "value": ""}
+    )
+    assert heating_cooling_actuator.cooling_position is None
+
+
+def test_heating_position_invalid_values(heating_cooling_actuator):
+    """Test heating position with various invalid values."""
+    # Test with non-numeric string
+    heating_cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 305, "value": "abc"}
+    )
+    assert heating_cooling_actuator.heating_position is None
+
+    # Test with None value
+    heating_cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 305, "value": None}
+    )
+    assert heating_cooling_actuator.heating_position is None
+
+
+def test_cooling_position_invalid_values(heating_cooling_actuator):
+    """Test cooling position with various invalid values."""
+    # Test with non-numeric string
+    heating_cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 306, "value": "xyz"}
+    )
+    assert heating_cooling_actuator.cooling_position is None
+
+    # Test with None value
+    heating_cooling_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 306, "value": None}
+    )
+    assert heating_cooling_actuator.cooling_position is None

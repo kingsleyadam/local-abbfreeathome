@@ -45,7 +45,10 @@ class ValveActuatorMixin:
 
         """
         value = datapoint.get("value")
-        setattr(self, attr_name, int(float(value)))
+        try:
+            setattr(self, attr_name, int(float(value)))
+        except (ValueError, TypeError):
+            setattr(self, attr_name, None)
         return attr_name.lstrip("_")
 
     async def _set_valve_datapoint(self, input_pairing: Pairing, value: str):
