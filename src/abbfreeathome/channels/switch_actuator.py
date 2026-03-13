@@ -97,6 +97,37 @@ class WelcomeIPMuteActuator(SimpleSwitchActuator):
     """Free@Home WelcomeIPMuteActuator Class."""
 
 
+class MWireSwitchActuator(SimpleSwitchActuator):
+    """Free@Home MWireSwitchActuator Class."""
+
+    _state_refresh_pairings: list[Pairing] = [
+        Pairing.AL_MWIRE_SWITCH_ON_OFF,
+    ]
+
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+        """
+        Refresh the state of the channel from a given output.
+
+        This will return the name of the attribute, which was refreshed or None.
+        """
+        if datapoint.get("pairingID") == Pairing.AL_MWIRE_SWITCH_ON_OFF.value:
+            self._state = datapoint.get("value") == "1"
+            return "state"
+        return None
+
+    async def _set_switching_datapoint(self, value: str):
+        """Set the switching datapoint on the api."""
+        _switch_input_id, _switch_input_value = self.get_input_by_pairing(
+            pairing=Pairing.AL_MWIRE_SWITCH_ON_OFF
+        )
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
+            channel_id=self.channel_id,
+            datapoint=_switch_input_id,
+            value=value,
+        )
+
+
 class SwitchActuator(SimpleSwitchActuator):
     """Free@Home SwitchActuator Class."""
 
