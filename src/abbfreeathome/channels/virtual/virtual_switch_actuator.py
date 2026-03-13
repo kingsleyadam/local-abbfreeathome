@@ -109,7 +109,7 @@ class VirtualSwitchActuator(Base):
             datapoint_value,
         )
         _callback_attribute = None
-        _io_key = datapoint_key.split("/")[-1]
+        _io_key = datapoint_key.rsplit("/", maxsplit=1)[-1]
 
         if _io_key in self._outputs:
             self._outputs[_io_key]["value"] = datapoint_value
