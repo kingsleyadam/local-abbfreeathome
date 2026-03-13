@@ -74,3 +74,35 @@ def test_update_channel(virtual_trigger):
     # Test scenario where websocket sends update not relevant to the state.
     virtual_trigger.update_channel("AL_SCENE_CONTROL/idp0003", "1")
     assert virtual_trigger.triggered is False
+
+    # Test scenario where websocket sends update for unknown datapoint.
+    virtual_trigger.update_channel("AL_UNKNOWN/odp0099", "1")
+    assert virtual_trigger.triggered is False
+
+
+def test_update_channel_output(mock_api, mock_device):
+    """Test updating the channel state from an output datapoint."""
+    inputs = {
+        "idp0001": {"pairingID": 2, "value": ""},
+    }
+    outputs = {
+        "odp0000": {"pairingID": 2, "value": ""},
+    }
+    mock_device.device_serial = "60001DFE59A4"
+    mock_device.api = mock_api
+    trigger = VirtualTrigger(
+        device=mock_device,
+        channel_id="ch0000",
+        channel_name="TRG Test Pushbutton",
+        inputs=inputs,
+        outputs=outputs,
+        parameters={},
+    )
+
+    def test_callback():
+        pass
+
+    trigger.register_callback(callback_attribute="triggered", callback=test_callback)
+
+    trigger.update_channel("AL_TIMED_START_STOP/odp0000", "1")
+    assert trigger.triggered is True
