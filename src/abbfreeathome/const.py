@@ -43,6 +43,7 @@ from .channels.virtual.virtual_room_temperature_controller import (
 )
 from .channels.virtual.virtual_switch_actuator import VirtualSwitchActuator
 from .channels.virtual.virtual_temperature_sensor import VirtualTemperatureSensor
+from .channels.virtual.virtual_trigger import VirtualTrigger
 from .channels.virtual.virtual_wind_sensor import VirtualWindSensor
 from .channels.virtual.virtual_window_door_sensor import VirtualWindowDoorSensor
 from .channels.wind_sensor import WindSensor
@@ -159,6 +160,7 @@ FUNCTION_VIRTUAL_CHANNEL_MAPPING: dict[Function, Base] = {
     ),
     Function.FID_SWITCH_ACTUATOR: VirtualSwitchActuator,
     Function.FID_TEMPERATURE_SENSOR: VirtualTemperatureSensor,
+    Function.FID_TRIGGER: VirtualTrigger,
     Function.FID_WIND_SENSOR: VirtualWindSensor,
     Function.FID_WINDOW_DOOR_SENSOR: VirtualWindowDoorSensor,
 }
