@@ -29,6 +29,26 @@ def get_temperature_sensor(mock_api, mock_device):
     )
 
 
+def get_temperature_sensor_invalid(mock_api, mock_device):
+    """Get the TemperatureSensor class with an invalid temperature value."""
+    inputs = {}
+    outputs = {
+        "odp0000": {"pairingID": 38, "value": "0"},
+        "odp0001": {"pairingID": 1024, "value": "invalid"},
+        "odp0002": {"pairingID": 4, "value": "0"},
+    }
+    parameters = {"par002d": "4", "par0047": "7", "par0048": "7"}
+
+    return TemperatureSensor(
+        device=mock_device,
+        channel_id="ch0002",
+        channel_name="Channel Name",
+        inputs=inputs,
+        outputs=outputs,
+        parameters=parameters,
+    )
+
+
 @pytest.fixture
 def mock_api():
     """Create a mock api function."""
@@ -39,9 +59,16 @@ def mock_api():
 def temperature_sensor(mock_api, mock_device):
     """Set up the instance for testing the TemperatureSensor channel."""
     mock_device.device_serial = "7EB1000021C5"
-
     mock_device.api = mock_api
     return get_temperature_sensor(mock_api, mock_device)
+
+
+@pytest.fixture
+def temperature_sensor_invalid(mock_api, mock_device):
+    """Set up the TemperatureSensor instance with an invalid temperature value."""
+    mock_device.device_serial = "7EB1000021C5"
+    mock_device.api = mock_api
+    return get_temperature_sensor_invalid(mock_api, mock_device)
 
 
 @pytest.fixture
@@ -55,6 +82,13 @@ async def test_initial_state(temperature_sensor):
     """Test the intial state of the sensor."""
     assert temperature_sensor.state == 15.50
     assert temperature_sensor.alarm is False
+
+
+@pytest.mark.asyncio
+async def test_initial_state_invalid_temperature(temperature_sensor_invalid):
+    """Test initial state when temperature value is invalid (non-numeric)."""
+    assert temperature_sensor_invalid.state is None
+    assert temperature_sensor_invalid.alarm is False
 
 
 @pytest.mark.asyncio
@@ -90,3 +124,9 @@ def test_refresh_state_from_datapoint(temperature_sensor):
         datapoint={"pairingID": 4, "value": "1"},
     )
     assert temperature_sensor.state == 20.1
+
+    # Check output with an invalid value sets state to None.
+    temperature_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1024, "value": "invalid"},
+    )
+    assert temperature_sensor.state is None
