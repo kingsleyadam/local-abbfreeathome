@@ -66,7 +66,7 @@ class TemperatureSensor(Base):
         if datapoint.get("pairingID") == Pairing.AL_OUTDOOR_TEMPERATURE.value:
             try:
                 self._state = float(datapoint.get("value"))
-            except ValueError:
+            except (ValueError, TypeError):
                 self._state = None
             return "state"
         if datapoint.get("pairingID") == Pairing.AL_FROST_ALARM.value:
