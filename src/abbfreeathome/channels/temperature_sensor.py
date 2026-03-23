@@ -64,7 +64,10 @@ class TemperatureSensor(Base):
         This will return the name of the attribute, which was refreshed or None.
         """
         if datapoint.get("pairingID") == Pairing.AL_OUTDOOR_TEMPERATURE.value:
-            self._state = float(datapoint.get("value"))
+            try:
+                self._state = float(datapoint.get("value"))
+            except (ValueError, TypeError):
+                self._state = None
             return "state"
         if datapoint.get("pairingID") == Pairing.AL_FROST_ALARM.value:
             self._alarm = datapoint.get("value") == "1"
