@@ -129,6 +129,7 @@ FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_E_CONTACT_SWITCH_ACTUATOR_TYPE1: SwitchActuator,
     Function.FID_E_CONTACT_SWITCH_ACTUATOR_TYPE2: SwitchActuator,
     Function.FID_SWITCH_ACTUATOR_TYPE1: SwitchActuator,
+    Function.FID_SWITCH_ACTUATOR_PYCUSTOM0: SwitchActuator,
     Function.FID_SWITCH_SENSOR: SwitchSensor,
     Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE0: SwitchSensor,
     Function.FID_SWITCH_SENSOR_PUSHBUTTON_TYPE1: SwitchSensor,
