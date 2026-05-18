@@ -137,6 +137,15 @@ class Base:
         _io_key = datapoint_key.rsplit("/", maxsplit=1)[-1]
 
         if _io_key in self._outputs:
+            # Skip when the SysAP republishes the same value (no-op).
+            # This is how the SysAP behaves after a WebSocket reconnect:
+            # it pushes a fresh datapoint snapshot for every channel even
+            # if nothing actually changed while the WS was down. Without
+            # this check, every state-callback fires for every channel,
+            # which downstream consumers (e.g. Home Assistant event
+            # entities) interpret as a real button press / state change.
+            if self._outputs[_io_key].get("value") == datapoint_value:
+                return
             self._outputs[_io_key]["value"] = datapoint_value
             _callback_attribute = self._refresh_state_from_datapoint(
                 datapoint=self._outputs[_io_key]

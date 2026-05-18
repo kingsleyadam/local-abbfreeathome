@@ -182,6 +182,42 @@ def test_update_channel(base_instance):
     base_instance.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")
 
 
+def test_update_channel_fires_callback_on_value_change(base_instance, monkeypatch):
+    """update_channel must invoke registered callbacks when the value changes."""
+    # Output odp0000 starts with value "0" (see base_instance fixture).
+    monkeypatch.setattr(
+        base_instance, "_refresh_state_from_datapoint", lambda datapoint: "test"
+    )
+    callback = MagicMock()
+    base_instance.register_callback(callback_attribute="test", callback=callback)
+
+    base_instance.update_channel("AL_INFO_ON_OFF/odp0000", "1")
+
+    assert base_instance._outputs["odp0000"]["value"] == "1"
+    callback.assert_called_once()
+
+
+def test_update_channel_skips_callback_on_unchanged_value(base_instance, monkeypatch):
+    """
+    update_channel must not invoke callbacks when the value is unchanged.
+
+    The SysAP republishes the full datapoint snapshot after every WebSocket
+    reconnect; without this guard, every consumer-side state callback would
+    fire for every channel and downstream automations would react as if the
+    user had pressed every button in the house.
+    """
+    # Output odp0000 already has value "0" in the fixture — push the same.
+    monkeypatch.setattr(
+        base_instance, "_refresh_state_from_datapoint", lambda datapoint: "test"
+    )
+    callback = MagicMock()
+    base_instance.register_callback(callback_attribute="test", callback=callback)
+
+    base_instance.update_channel("AL_INFO_ON_OFF/odp0000", "0")
+
+    callback.assert_not_called()
+
+
 def test_repr(base_instance):
     """Test the __repr__ method."""
     repr_str = repr(base_instance)
