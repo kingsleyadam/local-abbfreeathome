@@ -651,3 +651,4 @@ class Function(enum.Enum):
     FID_1_ROCKER_SWITCH_SENSOR_ICON = 65535
     # Functions below this line are custom to this python package
     # as they are not in the official API-documentation
+    FID_SWITCH_ACTUATOR_PYCUSTOM0 = 6146
