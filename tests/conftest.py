@@ -1,8 +1,29 @@
 """Shared test fixtures for the ABB-Free@Home test suite."""
 
+from unittest.mock import Mock
+
+import aiohttp.client_reqrep
 import pytest
 
 from src.abbfreeathome.floorplan import Floorplan
+
+original_init = aiohttp.client_reqrep.ClientResponse.__init__
+
+
+def patched_init(self, method, url, *args, **kwargs):
+    """
+    Add monkeypatch to aioresponses.
+
+    The aiohttp package introduced a new required keyword-only argument "stream_writer"
+    to ClientResponse.__init__ , but aioresponses  currently fails to provide it.
+    See: https://github.com/pnuckowski/aioresponses/issues/289
+    """
+    if "stream_writer" not in kwargs:
+        kwargs["stream_writer"] = Mock()
+    return original_init(self, method, url, *args, **kwargs)
+
+
+aiohttp.client_reqrep.ClientResponse.__init__ = patched_init
 
 
 @pytest.fixture
