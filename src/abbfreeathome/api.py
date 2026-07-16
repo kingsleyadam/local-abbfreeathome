@@ -10,7 +10,7 @@ import ssl
 from typing import Any
 from urllib.parse import urlparse
 
-from aiohttp import TCPConnector
+from aiohttp import TCPConnector, encode_basic_auth
 from aiohttp.client import ClientSession, ClientWebSocketResponse
 from aiohttp.client_exceptions import (
     ClientConnectionError as AioHttpClientConnectionError,
@@ -19,7 +19,6 @@ from aiohttp.client_exceptions import (
     InvalidUrlClientError as AioHttpInvalidUrlClientError,
     WSServerHandshakeError as AioHttpWSServerHandshakeError,
 )
-from aiohttp.helpers import BasicAuth
 from aiohttp.http import WSMsgType
 import backoff
 from packaging.version import Version
@@ -262,8 +261,10 @@ class FreeAtHomeApi(SSLContextMixin):
         """
         super().__init__()
         self._host = host.rstrip("/")
-        self._auth = BasicAuth(username, password)
-        self._headers = {"Authorization": self._auth.encode()}
+        self._username = username
+        self._headers = {
+            "Authorization": encode_basic_auth(login=username, password=password)
+        }
         self._sysap_uuid = sysap_uuid
         self._client_session = client_session
         self._ws_heartbeat = ws_heartbeat
@@ -443,7 +444,7 @@ class FreeAtHomeApi(SSLContextMixin):
         if error.status == 400:
             raise BadRequestException(data) from error
         if error.status == 401:
-            raise InvalidCredentialsException(self._auth.login) from error
+            raise InvalidCredentialsException(self._username) from error
         if error.status == 403:
             raise ForbiddenAuthException(path, error.status) from error
         if error.status == 502:
