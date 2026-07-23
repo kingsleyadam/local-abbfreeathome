@@ -69,8 +69,10 @@ class DimmingActuator(Base):
         return bool(self._state)
 
     @property
-    def brightness(self) -> int:
+    def brightness(self) -> int | None:
         """Get the brightness level of the dimmer."""
+        if self._brightness is None:
+            return None
         return int(self._brightness)
 
     @property
@@ -223,6 +225,8 @@ class ColorTemperatureActuator(DimmingActuator):
         _id, _value = self.get_channel_parameter(
             parameter=Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_COOLEST
         )
+        if _value is None:
+            return None
         return int(_value)
 
     @property
@@ -231,6 +235,8 @@ class ColorTemperatureActuator(DimmingActuator):
         _id, _value = self.get_channel_parameter(
             parameter=Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_WARMEST
         )
+        if _value is None:
+            return None
         return int(_value)
 
     @property
