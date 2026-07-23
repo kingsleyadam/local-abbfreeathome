@@ -223,28 +223,35 @@ def test_name_property(settings):
     assert settings.name == "SysAP"
 
 
-@pytest.mark.filterwarnings("ignore:BasicAuth is deprecated:DeprecationWarning")
 def test_basic_auth_falls_back_for_older_aiohttp(monkeypatch):
     """Test basic authentication with aiohttp versions older than 3.14."""
+    basic_auth = Mock()
+    basic_auth.return_value.encode.return_value = "Basic encoded"
+
     monkeypatch.setattr(api_module, "_aiohttp_encode_basic_auth", None)
-    monkeypatch.setattr(api_module, "BasicAuth", aiohttp.BasicAuth, raising=False)
+    monkeypatch.setattr(api_module, "BasicAuth", basic_auth, raising=False)
 
     instance = FreeAtHomeApi(
         host="http://192.168.1.1", username="user", password="pass"
     )
 
-    assert instance._headers["Authorization"] == "Basic dXNlcjpwYXNz"
+    basic_auth.assert_called_once_with("user", "pass")
+    assert instance._headers["Authorization"] == "Basic encoded"
 
 
 def test_basic_auth_supports_aiohttp_without_basic_auth(monkeypatch):
     """Test basic authentication with aiohttp versions newer than 3.x."""
-    monkeypatch.delattr(aiohttp, "BasicAuth", raising=False)
+    encode_basic_auth = Mock(return_value="Basic encoded")
+
+    monkeypatch.setattr(api_module, "_aiohttp_encode_basic_auth", encode_basic_auth)
+    monkeypatch.delattr(api_module, "BasicAuth", raising=False)
 
     instance = FreeAtHomeApi(
         host="http://192.168.1.1", username="user", password="pass"
     )
 
-    assert instance._headers["Authorization"] == "Basic dXNlcjpwYXNz"
+    encode_basic_auth.assert_called_once_with(login="user", password="pass")
+    assert instance._headers["Authorization"] == "Basic encoded"
 
 
 @pytest.mark.asyncio
