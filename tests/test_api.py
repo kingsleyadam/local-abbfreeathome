@@ -10,6 +10,7 @@ import pytest
 import pytest_asyncio
 import voluptuous as vol
 
+from src.abbfreeathome import api as api_module
 from src.abbfreeathome.api import FreeAtHomeApi, FreeAtHomeSettings
 from src.abbfreeathome.exceptions import (
     BadRequestException,
@@ -220,6 +221,30 @@ def test_name_property(settings):
     """Test getting name."""
     settings._settings = {"flags": {"name": "SysAP"}}
     assert settings.name == "SysAP"
+
+
+@pytest.mark.filterwarnings("ignore:BasicAuth is deprecated:DeprecationWarning")
+def test_basic_auth_falls_back_for_older_aiohttp(monkeypatch):
+    """Test basic authentication with aiohttp versions older than 3.14."""
+    monkeypatch.setattr(api_module, "_aiohttp_encode_basic_auth", None)
+    monkeypatch.setattr(api_module, "BasicAuth", aiohttp.BasicAuth, raising=False)
+
+    instance = FreeAtHomeApi(
+        host="http://192.168.1.1", username="user", password="pass"
+    )
+
+    assert instance._headers["Authorization"] == "Basic dXNlcjpwYXNz"
+
+
+def test_basic_auth_supports_aiohttp_without_basic_auth(monkeypatch):
+    """Test basic authentication with aiohttp versions newer than 3.x."""
+    monkeypatch.delattr(aiohttp, "BasicAuth", raising=False)
+
+    instance = FreeAtHomeApi(
+        host="http://192.168.1.1", username="user", password="pass"
+    )
+
+    assert instance._headers["Authorization"] == "Basic dXNlcjpwYXNz"
 
 
 @pytest.mark.asyncio

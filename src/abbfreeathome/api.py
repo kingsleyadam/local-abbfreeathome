@@ -10,7 +10,12 @@ import ssl
 from typing import Any
 from urllib.parse import urlparse
 
-from aiohttp import TCPConnector, encode_basic_auth
+try:
+    from aiohttp import TCPConnector, encode_basic_auth as _aiohttp_encode_basic_auth
+except ImportError:  # pragma: no cover - depends on the installed aiohttp version
+    from aiohttp import BasicAuth, TCPConnector
+
+    _aiohttp_encode_basic_auth = None
 from aiohttp.client import ClientSession, ClientWebSocketResponse
 from aiohttp.client_exceptions import (
     ClientConnectionError as AioHttpClientConnectionError,
@@ -213,6 +218,14 @@ class FreeAtHomeApi(SSLContextMixin):
     _close_client_session: bool = False
     _ws_response: ClientWebSocketResponse = None
 
+    @staticmethod
+    def _encode_basic_auth(login: str, password: str) -> str:
+        """Encode basic authentication across supported aiohttp versions."""
+        if _aiohttp_encode_basic_auth is not None:
+            return _aiohttp_encode_basic_auth(login=login, password=password)
+
+        return BasicAuth(login, password).encode()
+
     def __init__(
         self,
         host: str,
@@ -263,7 +276,7 @@ class FreeAtHomeApi(SSLContextMixin):
         self._host = host.rstrip("/")
         self._username = username
         self._headers = {
-            "Authorization": encode_basic_auth(login=username, password=password)
+            "Authorization": self._encode_basic_auth(login=username, password=password)
         }
         self._sysap_uuid = sysap_uuid
         self._client_session = client_session
