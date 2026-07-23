@@ -222,7 +222,7 @@ class ColorTemperatureActuator(DimmingActuator):
     @property
     def color_temperature_coolest(self) -> int | None:
         """Get the coolest color temperature of the light."""
-        _id, _value = self.get_channel_parameter(
+        _, _value = self.get_channel_parameter(
             parameter=Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_COOLEST
         )
         if _value is None:
