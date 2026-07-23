@@ -218,14 +218,6 @@ class FreeAtHomeApi(SSLContextMixin):
     _close_client_session: bool = False
     _ws_response: ClientWebSocketResponse = None
 
-    @staticmethod
-    def _encode_basic_auth(login: str, password: str) -> str:
-        """Encode basic authentication across supported aiohttp versions."""
-        if _aiohttp_encode_basic_auth is not None:
-            return _aiohttp_encode_basic_auth(login=login, password=password)
-
-        return BasicAuth(login, password).encode()
-
     def __init__(
         self,
         host: str,
@@ -595,3 +587,11 @@ class FreeAtHomeApi(SSLContextMixin):
             WSMsgType.CLOSING,
         ):
             _LOGGER.warning("Websocket Connection Closed.")
+
+    @staticmethod
+    def _encode_basic_auth(login: str, password: str) -> str:
+        """Encode basic authentication across supported aiohttp versions."""
+        if _aiohttp_encode_basic_auth is not None:
+            return _aiohttp_encode_basic_auth(login=login, password=password)
+
+        return BasicAuth(login, password).encode()
