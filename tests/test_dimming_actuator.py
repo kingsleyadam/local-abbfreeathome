@@ -92,6 +92,12 @@ async def test_initial_state(dimming_actuator):
     assert dimming_actuator.state is False
 
 
+def test_brightness_defaults_to_none_when_uninitialized(dimming_actuator):
+    """Test brightness remains nullable before the value is available."""
+    dimming_actuator._brightness = None
+    assert dimming_actuator.brightness is None
+
+
 @pytest.mark.asyncio
 async def test_turn_on(dimming_actuator):
     """Test to turning on the DimmingActuator."""
@@ -265,3 +271,38 @@ def test_color_temperature_warmest(colortemperature_actuator):
     """Test to get the warmest color temperature."""
     _temp = colortemperature_actuator.color_temperature_warmest
     assert _temp == 2700
+
+
+def test_color_temperature_defaults_to_none_when_unavailable(mock_api, mock_device):
+    """Test color-temperature parameters remain nullable when missing."""
+    inputs = {
+        "idp0000": {"pairingID": 1, "value": "0"},
+        "idp0002": {"pairingID": 17, "value": "50"},
+        "idp0004": {"pairingID": 3, "value": "0"},
+        "idp0008": {"pairingID": 22, "value": "50"},
+    }
+    outputs = {
+        "odp0000": {"pairingID": 256, "value": "0"},
+        "odp0001": {"pairingID": 272, "value": "50"},
+        "odp0002": {"pairingID": 273, "value": "0"},
+        "odp0003": {"pairingID": 257, "value": "0"},
+        "odp0004": {"pairingID": 280, "value": "50"},
+    }
+
+    mock_device.device_serial = "ABB70139AF8A"
+    mock_device.api = mock_api
+
+    actuator = ColorTemperatureActuator(
+        device=mock_device,
+        channel_id="ch0000",
+        channel_name="Channel Name",
+        inputs=inputs,
+        outputs=outputs,
+        parameters={
+            "par00f5": None,
+            "par00f6": None,
+        },
+    )
+
+    assert actuator.color_temperature_coolest is None
+    assert actuator.color_temperature_warmest is None
