@@ -10,6 +10,7 @@ import pytest
 import pytest_asyncio
 import voluptuous as vol
 
+from src.abbfreeathome import api as api_module
 from src.abbfreeathome.api import FreeAtHomeApi, FreeAtHomeSettings
 from src.abbfreeathome.exceptions import (
     BadRequestException,
@@ -220,6 +221,37 @@ def test_name_property(settings):
     """Test getting name."""
     settings._settings = {"flags": {"name": "SysAP"}}
     assert settings.name == "SysAP"
+
+
+def test_basic_auth_falls_back_for_older_aiohttp(monkeypatch):
+    """Test basic authentication with aiohttp versions older than 3.14."""
+    basic_auth = Mock()
+    basic_auth.return_value.encode.return_value = "Basic encoded"
+
+    monkeypatch.setattr(api_module, "_aiohttp_encode_basic_auth", None)
+    monkeypatch.setattr(api_module, "BasicAuth", basic_auth, raising=False)
+
+    instance = FreeAtHomeApi(
+        host="http://192.168.1.1", username="user", password="pass"
+    )
+
+    basic_auth.assert_called_once_with("user", "pass")
+    assert instance._headers["Authorization"] == "Basic encoded"
+
+
+def test_basic_auth_supports_aiohttp_without_basic_auth(monkeypatch):
+    """Test basic authentication with aiohttp versions newer than 3.x."""
+    encode_basic_auth = Mock(return_value="Basic encoded")
+
+    monkeypatch.setattr(api_module, "_aiohttp_encode_basic_auth", encode_basic_auth)
+    monkeypatch.delattr(api_module, "BasicAuth", raising=False)
+
+    instance = FreeAtHomeApi(
+        host="http://192.168.1.1", username="user", password="pass"
+    )
+
+    encode_basic_auth.assert_called_once_with(login="user", password="pass")
+    assert instance._headers["Authorization"] == "Basic encoded"
 
 
 @pytest.mark.asyncio

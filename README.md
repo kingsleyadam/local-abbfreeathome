@@ -143,6 +143,7 @@ async def refresh_state(self):
             }
         )
 
+
 @property
 def state(self) -> bool | None:
     """Get the state of the switch."""
@@ -166,6 +167,7 @@ async def _set_switching_datapoint(self, value: str):
         datapoint=_switch_input_id,
         value=value,
     )
+
 
 async def turn_on(self):
     """Turn on the switch."""
@@ -233,7 +235,7 @@ api = FreeAtHomeApi(
     host="https://<IP or HOSTNAME>",
     username="installer",
     password="<password>",
-    ssl_cert_ca_file="/path/to/your/sysap.crt"
+    ssl_cert_ca_file="/path/to/your/sysap.crt",
 )
 ```
 
@@ -341,7 +343,9 @@ async def websocket_test():
         await _free_at_home.load()
 
         # Add our very own callback
-        for _switch in _free_at_home.get_channels_by_class(channel_class=SwitchActuator):
+        for _switch in _free_at_home.get_channels_by_class(
+            channel_class=SwitchActuator
+        ):
             _switch.register_callback(
                 callback_attribute="state", callback=my_very_own_callback
             )
