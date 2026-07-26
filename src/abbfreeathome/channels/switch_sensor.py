@@ -96,7 +96,7 @@ class SwitchSensor(Base):
         await self._set_led_datapoint("0")
         self._led = False
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
         """
         Refresh the state of the channel from a given output.
 
@@ -221,7 +221,7 @@ class DimmingSensor(SwitchSensor):
         """Get the dimming state."""
         return self._dimming_sensor_state.name
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
         """
         Refresh the state of the channel from a given output.
 
@@ -256,7 +256,7 @@ class StaircaseLightSensor(SwitchSensor):
         Pairing.AL_TIMED_START_STOP,
     ]
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
         """
         Refresh the state of the channel from a given output.
 
