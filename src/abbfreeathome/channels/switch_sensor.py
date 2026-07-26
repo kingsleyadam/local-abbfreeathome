@@ -240,3 +240,38 @@ class DimmingSensor(SwitchSensor):
             self._state = self._dimming_sensor_state
             return "state"
         return None
+
+
+class StaircaseLightSensor(SwitchSensor):
+    """
+    Free@Home StaircaseLightSensor Class.
+
+    Sensor (control-element) side of the staircase-timer-light function.
+    Despite the name, it is a timed-pulse push-button that emits an
+    ``AL_TIMED_START_STOP`` telegram on every physical press; commonly linked
+    to non-light targets (e.g. a garage-door opener or a gate).
+    """
+
+    _state_refresh_pairings: list[Pairing] = [
+        Pairing.AL_TIMED_START_STOP,
+    ]
+
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+        """
+        Refresh the state of the channel from a given output.
+
+        This will return the name of the attribute, which was refreshed or None.
+        """
+        _return_value = super()._refresh_state_from_datapoint(datapoint)
+        if _return_value is not None:
+            return _return_value
+
+        if datapoint.get("pairingID") == Pairing.AL_TIMED_START_STOP.value:
+            try:
+                self._switch_sensor_state = SwitchSensorState(datapoint.get("value"))
+            except ValueError:
+                self._switch_sensor_state = SwitchSensorState.unknown
+
+            self._state = self._switch_sensor_state
+            return "state"
+        return None
