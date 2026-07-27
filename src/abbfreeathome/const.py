@@ -25,7 +25,7 @@ from .channels.switch_actuator import (
     SwitchActuator,
     WelcomeIPMuteActuator,
 )
-from .channels.switch_sensor import DimmingSensor, SwitchSensor
+from .channels.switch_sensor import DimmingSensor, StaircaseLightSensor, SwitchSensor
 from .channels.temperature_sensor import TemperatureSensor
 from .channels.trigger import Trigger
 from .channels.valve_actuator import (
@@ -124,6 +124,28 @@ FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     ),
     Function.FID_SHUTTER_ACTUATOR: ShutterActuator,
     Function.FID_SMOKE_DETECTOR: SmokeDetector,
+    Function.FID_STAIRCASE_LIGHT_SENSOR: StaircaseLightSensor,
+    Function.FID_PANEL_STAIRCASE_LIGHT_SENSOR: StaircaseLightSensor,
+    Function.FID_PB_STAIRCASE_LIGHT_SENSOR: StaircaseLightSensor,
+    Function.FID_PANEL_STAIRCASE_LIGHT_SENSOR_PUSHBUTTON_TYPE2: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_ROCKER_TYPE0: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_ROCKER_TYPE1: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_ROCKER_TYPE2: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_ROCKER_TYPE3: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_ROCKER_TYPE4: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_ROCKER_TYPE5: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_ROCKER_TYPE6: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_ROCKER_TYPE7: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_ROCKER_TYPE8: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_PUSHBUTTON_TYPE0: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_PUSHBUTTON_TYPE1: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_PUSHBUTTON_TYPE2: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_PUSHBUTTON_TYPE3: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_PUSHBUTTON_TYPE4: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_PUSHBUTTON_TYPE5: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_PUSHBUTTON_TYPE6: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_PUSHBUTTON_TYPE7: StaircaseLightSensor,
+    Function.FID_STAIRCASE_LIGHT_SENSOR_PUSHBUTTON_TYPE8: StaircaseLightSensor,
     Function.FID_SWITCH_ACTUATOR: SwitchActuator,
     Function.FID_E_CONTACT_SWITCH_ACTUATOR_TYPE0: SwitchActuator,
     Function.FID_E_CONTACT_SWITCH_ACTUATOR_TYPE1: SwitchActuator,

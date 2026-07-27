@@ -8,6 +8,7 @@ from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.channels.switch_sensor import (
     DimmingSensor,
     DimmingSensorState,
+    StaircaseLightSensor,
     SwitchSensor,
     SwitchSensorState,
 )
@@ -99,6 +100,33 @@ def dimming_sensor(mock_api, mock_device):
     return DimmingSensor(
         device=mock_device,
         channel_id="ch0000",
+        channel_name="Channel Name",
+        inputs=inputs,
+        outputs=outputs,
+        parameters=parameters,
+    )
+
+
+@pytest.fixture
+def staircase_light_sensor(mock_api, mock_device):
+    """Set up the staircase-light-sensor instance for testing."""
+    inputs = {
+        "idp0000": {"pairingID": 256, "value": "0"},
+    }
+    outputs = {
+        "odp0005": {"pairingID": 2, "value": "0"},
+        "odp0007": {"pairingID": 4, "value": ""},
+    }
+    parameters = {
+        "par0007": "2",
+    }
+
+    mock_device.device_serial = "ABB700D9C0A4"
+
+    mock_device.api = mock_api
+    return StaircaseLightSensor(
+        device=mock_device,
+        channel_id="ch0004",
         channel_name="Channel Name",
         inputs=inputs,
         outputs=outputs,
@@ -253,6 +281,47 @@ def test_update_channel_without_led(switch_sensor_without_led):
 
     switch_sensor_without_led.update_channel("AL_INFO_ON_OFF/idp0000", "0")
     assert switch_sensor_without_led.led is None
+
+
+def test_refresh_state_from_datapoint_staircase_light(staircase_light_sensor):
+    """Test the _refresh_state_from_datapoint function for StaircaseLightSensor."""
+    # Check output that affects the state via AL_TIMED_START_STOP.
+    staircase_light_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 2, "value": "1"},
+    )
+    assert staircase_light_sensor.state == SwitchSensorState.on.name
+    assert staircase_light_sensor.switching_state == SwitchSensorState.on.name
+
+    staircase_light_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 2, "value": "0"},
+    )
+    assert staircase_light_sensor.state == SwitchSensorState.off.name
+    assert staircase_light_sensor.switching_state == SwitchSensorState.off.name
+
+    staircase_light_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 2, "value": "INVALID"},
+    )
+    assert staircase_light_sensor.state == SwitchSensorState.unknown.name
+
+    # Ensure the LED handling from SwitchSensor is still functional.
+    staircase_light_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 256, "value": "1"},
+    )
+    assert staircase_light_sensor.led is True
+
+
+def test_update_channel_staircase_light(staircase_light_sensor):
+    """Test updating the channel state for StaircaseLightSensor."""
+
+    def test_callback():
+        pass
+
+    staircase_light_sensor.register_callback(
+        callback_attribute="led", callback=test_callback
+    )
+
+    staircase_light_sensor.update_channel("AL_INFO_ON_OFF/idp0000", "1")
+    assert staircase_light_sensor.led is True
 
 
 def test_update_device_nonexistent_input(switch_sensor_with_led):

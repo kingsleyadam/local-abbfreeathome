@@ -42,6 +42,7 @@ The current channels implemented within the library.
 | RainSensor | | `state` |
 | RoomTemperatureController | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `valve`, `target_temperature`, `state_indication`, `eco_mode` |
 | SmokeDetector | | `state` |
+| StaircaseLightSensor\* | `turn_on_led()`, `turn_off_led()` | `state` |
 | SwitchActuator | `turn_on()`, `turn_off()`, `set_forced_position()` | `state`, `forced_position` |
 | SwitchSensor\* | `turn_on_led()`, `turn_off_led()` | `state` |
 | TemperatureSensor | | `state`, `alarm` |
@@ -59,7 +60,7 @@ The current channels implemented within the library.
 | WindSensor | `turn_on()`, `turn_off()`, `set_speed()`, `set_force()` | `speed`, `force`, `alarm` |
 | WindowDoorSensor | `turn_on()`, `turn_off()` | `state` |
 
-\*DimmingSensor and SwitchSensor: `turn_on_led()`and `turn_off_led()` refers to the LED of the sensor. It only has an effect when the "LED mode" is set to "Status Indication".
+\*DimmingSensor, StaircaseLightSensor, and SwitchSensor: `turn_on_led()` and `turn_off_led()` refer to the LED of the sensor. It only has an effect when the "LED mode" is set to "Status Indication".
 
 ## FreeAtHome Class Structure and API Interaction
 

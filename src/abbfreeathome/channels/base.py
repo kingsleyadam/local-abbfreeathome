@@ -195,7 +195,7 @@ class Base:
         for _datapoint in self._outputs.values():
             self._refresh_state_from_datapoint(_datapoint)
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
         """Refresh the state of the channel from a single datapoint."""
 
     def __repr__(self) -> str:
