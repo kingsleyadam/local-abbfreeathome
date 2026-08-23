@@ -260,7 +260,7 @@ class AwningActuator(CoverActuator):
         await self._set_position_datapoint(str(100 - value))
         self._position = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
         """Refresh the state, inverting the raw awning position/direction."""
         attribute = super()._refresh_state_from_datapoint(datapoint)
         if attribute == "position" and self._position is not None:
