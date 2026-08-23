@@ -87,6 +87,23 @@ class CoverActuator(Base):
         """Get the information, if the position is forced."""
         return self._forced_position.name
 
+    @property
+    def is_closed(self) -> bool | None:
+        """Get whether the cover is fully closed."""
+        if self._position is None:
+            return None
+        return self._position == 100
+
+    @property
+    def is_opening(self) -> bool:
+        """Get whether the cover is currently opening."""
+        return self._state == CoverActuatorState.opening
+
+    @property
+    def is_closing(self) -> bool:
+        """Get whether the cover is currently closing."""
+        return self._state == CoverActuatorState.closing
+
     async def open(self):
         """Open the cover."""
         await self._set_moving_datapoint("0")
@@ -213,7 +230,47 @@ class AtticWindowActuator(CoverActuator):
 
 
 class AwningActuator(CoverActuator):
-    """Free@Home AwningActuator Class."""
+    """
+    Free@Home AwningActuator Class.
+
+    Free@Home reports awning position with the opposite physical convention to
+    blinds: 0 = retracted (closed), 100 = extended (open). This class inverts
+    internally so its public API matches the other cover classes
+    (0 = open, 100 = closed).
+    """
+
+    async def open(self):
+        """Open (extend) the awning -> public position 0."""
+        await self.set_position(0)
+
+    async def close(self):
+        """Close (retract) the awning -> public position 100."""
+        await self.set_position(100)
+
+    async def set_position(self, value: int):
+        """
+        Set the position of the awning.
+
+        Uses the same public convention as the other cover classes
+        (0 = open, 100 = closed) and inverts to the raw Free@Home value.
+        """
+        value = max(0, value)
+        value = min(value, 100)
+
+        await self._set_position_datapoint(str(100 - value))
+        self._position = value
+
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+        """Refresh the state, inverting the raw awning position/direction."""
+        attribute = super()._refresh_state_from_datapoint(datapoint)
+        if attribute == "position" and self._position is not None:
+            self._position = 100 - self._position
+        elif attribute == "state":
+            if self._state == CoverActuatorState.opening:
+                self._state = CoverActuatorState.closing
+            elif self._state == CoverActuatorState.closing:
+                self._state = CoverActuatorState.opening
+        return attribute
 
 
 class BlindActuator(CoverActuator):
