@@ -7,6 +7,9 @@ import pytest
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.function import Function
 from src.abbfreeathome.bin.interface import Interface
+from src.abbfreeathome.channels.room_temperature_controller import (
+    RoomTemperatureController,
+)
 from src.abbfreeathome.channels.switch_actuator import SwitchActuator
 from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
     VirtualSwitchActuator,
@@ -411,6 +414,37 @@ def test_device_load_channels_with_valid_data(mock_floorplan):
     channel = channels["ch0000"]
     assert channel.floor_name == "Ground Floor"
     assert channel.room_name == "Living Room"
+
+
+def test_device_load_channels_rtc_master_with_fan(mock_floorplan):
+    """Test loading an RTC channel reported with the WITH_FAN (0x000A) function."""
+    mock_api = AsyncMock(spec=FreeAtHomeApi)
+
+    function_id = Function.FID_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITH_FAN.value
+    channels_data = {
+        "ch0000": {
+            "displayName": "Test RTC With Fan",
+            "floor": "01",
+            "room": "18",
+            "functionID": f"{function_id:04X}",
+            "inputs": {},
+            "outputs": {},
+            "parameters": {},
+        }
+    }
+
+    device = Device(
+        device_serial="ABB7F4F9B903",
+        device_id="9004",
+        display_name="Test Device",
+        api=mock_api,
+        channels_data=channels_data,
+    )
+
+    channels = device.load_channels(mock_floorplan)
+
+    assert len(channels) == 1
+    assert isinstance(channels["ch0000"], RoomTemperatureController)
 
 
 def test_device_load_channels_with_existing_floor_room_names(mock_floorplan):
