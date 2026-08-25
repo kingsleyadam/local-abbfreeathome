@@ -113,6 +113,9 @@ FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_MOVEMENT_DETECTOR_TYPE0: BlockableMovementDetector,
     Function.FID_MOVEMENT_DETECTOR_TYPE7: MovementDetector,
     Function.FID_RAIN_SENSOR: RainSensor,
+    Function.FID_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITH_FAN: (
+        RoomTemperatureController
+    ),
     Function.FID_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITHOUT_FAN: (
         RoomTemperatureController
     ),
