@@ -100,7 +100,9 @@ class VirtualSwitchActuator(Base):
             value=value,
         )
 
-    def update_channel(self, datapoint_key: str, datapoint_value: str):
+    def update_channel(
+        self, datapoint_key: str, datapoint_value: str, is_priming: bool = False
+    ):
         """Update the device state."""
         _LOGGER.info(
             "%s received updated data: %s: %s",
@@ -109,19 +111,25 @@ class VirtualSwitchActuator(Base):
             datapoint_value,
         )
         _callback_attribute = None
+        _changed = True
         _io_key = datapoint_key.rsplit("/", maxsplit=1)[-1]
 
         if _io_key in self._outputs:
+            _changed = self._outputs[_io_key].get("value") != datapoint_value
             self._outputs[_io_key]["value"] = datapoint_value
             _callback_attribute = self._refresh_state_from_datapoint(
                 datapoint=self._outputs[_io_key]
             )
 
         if _io_key in self._inputs:
+            _changed = self._inputs[_io_key].get("value") != datapoint_value
             self._inputs[_io_key]["value"] = datapoint_value
             _callback_attribute = self._refresh_state_from_datapoint(
                 datapoint=self._inputs[_io_key]
             )
+
+        if is_priming and not _changed:
+            return
 
         if _callback_attribute and self._callbacks[_callback_attribute]:
             for callback in self._callbacks[_callback_attribute]:

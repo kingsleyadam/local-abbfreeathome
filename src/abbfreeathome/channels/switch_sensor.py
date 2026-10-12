@@ -134,17 +134,22 @@ class SwitchSensor(Base):
             value=value,
         )
 
-    def update_channel(self, datapoint_key, datapoint_value):
+    def update_channel(self, datapoint_key, datapoint_value, is_priming: bool = False):
         """Update the channel state."""
-        super().update_channel(datapoint_key, datapoint_value)
+        super().update_channel(datapoint_key, datapoint_value, is_priming=is_priming)
         _callback_attribute = None
+        _changed = True
         _io_key = datapoint_key.split("/")[-1]
 
         if _io_key in self._inputs:
+            _changed = self._inputs[_io_key].get("value") != datapoint_value
             self._inputs[_io_key]["value"] = datapoint_value
             _callback_attribute = self._refresh_state_from_datapoint(
                 datapoint=self._inputs[_io_key]
             )
+
+        if is_priming and not _changed:
+            return
 
         if _callback_attribute and self._callbacks[_callback_attribute]:
             for callback in self._callbacks[_callback_attribute]:

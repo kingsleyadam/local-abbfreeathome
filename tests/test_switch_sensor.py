@@ -266,6 +266,38 @@ def test_update_channel_with_led(switch_sensor_with_led):
     assert switch_sensor_with_led.led is False
 
 
+def test_update_channel_priming_suppresses_noop_input_callback(switch_sensor_with_led):
+    """
+    SwitchSensor input path: no-op during priming is suppressed (#239).
+
+    A changed input value during priming still fires; this covers the input
+    (led) callback branch in the SwitchSensor override.
+    """
+    callback = MagicMock()
+    switch_sensor_with_led.register_callback(
+        callback_attribute="led", callback=callback
+    )
+
+    # Seed a known led state outside priming.
+    switch_sensor_with_led.update_channel("AL_INFO_ON_OFF/idp0000", "1")
+    assert switch_sensor_with_led.led is True
+    callback.reset_mock()
+
+    # No-op replay during priming -> suppressed.
+    switch_sensor_with_led.update_channel(
+        "AL_INFO_ON_OFF/idp0000", "1", is_priming=True
+    )
+    assert switch_sensor_with_led.led is True
+    callback.assert_not_called()
+
+    # Changed value during priming -> still fires.
+    switch_sensor_with_led.update_channel(
+        "AL_INFO_ON_OFF/idp0000", "0", is_priming=True
+    )
+    assert switch_sensor_with_led.led is False
+    callback.assert_called_once()
+
+
 def test_update_channel_without_led(switch_sensor_without_led):
     """Test updating the channel state."""
 

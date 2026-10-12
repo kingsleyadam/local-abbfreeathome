@@ -107,12 +107,18 @@ class FreeAtHome:
         """Update channel based on websocket data."""
         _channels = self.get_channels()
 
+        # Datapoints received during the post-(re)connect priming window are a
+        # replayed snapshot, not real events: update caches but skip callbacks.
+        _is_priming = self.api.is_priming
+
         for _datapoint_key, _datapoint_value in data.get("datapoints").items():
             _unique_id = "/".join(_datapoint_key.split("/")[:-1])
 
             try:
                 _channel = _channels[_unique_id]
-                _channel.update_channel(_datapoint_key, _datapoint_value)
+                _channel.update_channel(
+                    _datapoint_key, _datapoint_value, is_priming=_is_priming
+                )
             except KeyError:
                 continue
 

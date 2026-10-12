@@ -572,11 +572,90 @@ async def test_update(freeathome):
     # Mock the device.channels to return our mock channel
     device._channels = {"ch0003": channel}
 
+    # Steady-state: the api is not in the priming window.
+    freeathome.api.is_priming = False
+
     data = {
         "datapoints": {"ABB7F500E17A/ch0003/256": "0", "ABB7F500E17A/ch0001/0": "0"}
     }
     await freeathome.update(data)
-    channel.update_channel.assert_called_once_with("ABB7F500E17A/ch0003/256", "0")
+    channel.update_channel.assert_called_once_with(
+        "ABB7F500E17A/ch0003/256", "0", is_priming=False
+    )
+
+
+@pytest.mark.asyncio
+async def test_update_priming_suppresses_noop_callback_flood(freeathome, api_mock):
+    """
+    Regression for #239: a no-op snapshot replay during priming is silent.
+
+    When the api reports it is priming (just after a websocket (re)connect), a
+    replayed datapoint whose value is unchanged must update the cache but NOT
+    fan out callbacks, preventing the phantom "button press" flood.
+    """
+    await freeathome.load()
+
+    _channel = freeathome.get_channels()["ABB7F500E17A/ch0000"]
+    _callback = MagicMock()
+    _channel.register_callback(callback_attribute="state", callback=_callback)
+
+    # The loaded cache for odp0000 is "0". Replaying the SAME value during
+    # priming is a no-op and must be suppressed.
+    assert _channel._outputs["odp0000"]["value"] == "0"
+    api_mock.is_priming = True
+    await freeathome.update({"datapoints": {"ABB7F500E17A/ch0000/odp0000": "0"}})
+
+    _callback.assert_not_called()
+    assert _channel._outputs["odp0000"]["value"] == "0"
+
+
+@pytest.mark.asyncio
+async def test_update_priming_fires_for_changed_value(freeathome, api_mock):
+    """
+    Regression for #239: a value changed during the outage still fires.
+
+    A datapoint that genuinely changed while the socket was down must fire a
+    callback even during the priming window. Suppress-no-ops only swallows
+    unchanged datapoints, so changed values surface and consumers do not stay
+    stale after a reconnect.
+    """
+    await freeathome.load()
+
+    _channel = freeathome.get_channels()["ABB7F500E17A/ch0000"]
+    _callback = MagicMock()
+    _channel.register_callback(callback_attribute="state", callback=_callback)
+
+    # Cache is "0"; a snapshot value of "1" is a real change -> callback fires.
+    api_mock.is_priming = True
+    await freeathome.update({"datapoints": {"ABB7F500E17A/ch0000/odp0000": "1"}})
+
+    _callback.assert_called_once()
+    assert _channel._outputs["odp0000"]["value"] == "1"
+    assert _channel.state == "on"
+
+
+@pytest.mark.asyncio
+async def test_update_after_priming_fires_on_while_on(freeathome, api_mock):
+    """
+    Regression for #239: once priming ends, real events still fire callbacks.
+
+    Crucially this includes an "on-while-on" event (a datapoint re-sent at its
+    current value), which the maintainer wants to keep delivering.
+    """
+    await freeathome.load()
+
+    _channel = freeathome.get_channels()["ABB7F500E17A/ch0000"]
+    _callback = MagicMock()
+    _channel.register_callback(callback_attribute="state", callback=_callback)
+
+    # Put the channel into a known "on" state (not priming yet; one callback).
+    api_mock.is_priming = False
+    await freeathome.update({"datapoints": {"ABB7F500E17A/ch0000/odp0000": "1"}})
+    assert _callback.call_count == 1
+
+    # Re-send the SAME value: an on-while-on press must still fire a callback.
+    await freeathome.update({"datapoints": {"ABB7F500E17A/ch0000/odp0000": "1"}})
+    assert _callback.call_count == 2
 
 
 @pytest.mark.asyncio
