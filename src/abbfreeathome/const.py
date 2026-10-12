@@ -59,7 +59,7 @@ FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_BLINDS_ACTUATOR_TYPE0: ShutterActuator,
     Function.FID_BLINDS_ACTUATOR_TYPE1: BlindActuator,
     Function.FID_BLINDS_ACTUATOR_TYPE2: BlindActuator,
-    Function.FID_BLINDS_ACTUATOR_TYPE3: BlindActuator,
+    Function.FID_BLINDS_ACTUATOR_TYPE3: AwningActuator,
     Function.FID_BLINDS_ACTUATOR_TYPE5: BlindActuator,
     Function.FID_BLINDS_ACTUATOR_TYPE8: BlindActuator,
     Function.FID_BLIND_SENSOR: BlindSensor,
