@@ -7,6 +7,7 @@ import pytest
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.function import Function
 from src.abbfreeathome.bin.interface import Interface
+from src.abbfreeathome.channels.cover_actuator import AwningActuator
 from src.abbfreeathome.channels.dimming_actuator import DimmingActuator
 from src.abbfreeathome.channels.switch_actuator import SwitchActuator
 from src.abbfreeathome.device import Device
@@ -198,3 +199,57 @@ def test_channels_data_property_unchanged(test_device_with_channels):
     # Should be raw dict data, not Channel objects
     assert isinstance(channels_data["ch0000"], dict)
     assert channels_data["ch0000"]["displayName"] == "Test Switch"
+
+
+@pytest.mark.asyncio
+async def test_blinds_actuator_type3_loads_as_awning(
+    mock_api, mock_device, mock_floorplan
+):
+    """Test function ID 1823 (BLINDS_ACTUATOR_TYPE3) maps to AwningActuator."""
+    channels_data = {
+        "ch0009": {
+            "displayName": "Awning",
+            "functionID": "1823",
+            "inputs": {
+                "idp0000": {"pairingID": 32, "value": "0"},
+                "idp0002": {"pairingID": 35, "value": "0"},
+            },
+            "outputs": {
+                "odp0000": {"pairingID": 288, "value": "0"},
+                "odp0001": {"pairingID": 289, "value": "0"},
+            },
+            "parameters": {},
+        },
+    }
+    device = Device(
+        device_serial="ABB7F500E17A",
+        device_id="2039",
+        display_name="Test Device",
+        interface=Interface.WIRED_BUS,
+        unresponsive=False,
+        unresponsive_counter=0,
+        defect=False,
+        floor="00000000-0000-0000-0000-000000000000",
+        room="00000000-0000-0000-0000-000000000001",
+        floor_name="Ground Floor",
+        room_name="Living Room",
+        device_reboots="0",
+        native_id=None,
+        parameters={},
+        channels_data=channels_data,
+        api=mock_api,
+    )
+    awning = device.load_channels(mock_floorplan)["ch0009"]
+
+    assert type(awning) is AwningActuator
+    # Raw 0 (retracted) -> library 100 (closed)
+    assert awning.position == 100
+    assert awning.is_closed is True
+
+    mock_api.set_datapoint.reset_mock()
+    await awning.open()
+    assert mock_api.set_datapoint.call_args.kwargs["value"] == "100"
+    await awning.close()
+    assert mock_api.set_datapoint.call_args.kwargs["value"] == "0"
+    await awning.set_position(70)
+    assert mock_api.set_datapoint.call_args.kwargs["value"] == "30"
