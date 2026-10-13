@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import ssl
+from time import monotonic
 from typing import Any
 from urllib.parse import urlparse
 
@@ -46,6 +47,13 @@ API_VERSION = "v1"
 
 # API Requests Configuration
 DEFAULT_FREEATHOME_MAX_REQUEST_TRIES = 5
+
+# Window (in seconds) after a successful websocket (re)connect during which the
+# SysAP may replay a full datapoint snapshot. Datapoints received inside this
+# window update the cache but only fan out callbacks when their value actually
+# changed, preventing the phantom callback flood described in issue #239 while
+# still surfacing state that genuinely changed while the connection was down.
+WS_PRIMING_SECONDS = 3.0
 
 VIRTUAL_DEVICE_ROOT_SCHEMA = vol.Schema(
     {
@@ -229,6 +237,7 @@ class FreeAtHomeApi(SSLContextMixin):
         verify_ssl: bool = True,
         ssl_cert_ca_file: str | None = None,
         wait_for_result: bool = True,
+        enable_priming: bool = True,
     ) -> None:
         """
         Initialize the FreeAtHomeApi class.
@@ -251,6 +260,11 @@ class FreeAtHomeApi(SSLContextMixin):
                 (True) or use fire-and-forget mode (False). If set to
                 False, relies on websocket for state updates and errors
                 are only logged. Defaults to True.
+            enable_priming: Whether to enable the post-(re)connect
+                priming window that suppresses no-op callback floods when
+                the SysAP replays a full datapoint snapshot (issue #239).
+                Set to False to restore the legacy behavior. Defaults to
+                True.
 
         Note:
             When using fire-and-forget mode (i.e.,
@@ -277,6 +291,8 @@ class FreeAtHomeApi(SSLContextMixin):
         self._ssl_cert_ca_file: None | str = ssl_cert_ca_file
         self._background_tasks: set[asyncio.Task] = set()
         self._wait_for_result = wait_for_result
+        self._is_priming_enabled: bool = enable_priming
+        self._priming_until: float = 0.0
 
     async def __aenter__(self):
         """Async enter and return self."""
@@ -508,6 +524,20 @@ class FreeAtHomeApi(SSLContextMixin):
         """Returns whether the websocket is connected."""
         return self._ws_response is not None and not self._ws_response.closed
 
+    @property
+    def is_priming(self) -> bool:
+        """
+        Whether we are inside the post-(re)connect priming window.
+
+        During this window the SysAP may replay a full datapoint snapshot. The
+        caller should update channel caches but suppress callback fan-out for
+        datapoints whose value did not change, so a no-op snapshot does not look
+        like real events (issue #239).
+
+        Always returns False when priming is disabled (``enable_priming=False``).
+        """
+        return self._is_priming_enabled and monotonic() < self._priming_until
+
     async def ws_close(self):
         """Close the websocket session."""
         await self.ws_disconnect()
@@ -532,6 +562,10 @@ class FreeAtHomeApi(SSLContextMixin):
             ssl=ssl_context,
         )
         _LOGGER.info("Websocket connected %s", _url)
+
+        # Begin the priming window: the SysAP may now replay a full datapoint
+        # snapshot that should not be treated as real events.
+        self._priming_until = monotonic() + WS_PRIMING_SECONDS
 
     async def ws_disconnect(self):
         """Close the websockets connection."""

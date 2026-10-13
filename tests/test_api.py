@@ -1,6 +1,7 @@
 """Test code to test all FreeAtHome class."""
 
 import asyncio
+from time import monotonic
 from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 
 import aiohttp
@@ -492,6 +493,39 @@ async def test_ws_connect(api):
     """Test the ws_connect function."""
     with patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock):
         await api.ws_connect()
+
+
+@pytest.mark.asyncio
+async def test_ws_connect_starts_priming_window(api):
+    """
+    ws_connect opens a priming window during which is_priming is True.
+
+    Regression for #239: the window lets the caller suppress the SysAP's
+    post-(re)connect snapshot replay.
+    """
+    assert api.is_priming is False
+    with patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock):
+        await api.ws_connect()
+
+    # Immediately after connecting we are priming.
+    assert api.is_priming is True
+
+    # Once the window has elapsed, priming is False again.
+    api._priming_until = monotonic() - 0.1
+    assert api.is_priming is False
+    assert api_module.WS_PRIMING_SECONDS > 0
+
+
+@pytest.mark.asyncio
+async def test_ws_connect_priming_disabled(api):
+    """When priming is disabled, is_priming stays False after connecting."""
+    api._is_priming_enabled = False
+    with patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock):
+        await api.ws_connect()
+
+    # Even though the window was armed, the disabled flag forces False.
+    assert api._priming_until > monotonic()
+    assert api.is_priming is False
 
 
 @pytest.mark.asyncio

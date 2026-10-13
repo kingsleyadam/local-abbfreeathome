@@ -126,3 +126,35 @@ def test_update_channel(virtual_switch_actuator):
     # Test scenario where websocket sends update not relevant to the state.
     virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/idp0001", "1")
     assert virtual_switch_actuator.state is False
+
+
+def test_update_channel_priming_suppresses_noop_callback(virtual_switch_actuator):
+    """
+    During priming an unchanged datapoint updates cache but fires no callback.
+
+    A changed datapoint during priming still fires, so genuinely-changed state
+    is surfaced after a reconnect (#239 suppress-no-ops).
+    """
+    callback = MagicMock()
+    virtual_switch_actuator.register_callback(
+        callback_attribute="state", callback=callback
+    )
+
+    # Seed a known state outside priming.
+    virtual_switch_actuator.update_channel("AL_SWITCH_ON_OFF/odp0000", "1")
+    assert virtual_switch_actuator.state is True
+    callback.reset_mock()
+
+    # No-op replay during priming -> suppressed.
+    virtual_switch_actuator.update_channel(
+        "AL_SWITCH_ON_OFF/odp0000", "1", is_priming=True
+    )
+    assert virtual_switch_actuator.state is True
+    callback.assert_not_called()
+
+    # Changed value during priming -> still fires.
+    virtual_switch_actuator.update_channel(
+        "AL_SWITCH_ON_OFF/odp0000", "0", is_priming=True
+    )
+    assert virtual_switch_actuator.state is False
+    callback.assert_called_once()
