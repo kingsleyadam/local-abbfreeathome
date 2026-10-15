@@ -12,6 +12,7 @@ from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
     VirtualSwitchActuator,
 )
 from src.abbfreeathome.device import Device
+from src.abbfreeathome.floorplan import Floorplan
 from src.abbfreeathome.freeathome import FreeAtHome
 
 
@@ -1003,3 +1004,107 @@ async def test_unload_channel_invalid_serial(api_mock):
     # Should not change anything
     updated_channels = freeathome.get_channels()
     assert len(updated_channels) == initial_count
+
+
+def _params_freeathome(freeathome):
+    device = Device(
+        device_serial="ABB7F500E17A",
+        device_id="910C",
+        display_name="Test Device",
+        interface=Interface.WIRED_BUS,
+        parameters={"par00ed": "1"},
+        channels_data={
+            "ch0000": {
+                "functionID": "0007",
+                "floor": "01",
+                "room": "01",
+                "parameters": {"par0002": "50"},
+            }
+        },
+        api=freeathome.api,
+    )
+    device.load_channels(floorplan=Floorplan())
+    freeathome._devices["ABB7F500E17A"] = device
+    return device, device.channels["ch0000"]
+
+
+@pytest.mark.asyncio
+async def test_update_parameters_from_devices(freeathome):
+    """Parameter changes in the websocket `devices` payload fire callbacks."""
+    device, channel = _params_freeathome(freeathome)
+    channel_cb, device_cb = MagicMock(), MagicMock()
+    channel.register_parameter_callback(channel_cb)
+    device.register_parameter_callback(device_cb)
+
+    data = {
+        "devices": {
+            "ABB7F500E17A": {
+                "parameters": {"par00ed": "2"},
+                "channels": {"ch0000": {"parameters": {"par0002": "60"}}},
+            },
+            "UNKNOWN": {"parameters": {"par0001": "1"}},
+        }
+    }
+    await freeathome.update(data)
+
+    assert channel.get_parameter("par0002") == "60"
+    assert device.get_parameter(0xED) == "2"
+    channel_cb.assert_called_once()
+    device_cb.assert_called_once()
+
+    # Unchanged values do not fire again
+    await freeathome.update(data)
+    channel_cb.assert_called_once()
+    device_cb.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_update_parameters_from_parameters_map(freeathome):
+    """Parameter changes in the top-level `parameters` payload are applied."""
+    device, channel = _params_freeathome(freeathome)
+    filtered_cb, other_cb = MagicMock(), MagicMock()
+    channel.register_parameter_callback(filtered_cb, parameter_id="par0002")
+    channel.register_parameter_callback(other_cb, parameter_id=0x99)
+
+    await freeathome.update(
+        {
+            "parameters": {
+                "ABB7F500E17A/ch0000/par0002": "70",
+                "ABB7F500E17A/par00ed": "3",
+                "ABB7F500E17A/ch0009/par0002": "1",
+                "NOPE/par0001": "1",
+            }
+        }
+    )
+
+    assert channel.parameters == {"par0002": "70"}
+    assert device.parameters == {"par00ed": "3"}
+    filtered_cb.assert_called_once()
+    other_cb.assert_not_called()
+
+    channel.remove_parameter_callback(filtered_cb, parameter_id="par0002")
+    await freeathome.update({"parameters": {"ABB7F500E17A/ch0000/par0002": "80"}})
+    filtered_cb.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_update_parameters_from_devices_skips_unknown_channels(freeathome):
+    """Unknown channels and malformed payloads in `devices` are ignored."""
+    device, channel = _params_freeathome(freeathome)
+
+    await freeathome.update(
+        {
+            "devices": {
+                "ABB7F500E17A": {
+                    "channels": {
+                        "ch0009": {"parameters": {"par0002": "1"}},
+                        "ch0000": "invalid",
+                    }
+                },
+                "ABB7F500E17B": "invalid",
+            }
+        }
+    )
+
+    assert channel.parameters == {"par0002": "50"}
+    assert device.parameters == {"par00ed": "1"}

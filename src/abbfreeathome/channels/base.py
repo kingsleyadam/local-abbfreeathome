@@ -11,6 +11,7 @@ from ..exceptions import (
     InvalidDeviceChannelParameter,
     UnknownCallbackAttributeException,
 )
+from ..parameters import ParametersMixin
 
 if TYPE_CHECKING:
     from ..device import Device
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class Base:
+class Base(ParametersMixin):
     """Free@Home Base Class."""
 
     _state_refresh_pairings: list[Pairing] = []
