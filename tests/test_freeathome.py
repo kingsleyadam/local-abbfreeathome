@@ -1108,3 +1108,41 @@ async def test_update_parameters_from_devices_skips_unknown_channels(freeathome)
 
     assert channel.parameters == {"par0002": "50"}
     assert device.parameters == {"par00ed": "1"}
+
+
+@pytest.mark.asyncio
+async def test_update_applies_parameters_before_datapoints(freeathome):
+    """A parameter change is in effect for datapoints in the same message."""
+    api = freeathome.api
+    api.is_priming = False
+    device = Device(
+        device_serial="ABB7F500E17A",
+        device_id="910C",
+        display_name="Test Device",
+        interface=Interface.WIRED_BUS,
+        channels_data={
+            "ch0000": {
+                "functionID": "0000",
+                "floor": "01",
+                "room": "01",
+                "outputs": {"odp0000": {"pairingID": 256, "value": "0"}},
+                "parameters": {"par0007": "1"},
+            }
+        },
+        api=api,
+    )
+    device.load_channels(floorplan=Floorplan())
+    freeathome._devices["ABB7F500E17A"] = device
+    channel = device.channels["ch0000"]
+    led_callback = MagicMock()
+    channel.register_callback("led", led_callback)
+
+    await freeathome.update(
+        {
+            "parameters": {"ABB7F500E17A/ch0000/par0007": "2"},
+            "datapoints": {"ABB7F500E17A/ch0000/odp0000": "1"},
+        }
+    )
+
+    assert channel.led is True
+    led_callback.assert_called_once()

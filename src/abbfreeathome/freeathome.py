@@ -111,6 +111,10 @@ class FreeAtHome:
         # replayed snapshot, not real events: update caches but skip callbacks.
         _is_priming = self.api.is_priming
 
+        # Parameters first: channels read them (e.g. LED mode) to interpret
+        # datapoints arriving in the same message.
+        self._update_parameters(data)
+
         for _datapoint_key, _datapoint_value in (data.get("datapoints") or {}).items():
             _unique_id = "/".join(_datapoint_key.split("/")[:-1])
 
@@ -121,8 +125,6 @@ class FreeAtHome:
                 )
             except KeyError:
                 continue
-
-        self._update_parameters(data)
 
     def _update_parameters(self, data: dict) -> None:
         """Apply parameter changes from a websocket message."""
