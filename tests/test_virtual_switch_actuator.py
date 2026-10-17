@@ -158,3 +158,57 @@ def test_update_channel_priming_suppresses_noop_callback(virtual_switch_actuator
     )
     assert virtual_switch_actuator.state is False
     callback.assert_called_once()
+
+
+@pytest.mark.parametrize("is_priming", [False, True])
+def test_update_scene_repeated_request(virtual_switch_actuator, is_priming):
+    """Test every scene emits a request, including repeats and event-only users."""
+    callback = MagicMock()
+    virtual_switch_actuator.register_callback("requested_state", callback)
+
+    for value in ("1", "1", "0", "0"):
+        virtual_switch_actuator.update_scene(
+            "60004F56EA24/ch0000/odp0000", value, is_priming=is_priming
+        )
+        assert virtual_switch_actuator.state is (value == "1")
+        assert virtual_switch_actuator.requested_state is (value == "1")
+
+    assert callback.call_count == 4
+    virtual_switch_actuator.device.api.set_datapoint.assert_not_called()
+
+
+def test_update_scene_without_callbacks(virtual_switch_actuator):
+    """Test scene state is updated when no subscribers are registered."""
+    virtual_switch_actuator.update_scene("60004F56EA24/ch0000/odp0000", "1")
+
+    assert virtual_switch_actuator.state is True
+    assert virtual_switch_actuator.requested_state is True
+
+
+@pytest.mark.parametrize("datapoint", ["odp0001", "odp9999"])
+def test_update_scene_unrelated_output(virtual_switch_actuator, datapoint):
+    """Test unrelated and unknown scene outputs do not emit switch requests."""
+    callback = MagicMock()
+    virtual_switch_actuator.register_callback("requested_state", callback)
+
+    virtual_switch_actuator.update_scene(f"60004F56EA24/ch0000/{datapoint}", "1")
+
+    assert virtual_switch_actuator.state is False
+    assert virtual_switch_actuator.requested_state is None
+    callback.assert_not_called()
+
+
+def test_update_channel_output_feedback_does_not_request(virtual_switch_actuator):
+    """Test output feedback cannot retrigger an event-driven switch automation."""
+    callback = MagicMock()
+    virtual_switch_actuator.register_callback("requested_state", callback)
+
+    virtual_switch_actuator.update_scene("60004F56EA24/ch0000/odp0000", "1")
+    callback.assert_called_once_with()
+    callback.reset_mock()
+
+    virtual_switch_actuator.update_channel("60004F56EA24/ch0000/odp0000", "1")
+    virtual_switch_actuator.update_channel("60004F56EA24/ch0000/odp0000", "0")
+
+    assert virtual_switch_actuator.state is False
+    callback.assert_not_called()

@@ -131,6 +131,22 @@ class VirtualSwitchActuator(Base):
         if is_priming and not _changed:
             return
 
-        if _callback_attribute and self._callbacks[_callback_attribute]:
-            for callback in self._callbacks[_callback_attribute]:
-                callback()
+        for callback in self._callbacks.get(_callback_attribute, ()):
+            callback()
+
+    def update_scene(
+        self, datapoint_key: str, datapoint_value: str, is_priming: bool = False
+    ):
+        """Update scene output state and notify subscribers of its switch request."""
+        self.update_channel(datapoint_key, datapoint_value, is_priming=is_priming)
+
+        _io_key = datapoint_key.rsplit("/", maxsplit=1)[-1]
+        _output = self._outputs.get(_io_key, {})
+        if _output.get("pairingID") != Pairing.AL_INFO_ON_OFF.value:
+            return
+
+        # A triggered scene is a command, even if its value is unchanged or the
+        # websocket is priming. Ordinary output feedback must not emit requests.
+        self._requested_state = datapoint_value == "1"
+        for callback in self._callbacks.get("requested_state", ()):
+            callback()
