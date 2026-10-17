@@ -8,9 +8,10 @@ from .bin.interface import Interface
 from .channels.base import Base
 from .const import FUNCTION_CHANNEL_MAPPING, FUNCTION_VIRTUAL_CHANNEL_MAPPING
 from .floorplan import Floorplan
+from .parameters import ParametersMixin
 
 
-class Device:
+class Device(ParametersMixin):
     """Represents a Free@Home device with all its attributes."""
 
     def __init__(
@@ -119,11 +120,6 @@ class Device:
         return self._native_id
 
     @property
-    def parameters(self) -> dict[str, dict[str, Any]]:
-        """Return the device parameters."""
-        return self._parameters
-
-    @property
     def channels_data(self) -> dict[str, dict]:
         """Return the device channels data."""
         return self._channels_data
@@ -196,7 +192,7 @@ class Device:
                 channel_name=_channel_name,
                 inputs=channel_data.get("inputs", {}),
                 outputs=channel_data.get("outputs", {}),
-                parameters=channel_data.get("parameters", {}),
+                parameters=channel_data.setdefault("parameters", {}),
                 floor_name=_channel_floor_name or self.floor_name,
                 room_name=_channel_room_name or self.room_name,
             )
