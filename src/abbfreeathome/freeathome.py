@@ -115,14 +115,31 @@ class FreeAtHome:
         # datapoints arriving in the same message.
         self._update_parameters(data)
 
-        for _datapoint_key, _datapoint_value in (data.get("datapoints") or {}).items():
+        # Scene output values use a nested structure instead of datapoint paths.
+        # Merge them into a copy so each datapoint is dispatched only once.
+        _scene_datapoints = {}
+        for _serial, _device in (data.get("scenesTriggered") or {}).items():
+            for _channel_id, _channel_data in (_device.get("channels") or {}).items():
+                for _output_id, _output in (_channel_data.get("outputs") or {}).items():
+                    _datapoint_key = f"{_serial}/{_channel_id}/{_output_id}"
+                    _scene_datapoints[_datapoint_key] = _output["value"]
+
+        _datapoints = dict(data.get("datapoints") or {})
+        _datapoints.update(_scene_datapoints)
+
+        for _datapoint_key, _datapoint_value in _datapoints.items():
             _unique_id = "/".join(_datapoint_key.split("/")[:-1])
 
             try:
                 _channel = _channels[_unique_id]
-                _channel.update_channel(
-                    _datapoint_key, _datapoint_value, is_priming=_is_priming
-                )
+                if _datapoint_key in _scene_datapoints:
+                    _channel.update_scene(
+                        _datapoint_key, _datapoint_value, is_priming=_is_priming
+                    )
+                else:
+                    _channel.update_channel(
+                        _datapoint_key, _datapoint_value, is_priming=_is_priming
+                    )
             except KeyError:
                 continue
 

@@ -163,6 +163,12 @@ class Base(ParametersMixin):
             for callback in self._callbacks[_callback_attribute]:
                 callback()
 
+    def update_scene(
+        self, datapoint_key: str, datapoint_value: str, is_priming: bool = False
+    ):
+        """Update an output reported by a triggered scene."""
+        self.update_channel(datapoint_key, datapoint_value, is_priming=is_priming)
+
     def register_callback(
         self, callback_attribute: str, callback: Callable[[], None]
     ) -> None:

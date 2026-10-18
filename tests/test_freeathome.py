@@ -1,5 +1,6 @@
 """Test code to test all FreeAtHome class."""
 
+from copy import deepcopy
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -583,6 +584,224 @@ async def test_update(freeathome):
     channel.update_channel.assert_called_once_with(
         "ABB7F500E17A/ch0003/256", "0", is_priming=False
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("is_priming", [False, True])
+@pytest.mark.parametrize(("initial_value", "value"), [("0", "1"), ("1", "0")])
+async def test_update_scene_virtual_switch(
+    freeathome_virtuals, api_mock, is_priming, initial_value, value
+):
+    """Test scene outputs update state and emit a virtual switch request."""
+    serial = "6000D2CB27B2"
+    devices = api_mock.get_configuration.return_value["devices"]
+    devices[serial] = devices.pop("60005D808C54")
+    devices[serial]["channels"]["ch0000"]["outputs"]["odp0000"]["value"] = initial_value
+    await freeathome_virtuals.load()
+    channel = freeathome_virtuals.get_channels()[f"{serial}/ch0000"]
+    callback = MagicMock()
+    channel.register_callback(callback_attribute="state", callback=callback)
+    request_callback = MagicMock()
+    channel.register_callback(
+        callback_attribute="requested_state", callback=request_callback
+    )
+    api_mock.is_priming = is_priming
+    data = {
+        "datapoints": {f"{serial}/ch0000/idp0003": "4"},
+        "parameters": {},
+        "devices": {},
+        "devicesAdded": [],
+        "devicesRemoved": [],
+        "scenesTriggered": {
+            serial: {
+                "channels": {
+                    "ch0000": {
+                        "outputs": {"odp0000": {"value": value, "pairingID": 256}}
+                    }
+                }
+            }
+        },
+    }
+
+    await freeathome_virtuals.update(data)
+
+    assert channel.state is (value == "1")
+    assert channel._outputs["odp0000"]["value"] == value
+    assert channel._inputs["idp0003"]["value"] == "4"
+    callback.assert_called_once_with()
+    assert channel.requested_state is (value == "1")
+    request_callback.assert_called_once_with()
+    api_mock.set_datapoint.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_update_scene_duplicate_datapoint(freeathome_virtuals, api_mock):
+    """Test an output present in both sections only notifies the channel once."""
+    await freeathome_virtuals.load()
+    channel = freeathome_virtuals.get_channels()["60005D808C54/ch0000"]
+    callback = MagicMock()
+    channel.register_callback(callback_attribute="state", callback=callback)
+    request_callback = MagicMock()
+    channel.register_callback("requested_state", request_callback)
+    api_mock.is_priming = False
+    data = {
+        "datapoints": {"60005D808C54/ch0000/odp0000": "1"},
+        "scenesTriggered": {
+            "60005D808C54": {
+                "channels": {
+                    "ch0000": {"outputs": {"odp0000": {"value": "1", "pairingID": 256}}}
+                }
+            }
+        },
+    }
+
+    original_data = deepcopy(data)
+    await freeathome_virtuals.update(data)
+
+    assert channel.state is True
+    callback.assert_called_once_with()
+    request_callback.assert_called_once_with()
+    assert data == original_data
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("is_priming", [False, True])
+async def test_update_scene_unchanged_output(freeathome_virtuals, api_mock, is_priming):
+    """Test scene outputs preserve the existing priming callback behavior."""
+    await freeathome_virtuals.load()
+    channel = freeathome_virtuals.get_channels()["60005D808C54/ch0000"]
+    callback = MagicMock()
+    channel.register_callback(callback_attribute="state", callback=callback)
+    api_mock.is_priming = is_priming
+
+    await freeathome_virtuals.update(
+        {
+            "scenesTriggered": {
+                "60005D808C54": {
+                    "channels": {
+                        "ch0000": {
+                            "outputs": {"odp0000": {"value": "0", "pairingID": 256}}
+                        }
+                    }
+                }
+            }
+        }
+    )
+
+    assert channel.state is False
+    if is_priming:
+        callback.assert_not_called()
+    else:
+        callback.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_update_scene_without_datapoints(freeathome_virtuals, api_mock):
+    """Test scene-only updates skip unknown channels and empty scene sections."""
+    await freeathome_virtuals.load()
+    channel = freeathome_virtuals.get_channels()["60005D808C54/ch0000"]
+    callback = MagicMock()
+    channel.register_callback(callback_attribute="state", callback=callback)
+    api_mock.is_priming = False
+    output = {"outputs": {"odp0000": {"value": "1", "pairingID": 256}}}
+    data = {
+        "scenesTriggered": {
+            "unknown": {"channels": {"ch0000": output}},
+            "60005D808C54": {
+                "channels": {"ch9999": output, "ch0001": {}, "ch0000": output}
+            },
+            "empty": {},
+        }
+    }
+
+    await freeathome_virtuals.update(data)
+
+    assert channel.state is True
+    callback.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("data", [{}, {"scenesTriggered": {}}])
+async def test_update_empty_data(freeathome_virtuals, data):
+    """Test updates without datapoints or scene outputs are ignored."""
+    await freeathome_virtuals.load()
+    await freeathome_virtuals.update(data)
+
+
+@pytest.mark.asyncio
+async def test_update_scene_physical_switch(freeathome, api_mock):
+    """Test physical channels still receive scene output state updates."""
+    await freeathome.load()
+    channel = freeathome.get_channels()["ABB7F500E17A/ch0003"]
+    callback = MagicMock()
+    channel.register_callback("state", callback)
+    api_mock.is_priming = False
+
+    await freeathome.update(
+        {
+            "scenesTriggered": {
+                "ABB7F500E17A": {
+                    "channels": {
+                        "ch0003": {
+                            "outputs": {"odp0000": {"value": "1", "pairingID": 256}}
+                        }
+                    }
+                }
+            }
+        }
+    )
+
+    assert channel.state is True
+    callback.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_update_scene_multiple_virtual_switches(freeathome_virtuals, api_mock):
+    """Test both reported devices emit requests and output echoes emit none."""
+    serials = ("600061C8C3F9", "6000D2CB27B2")
+    devices = api_mock.get_configuration.return_value["devices"]
+    device = devices.pop("60005D808C54")
+    for serial in serials:
+        devices[serial] = deepcopy(device)
+    await freeathome_virtuals.load()
+    api_mock.is_priming = False
+    events = {serial: [] for serial in serials}
+    channels = freeathome_virtuals.get_channels()
+    for serial in serials:
+        channel = channels[f"{serial}/ch0000"]
+        channel.register_callback(
+            "requested_state",
+            lambda serial=serial, channel=channel: events[serial].append(
+                channel.requested_state
+            ),
+        )
+
+    for value in ("1", "1", "0"):
+        await freeathome_virtuals.update(
+            {
+                "datapoints": {f"{serial}/ch0000/idp0003": "4" for serial in serials},
+                "scenesTriggered": {
+                    serial: {
+                        "channels": {
+                            "ch0000": {
+                                "outputs": {
+                                    "odp0000": {"value": value, "pairingID": 256}
+                                }
+                            }
+                        }
+                    }
+                    for serial in serials
+                },
+            }
+        )
+        # The automation confirms the virtual output through the API. Its
+        # subsequent websocket echo must not trigger another switch request.
+        await freeathome_virtuals.update(
+            {"datapoints": {f"{serial}/ch0000/odp0000": value for serial in serials}}
+        )
+
+    assert events == {serial: [True, True, False] for serial in serials}
+    api_mock.set_datapoint.assert_not_called()
 
 
 @pytest.mark.asyncio
