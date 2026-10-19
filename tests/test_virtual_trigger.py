@@ -80,6 +80,31 @@ def test_update_channel(virtual_trigger):
     assert virtual_trigger.triggered is False
 
 
+def test_update_channel_priming_suppresses_noop_callback(virtual_trigger):
+    """
+    During priming an unchanged datapoint updates cache but fires no callback.
+
+    A changed datapoint during priming still fires (#239 suppress-no-ops).
+    """
+    callback = MagicMock()
+    virtual_trigger.register_callback(callback_attribute="triggered", callback=callback)
+
+    # Seed a known state outside priming.
+    virtual_trigger.update_channel("AL_TIMED_START_STOP/idp0001", "1")
+    assert virtual_trigger.triggered is True
+    callback.reset_mock()
+
+    # No-op replay during priming -> suppressed.
+    virtual_trigger.update_channel("AL_TIMED_START_STOP/idp0001", "1", is_priming=True)
+    assert virtual_trigger.triggered is True
+    callback.assert_not_called()
+
+    # Changed value during priming -> still fires.
+    virtual_trigger.update_channel("AL_TIMED_START_STOP/idp0001", "0", is_priming=True)
+    assert virtual_trigger.triggered is False
+    callback.assert_called_once()
+
+
 def test_update_channel_output(mock_api, mock_device):
     """Test updating the channel state from an output datapoint."""
     inputs = {

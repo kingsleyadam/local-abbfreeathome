@@ -17,6 +17,8 @@ DATAPOINT = f"{SERIAL}/ch0000/odp0000"
 def api():
     """Return a scene configuration with a cached, non-empty output value."""
     api = AsyncMock(spec=FreeAtHomeApi)
+    # Test live requests after the reconnect snapshot has finished.
+    api.is_priming = False
     api.get_configuration.return_value = {
         "devices": {
             SERIAL: {
@@ -152,3 +154,43 @@ async def test_mixed_websocket_message(freeathome):
         }
     )
     requested.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_snapshot_replay_suppresses_unchanged_scene(freeathome, api):
+    """Suppress cached snapshot values while preserving identical live requests."""
+    scene = freeathome.get_channels_by_class(Scene)[0]
+    requested = Mock()
+    scene.register_callback("scene_control", requested)
+    api.is_priming = True
+    await freeathome.update({"datapoints": {DATAPOINT: "2"}})
+    requested.assert_not_called()
+    api.is_priming = False
+    await freeathome.update({"datapoints": {DATAPOINT: "2"}})
+    requested.assert_called_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("is_priming", [False, True])
+async def test_explicit_scene_requests_during_priming(freeathome, api, is_priming):
+    """Emit repeated scene notifications once even if also listed as datapoints."""
+    scene = freeathome.get_channels_by_class(Scene)[0]
+    requested = Mock()
+    scene.register_callback("scene_control", requested)
+    api.is_priming = is_priming
+    for _ in range(3):
+        await freeathome.update(
+            {
+                "datapoints": {DATAPOINT: "2"},
+                "scenesTriggered": {
+                    SERIAL: {
+                        "channels": {
+                            "ch0000": {
+                                "outputs": {"odp0000": {"pairingID": 4, "value": "2"}}
+                            }
+                        }
+                    }
+                },
+            }
+        )
+    assert requested.call_count == 3

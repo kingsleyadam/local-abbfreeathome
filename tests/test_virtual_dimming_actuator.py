@@ -41,6 +41,8 @@ def device(mock_floorplan):
             },
         },
     )
+    # Test live requests after the reconnect snapshot has finished.
+    instance.api.is_priming = False
     instance.load_channels(mock_floorplan)
     return instance
 
@@ -225,3 +227,18 @@ async def test_websocket_dispatch(device, dimmer):
     for value in ("1", "0"):
         await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0000": value}})
         assert dimmer.requested_state is (value == "1")
+
+
+@pytest.mark.asyncio
+async def test_snapshot_replay_suppresses_unchanged_dimmer(device, dimmer):
+    """Suppress replayed requests while allowing identical live dimmer presses."""
+    freeathome = FreeAtHome(device.api, include_orphan_channels=True)
+    freeathome._devices[device.device_serial] = device
+    requested = Mock()
+    dimmer.register_callback("requested_dimming_state", requested)
+    device.api.is_priming = True
+    await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0001": "9"}})
+    requested.assert_not_called()
+    device.api.is_priming = False
+    await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0001": "9"}})
+    requested.assert_called_once()

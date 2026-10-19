@@ -1,5 +1,6 @@
 """Test code to test all FreeAtHome class."""
 
+from copy import deepcopy
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -12,6 +13,7 @@ from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
     VirtualSwitchActuator,
 )
 from src.abbfreeathome.device import Device
+from src.abbfreeathome.floorplan import Floorplan
 from src.abbfreeathome.freeathome import FreeAtHome
 
 
@@ -572,11 +574,308 @@ async def test_update(freeathome):
     # Mock the device.channels to return our mock channel
     device._channels = {"ch0003": channel}
 
+    # Steady-state: the api is not in the priming window.
+    freeathome.api.is_priming = False
+
     data = {
         "datapoints": {"ABB7F500E17A/ch0003/256": "0", "ABB7F500E17A/ch0001/0": "0"}
     }
     await freeathome.update(data)
-    channel.update_channel.assert_called_once_with("ABB7F500E17A/ch0003/256", "0")
+    channel.update_channel.assert_called_once_with(
+        "ABB7F500E17A/ch0003/256", "0", is_priming=False
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("is_priming", [False, True])
+@pytest.mark.parametrize(("initial_value", "value"), [("0", "1"), ("1", "0")])
+async def test_update_scene_virtual_switch(
+    freeathome_virtuals, api_mock, is_priming, initial_value, value
+):
+    """Test scene outputs update state and emit a virtual switch request."""
+    serial = "6000D2CB27B2"
+    devices = api_mock.get_configuration.return_value["devices"]
+    devices[serial] = devices.pop("60005D808C54")
+    devices[serial]["channels"]["ch0000"]["outputs"]["odp0000"]["value"] = initial_value
+    await freeathome_virtuals.load()
+    channel = freeathome_virtuals.get_channels()[f"{serial}/ch0000"]
+    callback = MagicMock()
+    channel.register_callback(callback_attribute="state", callback=callback)
+    request_callback = MagicMock()
+    channel.register_callback(
+        callback_attribute="requested_state", callback=request_callback
+    )
+    api_mock.is_priming = is_priming
+    data = {
+        "datapoints": {f"{serial}/ch0000/idp0003": "4"},
+        "parameters": {},
+        "devices": {},
+        "devicesAdded": [],
+        "devicesRemoved": [],
+        "scenesTriggered": {
+            serial: {
+                "channels": {
+                    "ch0000": {
+                        "outputs": {"odp0000": {"value": value, "pairingID": 256}}
+                    }
+                }
+            }
+        },
+    }
+
+    await freeathome_virtuals.update(data)
+
+    assert channel.state is (value == "1")
+    assert channel._outputs["odp0000"]["value"] == value
+    assert channel._inputs["idp0003"]["value"] == "4"
+    callback.assert_called_once_with()
+    assert channel.requested_state is (value == "1")
+    request_callback.assert_called_once_with()
+    api_mock.set_datapoint.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_update_scene_duplicate_datapoint(freeathome_virtuals, api_mock):
+    """Test an output present in both sections only notifies the channel once."""
+    await freeathome_virtuals.load()
+    channel = freeathome_virtuals.get_channels()["60005D808C54/ch0000"]
+    callback = MagicMock()
+    channel.register_callback(callback_attribute="state", callback=callback)
+    request_callback = MagicMock()
+    channel.register_callback("requested_state", request_callback)
+    api_mock.is_priming = False
+    data = {
+        "datapoints": {"60005D808C54/ch0000/odp0000": "1"},
+        "scenesTriggered": {
+            "60005D808C54": {
+                "channels": {
+                    "ch0000": {"outputs": {"odp0000": {"value": "1", "pairingID": 256}}}
+                }
+            }
+        },
+    }
+
+    original_data = deepcopy(data)
+    await freeathome_virtuals.update(data)
+
+    assert channel.state is True
+    callback.assert_called_once_with()
+    request_callback.assert_called_once_with()
+    assert data == original_data
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("is_priming", [False, True])
+async def test_update_scene_unchanged_output(freeathome_virtuals, api_mock, is_priming):
+    """Test scene outputs preserve the existing priming callback behavior."""
+    await freeathome_virtuals.load()
+    channel = freeathome_virtuals.get_channels()["60005D808C54/ch0000"]
+    callback = MagicMock()
+    channel.register_callback(callback_attribute="state", callback=callback)
+    api_mock.is_priming = is_priming
+
+    await freeathome_virtuals.update(
+        {
+            "scenesTriggered": {
+                "60005D808C54": {
+                    "channels": {
+                        "ch0000": {
+                            "outputs": {"odp0000": {"value": "0", "pairingID": 256}}
+                        }
+                    }
+                }
+            }
+        }
+    )
+
+    assert channel.state is False
+    if is_priming:
+        callback.assert_not_called()
+    else:
+        callback.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_update_scene_without_datapoints(freeathome_virtuals, api_mock):
+    """Test scene-only updates skip unknown channels and empty scene sections."""
+    await freeathome_virtuals.load()
+    channel = freeathome_virtuals.get_channels()["60005D808C54/ch0000"]
+    callback = MagicMock()
+    channel.register_callback(callback_attribute="state", callback=callback)
+    api_mock.is_priming = False
+    output = {"outputs": {"odp0000": {"value": "1", "pairingID": 256}}}
+    data = {
+        "scenesTriggered": {
+            "unknown": {"channels": {"ch0000": output}},
+            "60005D808C54": {
+                "channels": {"ch9999": output, "ch0001": {}, "ch0000": output}
+            },
+            "empty": {},
+        }
+    }
+
+    await freeathome_virtuals.update(data)
+
+    assert channel.state is True
+    callback.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("data", [{}, {"scenesTriggered": {}}])
+async def test_update_empty_data(freeathome_virtuals, data):
+    """Test updates without datapoints or scene outputs are ignored."""
+    await freeathome_virtuals.load()
+    await freeathome_virtuals.update(data)
+
+
+@pytest.mark.asyncio
+async def test_update_scene_physical_switch(freeathome, api_mock):
+    """Test physical channels still receive scene output state updates."""
+    await freeathome.load()
+    channel = freeathome.get_channels()["ABB7F500E17A/ch0003"]
+    callback = MagicMock()
+    channel.register_callback("state", callback)
+    api_mock.is_priming = False
+
+    await freeathome.update(
+        {
+            "scenesTriggered": {
+                "ABB7F500E17A": {
+                    "channels": {
+                        "ch0003": {
+                            "outputs": {"odp0000": {"value": "1", "pairingID": 256}}
+                        }
+                    }
+                }
+            }
+        }
+    )
+
+    assert channel.state is True
+    callback.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_update_scene_multiple_virtual_switches(freeathome_virtuals, api_mock):
+    """Test both reported devices emit requests and output echoes emit none."""
+    serials = ("600061C8C3F9", "6000D2CB27B2")
+    devices = api_mock.get_configuration.return_value["devices"]
+    device = devices.pop("60005D808C54")
+    for serial in serials:
+        devices[serial] = deepcopy(device)
+    await freeathome_virtuals.load()
+    api_mock.is_priming = False
+    events = {serial: [] for serial in serials}
+    channels = freeathome_virtuals.get_channels()
+    for serial in serials:
+        channel = channels[f"{serial}/ch0000"]
+        channel.register_callback(
+            "requested_state",
+            lambda serial=serial, channel=channel: events[serial].append(
+                channel.requested_state
+            ),
+        )
+
+    for value in ("1", "1", "0"):
+        await freeathome_virtuals.update(
+            {
+                "datapoints": {f"{serial}/ch0000/idp0003": "4" for serial in serials},
+                "scenesTriggered": {
+                    serial: {
+                        "channels": {
+                            "ch0000": {
+                                "outputs": {
+                                    "odp0000": {"value": value, "pairingID": 256}
+                                }
+                            }
+                        }
+                    }
+                    for serial in serials
+                },
+            }
+        )
+        # The automation confirms the virtual output through the API. Its
+        # subsequent websocket echo must not trigger another switch request.
+        await freeathome_virtuals.update(
+            {"datapoints": {f"{serial}/ch0000/odp0000": value for serial in serials}}
+        )
+
+    assert events == {serial: [True, True, False] for serial in serials}
+    api_mock.set_datapoint.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_update_priming_suppresses_noop_callback_flood(freeathome, api_mock):
+    """
+    Regression for #239: a no-op snapshot replay during priming is silent.
+
+    When the api reports it is priming (just after a websocket (re)connect), a
+    replayed datapoint whose value is unchanged must update the cache but NOT
+    fan out callbacks, preventing the phantom "button press" flood.
+    """
+    await freeathome.load()
+
+    _channel = freeathome.get_channels()["ABB7F500E17A/ch0000"]
+    _callback = MagicMock()
+    _channel.register_callback(callback_attribute="state", callback=_callback)
+
+    # The loaded cache for odp0000 is "0". Replaying the SAME value during
+    # priming is a no-op and must be suppressed.
+    assert _channel._outputs["odp0000"]["value"] == "0"
+    api_mock.is_priming = True
+    await freeathome.update({"datapoints": {"ABB7F500E17A/ch0000/odp0000": "0"}})
+
+    _callback.assert_not_called()
+    assert _channel._outputs["odp0000"]["value"] == "0"
+
+
+@pytest.mark.asyncio
+async def test_update_priming_fires_for_changed_value(freeathome, api_mock):
+    """
+    Regression for #239: a value changed during the outage still fires.
+
+    A datapoint that genuinely changed while the socket was down must fire a
+    callback even during the priming window. Suppress-no-ops only swallows
+    unchanged datapoints, so changed values surface and consumers do not stay
+    stale after a reconnect.
+    """
+    await freeathome.load()
+
+    _channel = freeathome.get_channels()["ABB7F500E17A/ch0000"]
+    _callback = MagicMock()
+    _channel.register_callback(callback_attribute="state", callback=_callback)
+
+    # Cache is "0"; a snapshot value of "1" is a real change -> callback fires.
+    api_mock.is_priming = True
+    await freeathome.update({"datapoints": {"ABB7F500E17A/ch0000/odp0000": "1"}})
+
+    _callback.assert_called_once()
+    assert _channel._outputs["odp0000"]["value"] == "1"
+    assert _channel.state == "on"
+
+
+@pytest.mark.asyncio
+async def test_update_after_priming_fires_on_while_on(freeathome, api_mock):
+    """
+    Regression for #239: once priming ends, real events still fire callbacks.
+
+    Crucially this includes an "on-while-on" event (a datapoint re-sent at its
+    current value), which the maintainer wants to keep delivering.
+    """
+    await freeathome.load()
+
+    _channel = freeathome.get_channels()["ABB7F500E17A/ch0000"]
+    _callback = MagicMock()
+    _channel.register_callback(callback_attribute="state", callback=_callback)
+
+    # Put the channel into a known "on" state (not priming yet; one callback).
+    api_mock.is_priming = False
+    await freeathome.update({"datapoints": {"ABB7F500E17A/ch0000/odp0000": "1"}})
+    assert _callback.call_count == 1
+
+    # Re-send the SAME value: an on-while-on press must still fire a callback.
+    await freeathome.update({"datapoints": {"ABB7F500E17A/ch0000/odp0000": "1"}})
+    assert _callback.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -924,3 +1223,145 @@ async def test_unload_channel_invalid_serial(api_mock):
     # Should not change anything
     updated_channels = freeathome.get_channels()
     assert len(updated_channels) == initial_count
+
+
+def _params_freeathome(freeathome):
+    device = Device(
+        device_serial="ABB7F500E17A",
+        device_id="910C",
+        display_name="Test Device",
+        interface=Interface.WIRED_BUS,
+        parameters={"par00ed": "1"},
+        channels_data={
+            "ch0000": {
+                "functionID": "0007",
+                "floor": "01",
+                "room": "01",
+                "parameters": {"par0002": "50"},
+            }
+        },
+        api=freeathome.api,
+    )
+    device.load_channels(floorplan=Floorplan())
+    freeathome._devices["ABB7F500E17A"] = device
+    return device, device.channels["ch0000"]
+
+
+@pytest.mark.asyncio
+async def test_update_parameters_from_devices(freeathome):
+    """Parameter changes in the websocket `devices` payload fire callbacks."""
+    device, channel = _params_freeathome(freeathome)
+    channel_cb, device_cb = MagicMock(), MagicMock()
+    channel.register_parameter_callback(channel_cb)
+    device.register_parameter_callback(device_cb)
+
+    data = {
+        "devices": {
+            "ABB7F500E17A": {
+                "parameters": {"par00ed": "2"},
+                "channels": {"ch0000": {"parameters": {"par0002": "60"}}},
+            },
+            "UNKNOWN": {"parameters": {"par0001": "1"}},
+        }
+    }
+    await freeathome.update(data)
+
+    assert channel.get_parameter("par0002") == "60"
+    assert device.get_parameter(0xED) == "2"
+    channel_cb.assert_called_once()
+    device_cb.assert_called_once()
+
+    # Unchanged values do not fire again
+    await freeathome.update(data)
+    channel_cb.assert_called_once()
+    device_cb.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_update_parameters_from_parameters_map(freeathome):
+    """Parameter changes in the top-level `parameters` payload are applied."""
+    device, channel = _params_freeathome(freeathome)
+    filtered_cb, other_cb = MagicMock(), MagicMock()
+    channel.register_parameter_callback(filtered_cb, parameter_id="par0002")
+    channel.register_parameter_callback(other_cb, parameter_id=0x99)
+
+    await freeathome.update(
+        {
+            "parameters": {
+                "ABB7F500E17A/ch0000/par0002": "70",
+                "ABB7F500E17A/par00ed": "3",
+                "ABB7F500E17A/ch0009/par0002": "1",
+                "NOPE/par0001": "1",
+            }
+        }
+    )
+
+    assert channel.parameters == {"par0002": "70"}
+    assert device.parameters == {"par00ed": "3"}
+    filtered_cb.assert_called_once()
+    other_cb.assert_not_called()
+
+    channel.remove_parameter_callback(filtered_cb, parameter_id="par0002")
+    await freeathome.update({"parameters": {"ABB7F500E17A/ch0000/par0002": "80"}})
+    filtered_cb.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_update_parameters_from_devices_skips_unknown_channels(freeathome):
+    """Unknown channels and malformed payloads in `devices` are ignored."""
+    device, channel = _params_freeathome(freeathome)
+
+    await freeathome.update(
+        {
+            "devices": {
+                "ABB7F500E17A": {
+                    "channels": {
+                        "ch0009": {"parameters": {"par0002": "1"}},
+                        "ch0000": "invalid",
+                    }
+                },
+                "ABB7F500E17B": "invalid",
+            }
+        }
+    )
+
+    assert channel.parameters == {"par0002": "50"}
+    assert device.parameters == {"par00ed": "1"}
+
+
+@pytest.mark.asyncio
+async def test_update_applies_parameters_before_datapoints(freeathome):
+    """A parameter change is in effect for datapoints in the same message."""
+    api = freeathome.api
+    api.is_priming = False
+    device = Device(
+        device_serial="ABB7F500E17A",
+        device_id="910C",
+        display_name="Test Device",
+        interface=Interface.WIRED_BUS,
+        channels_data={
+            "ch0000": {
+                "functionID": "0000",
+                "floor": "01",
+                "room": "01",
+                "outputs": {"odp0000": {"pairingID": 256, "value": "0"}},
+                "parameters": {"par0007": "1"},
+            }
+        },
+        api=api,
+    )
+    device.load_channels(floorplan=Floorplan())
+    freeathome._devices["ABB7F500E17A"] = device
+    channel = device.channels["ch0000"]
+    led_callback = MagicMock()
+    channel.register_callback("led", led_callback)
+
+    await freeathome.update(
+        {
+            "parameters": {"ABB7F500E17A/ch0000/par0007": "2"},
+            "datapoints": {"ABB7F500E17A/ch0000/odp0000": "1"},
+        }
+    )
+
+    assert channel.led is True
+    led_callback.assert_called_once()

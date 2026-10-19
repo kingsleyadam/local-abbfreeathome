@@ -11,6 +11,7 @@ from ..exceptions import (
     InvalidDeviceChannelParameter,
     UnknownCallbackAttributeException,
 )
+from ..parameters import ParametersMixin
 
 if TYPE_CHECKING:
     from ..device import Device
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
-class Base:
+class Base(ParametersMixin):
     """Free@Home Base Class."""
 
     _state_refresh_pairings: list[Pairing] = []
@@ -125,8 +126,19 @@ class Base:
             self.device_serial, self.channel_id, parameter.name
         )
 
-    def update_channel(self, datapoint_key: str, datapoint_value: str):
-        """Update the channel state."""
+    def update_channel(
+        self, datapoint_key: str, datapoint_value: str, is_priming: bool = False
+    ):
+        """
+        Update the channel state.
+
+        When ``is_priming`` is True the incoming datapoint is part of a
+        post-(re)connect snapshot replay. The cache is always updated so it
+        stays consistent with the gateway, but callbacks are suppressed for
+        datapoints whose value did not change -- preventing the phantom
+        callback flood (issue #239) while still surfacing datapoints that
+        genuinely changed while the connection was down.
+        """
         _LOGGER.info(
             "%s received updated data: %s: %s",
             self.channel_name,
@@ -134,18 +146,29 @@ class Base:
             datapoint_value,
         )
         _callback_attribute = None
+        _changed = True
         _io_key = datapoint_key.rsplit("/", maxsplit=1)[-1]
 
         if _io_key in self._outputs:
+            _changed = self._outputs[_io_key].get("value") != datapoint_value
             self._outputs[_io_key]["value"] = datapoint_value
             _callback_attribute = self._refresh_state_from_datapoint(
                 datapoint=self._outputs[_io_key]
             )
 
+        if is_priming and not _changed:
+            return
+
         # Channels may receive notifications before a consumer subscribes.
         if _callback_attribute:
             for callback in self._callbacks.get(_callback_attribute, ()):
                 callback()
+
+    def update_scene(
+        self, datapoint_key: str, datapoint_value: str, is_priming: bool = False
+    ):
+        """Update an output reported by a triggered scene."""
+        self.update_channel(datapoint_key, datapoint_value, is_priming=is_priming)
 
     def register_callback(
         self, callback_attribute: str, callback: Callable[[], None]

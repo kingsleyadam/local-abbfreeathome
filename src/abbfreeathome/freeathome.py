@@ -107,14 +107,75 @@ class FreeAtHome:
         """Update channel based on websocket data."""
         _channels = self.get_channels()
 
-        for _datapoint_key, _datapoint_value in data.get("datapoints").items():
+        # Datapoints received during the post-(re)connect priming window are a
+        # replayed snapshot, not real events: update caches but skip callbacks.
+        _is_priming = self.api.is_priming
+
+        # Parameters first: channels read them (e.g. LED mode) to interpret
+        # datapoints arriving in the same message.
+        self._update_parameters(data)
+
+        # Scene output values use a nested structure instead of datapoint paths.
+        # Merge them into a copy so each datapoint is dispatched only once.
+        _scene_datapoints = {}
+        for _serial, _device in (data.get("scenesTriggered") or {}).items():
+            for _channel_id, _channel_data in (_device.get("channels") or {}).items():
+                for _output_id, _output in (_channel_data.get("outputs") or {}).items():
+                    _datapoint_key = f"{_serial}/{_channel_id}/{_output_id}"
+                    _scene_datapoints[_datapoint_key] = _output["value"]
+
+        _datapoints = dict(data.get("datapoints") or {})
+        _datapoints.update(_scene_datapoints)
+
+        for _datapoint_key, _datapoint_value in _datapoints.items():
             _unique_id = "/".join(_datapoint_key.split("/")[:-1])
 
             try:
                 _channel = _channels[_unique_id]
-                _channel.update_channel(_datapoint_key, _datapoint_value)
+                if _datapoint_key in _scene_datapoints:
+                    _channel.update_scene(
+                        _datapoint_key, _datapoint_value, is_priming=_is_priming
+                    )
+                else:
+                    _channel.update_channel(
+                        _datapoint_key, _datapoint_value, is_priming=_is_priming
+                    )
             except KeyError:
                 continue
+
+    def _update_parameters(self, data: dict) -> None:
+        """Apply parameter changes from a websocket message."""
+        # Changed device config is sent in full under "devices".
+        for _serial, _device_data in (data.get("devices") or {}).items():
+            _device = self._devices.get(_serial)
+            if _device is None or not isinstance(_device_data, dict):
+                continue
+
+            self._apply_parameters(_device, _device_data.get("parameters"))
+            for _channel_id, _channel_data in (
+                _device_data.get("channels") or {}
+            ).items():
+                _channel = _device.channels.get(_channel_id)
+                if _channel is not None and isinstance(_channel_data, dict):
+                    self._apply_parameters(_channel, _channel_data.get("parameters"))
+
+        # Individual parameter changes: "<serial>[/<channel>]/<parameter>".
+        for _key, _value in (data.get("parameters") or {}).items():
+            _parts = _key.split("/")
+            _device = self._devices.get(_parts[0])
+            if _device is None or len(_parts) not in (2, 3):
+                continue
+
+            _target = _device
+            if len(_parts) == 3:
+                _target = _device.channels.get(_parts[1])
+            if _target is not None:
+                _target.update_parameter(_parts[-1], _value)
+
+    @staticmethod
+    def _apply_parameters(target, parameters: dict | None) -> None:
+        for _parameter_id, _value in (parameters or {}).items():
+            target.update_parameter(_parameter_id, _value)
 
     async def ws_close(self):
         """Close the websocket connection."""

@@ -346,6 +346,26 @@ if __name__ == "__main__":
         print(_switch.channel_name, f"({_switch.state})")
 ```
 
+### Parameters
+
+Devices and channels expose their configuration parameters (read-only). Keys are the SysAP ids (e.g. `par0002`); values are strings. The SysAP only provides ids, so names come from the library's `Parameter` enum (`from abbfreeathome.bin.parameter import Parameter`). Changes received over the websocket update the cached values and notify parameter callbacks (only when the value actually changed).
+
+```python
+_switch = fah.get_channels_by_class(channel_class=SwitchActuator)[0]
+
+print(_switch.parameters)  # {"par0002": "50", ...}
+print(_switch.get_parameter("par0002"))  # or get_parameter(0x2)
+print(_switch.get_parameter(Parameter.PID_LED_NIGHT_BRIGHTNESS))
+print(
+    _switch.get_parameter_name("par0015")
+)  # PID_AUTONOMOUS_SWITCH_OFF_TIME_DURATION (None if unknown)
+print(_switch.device.parameters)  # device-level parameters
+
+# Notify on any parameter change, or only a specific one
+_switch.register_parameter_callback(callback=my_callback)
+_switch.register_parameter_callback(callback=my_callback, parameter_id="par0002")
+```
+
 ### WebSocket
 
 The Free@Home local api also exposes a websocket. With this library you can connect to and listen to events on the websocket. These events are changes in channels datapoints, parameters, etc. The library will give the ability to listen on the websocket and automatically update a channel's state.

@@ -233,3 +233,36 @@ def test_update_channel(virtual_room_temperature_controller):
     # Test scenario where websocket sends update not relevant to the state.
     virtual_room_temperature_controller.update_channel("AL_SWITCH_ON_OFF/idp0014", "1")
     assert virtual_room_temperature_controller.state is False
+
+
+def test_update_channel_priming_suppresses_noop_callback(
+    virtual_room_temperature_controller,
+):
+    """
+    During priming an unchanged datapoint updates cache but fires no callback.
+
+    A changed datapoint during priming still fires (#239 suppress-no-ops).
+    """
+    callback = MagicMock()
+    virtual_room_temperature_controller.register_callback(
+        callback_attribute="state", callback=callback
+    )
+
+    # Seed a known state outside priming.
+    virtual_room_temperature_controller.update_channel("AL_SWITCH_ON_OFF/odp0008", "1")
+    assert virtual_room_temperature_controller.state is True
+    callback.reset_mock()
+
+    # No-op replay during priming -> suppressed.
+    virtual_room_temperature_controller.update_channel(
+        "AL_SWITCH_ON_OFF/odp0008", "1", is_priming=True
+    )
+    assert virtual_room_temperature_controller.state is True
+    callback.assert_not_called()
+
+    # Changed value during priming -> still fires.
+    virtual_room_temperature_controller.update_channel(
+        "AL_SWITCH_ON_OFF/odp0008", "0", is_priming=True
+    )
+    assert virtual_room_temperature_controller.state is False
+    callback.assert_called_once()

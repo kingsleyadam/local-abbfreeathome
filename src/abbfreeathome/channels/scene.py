@@ -43,6 +43,13 @@ class Scene(Base):
         """Return the raw scene-control value, not the identity of the scene."""
         return self._scene_control
 
+    def update_scene(
+        self, datapoint_key: str, datapoint_value: str, is_priming: bool = False
+    ) -> None:
+        """Emit explicit scene requests even during WebSocket snapshot priming."""
+        # Scene notifications are commands, not replayed snapshot values.
+        self.update_channel(datapoint_key, datapoint_value)
+
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
         """Accept recall telegrams and ignore invalid or learning values."""
         if datapoint.get("pairingID") != Pairing.AL_SCENE_CONTROL.value:
