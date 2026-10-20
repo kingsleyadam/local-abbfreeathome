@@ -176,6 +176,37 @@ async def turn_on(self):
     self._state = True
 ```
 
+## Scene request notifications
+
+The `Scene` channel observes regular scenes (`FID_SCENE`), all-off scenes and
+panic scenes. The channel name and device serial identify the configured scene.
+Register a `scene_control` callback to receive each live `AL_SCENE_CONTROL` output
+telegram, including repeated requests with the same value:
+
+```python
+from abbfreeathome.channels.scene import Scene
+
+for scene in free_at_home.get_channels_by_class(Scene):
+    scene.register_callback(
+        "scene_control",
+        lambda scene=scene: print(
+            scene.device_serial, scene.channel_name, scene.scene_control
+        ),
+    )
+```
+
+The `scene_control` property preserves the raw telegram value. Do not use it as
+the scene identity or infer the physical click count from it. Initial
+configuration values and state refreshes do not emit requests. Malformed values
+and scene-learning telegrams (bit 7 set) are ignored. Requests report that a scene
+was requested, not that all its target devices reached their configured states.
+The channel does not provide a method to activate the scene.
+
+Reload the configuration after creating a scene so its channel and name can be
+discovered. Scenes must pass the selected interface and floor-plan filters,
+like other channels. Scene notifications are read from `datapoints`; the
+`scenesTriggered` object for virtual-device scene values is a separate API feature.
+
 ## Installation
 
 Create a directory and virtual environment and install the Python library using pip.

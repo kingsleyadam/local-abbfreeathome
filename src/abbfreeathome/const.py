@@ -19,6 +19,7 @@ from .channels.force_on_off_sensor import ForceOnOffSensor
 from .channels.movement_detector import BlockableMovementDetector, MovementDetector
 from .channels.rain_sensor import RainSensor
 from .channels.room_temperature_controller import RoomTemperatureController
+from .channels.scene import Scene
 from .channels.smoke_detector import SmokeDetector
 from .channels.switch_actuator import (
     MWireSwitchActuator,
@@ -131,6 +132,10 @@ FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_PANEL_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITHOUT_FAN: (
         RoomTemperatureController
     ),
+    # Scenes expose request notifications through their scene-control output.
+    Function.FID_SCENE: Scene,
+    Function.FID_SPECIAL_SCENE_ALL_OFF: Scene,
+    Function.FID_SPECIAL_SCENE_PANIC: Scene,
     Function.FID_SHUTTER_ACTUATOR: ShutterActuator,
     Function.FID_SMOKE_DETECTOR: SmokeDetector,
     Function.FID_STAIRCASE_LIGHT_SENSOR: StaircaseLightSensor,
