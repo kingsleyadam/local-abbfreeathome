@@ -34,6 +34,7 @@ from .channels.valve_actuator import (
     HeatingCoolingActuator,
 )
 from .channels.virtual.virtual_brightness_sensor import VirtualBrightnessSensor
+from .channels.virtual.virtual_dimming_actuator import VirtualDimmingActuator
 from .channels.virtual.virtual_energy_battery import VirtualEnergyBattery
 from .channels.virtual.virtual_energy_inverter import VirtualEnergyInverter
 from .channels.virtual.virtual_energy_two_way_meter import VirtualEnergyTwoWayMeter
@@ -183,6 +184,7 @@ FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
 
 FUNCTION_VIRTUAL_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_BRIGHTNESS_SENSOR: VirtualBrightnessSensor,
+    Function.FID_DIMMING_ACTUATOR: VirtualDimmingActuator,
     Function.FID_ENERGY_BATTERY: VirtualEnergyBattery,
     Function.FID_ENERGY_INVERTER: VirtualEnergyInverter,
     Function.FID_ENERGY_TWO_WAY_METER: VirtualEnergyTwoWayMeter,
