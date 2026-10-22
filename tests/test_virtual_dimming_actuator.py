@@ -411,6 +411,49 @@ async def test_refresh_state(dimmer, device):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("pairing", [2, 3, 4, 6, 18, 999])
+async def test_unsupported_inputs_are_not_refreshed(device, pairing):
+    """Ignore unused and unknown inputs during initialization and API refresh."""
+    data = device.channels_data["ch0000"]
+    inputs = {key: dict(point) for key, point in data["inputs"].items()} | {
+        "idp00ff": {"pairingID": pairing, "value": "unsupported"}
+    }
+    channel = VirtualDimmingActuator(
+        device,
+        "ch0000",
+        "Dimmer",
+        inputs,
+        {key: dict(point) for key, point in data["outputs"].items()},
+        {},
+    )
+    assert channel.state is False
+    assert channel.brightness == 20
+    assert channel.requested_state is True
+    assert channel.requested_dimming_state == "longpress_up"
+    assert channel.requested_brightness == 50
+    device.api.get_datapoint.assert_not_called()
+
+    callback = Mock()
+    for attribute in channel._callback_attributes:
+        channel.register_callback(attribute, callback)
+    device.api.get_datapoint.side_effect = [["1"], ["42"], ["0"], ["8"], ["65.5"]]
+    await channel.refresh_state()
+
+    assert channel.state is True
+    assert channel.brightness == 42
+    assert channel.requested_state is False
+    assert channel.requested_dimming_state == "longpress_up_release"
+    assert channel.requested_brightness == 65.5
+    assert inputs["idp00ff"]["value"] == "unsupported"
+    assert device.api.get_datapoint.await_args_list == [
+        call(device_serial="6000F66D1DA7", channel_id="ch0000", datapoint=datapoint)
+        for datapoint in ("odp0000", "odp0001", "idp0000", "idp0001", "idp0002")
+    ]
+    callback.assert_not_called()
+    device.api.set_datapoint.assert_not_called()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(("method", "value"), [("turn_on", "1"), ("turn_off", "0")])
 async def test_switch_feedback(dimmer, device, method, value):
     """Publish switch feedback to the output, as for a virtual switch."""
