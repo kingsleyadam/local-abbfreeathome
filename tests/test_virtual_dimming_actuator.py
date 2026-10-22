@@ -60,6 +60,7 @@ def test_initialization(dimmer):
     assert dimmer.state is False
     assert dimmer.requested_state is True
     assert dimmer.requested_dimming_state == "longpress_up"
+    assert dimmer.requested_brightness == 50
 
 
 def test_empty_initialization(device):
@@ -68,6 +69,7 @@ def test_empty_initialization(device):
     assert channel.state is None
     assert channel.requested_state is None
     assert channel.requested_dimming_state == "unknown"
+    assert channel.requested_brightness is None
 
 
 @pytest.mark.parametrize(
@@ -147,10 +149,12 @@ def test_updates_without_callbacks(dimmer):
     """Accept input and output updates even before callbacks are registered."""
     dimmer.update_channel("idp0000", "0")
     dimmer.update_channel("idp0001", "8")
+    dimmer.update_channel("idp0002", "42.5")
     dimmer.update_channel("odp0000", "1")
     assert dimmer.requested_state is False
     assert dimmer.requested_dimming_state == "longpress_up_release"
     assert dimmer.state is True
+    assert dimmer.requested_brightness == 42.5
     assert dimmer.get_input_by_pairing(Pairing.AL_RELATIVE_SET_VALUE_CONTROL) == (
         "idp0001",
         "8",
@@ -163,8 +167,74 @@ def test_pairing_based_dispatch(dimmer):
     dimmer.update_channel("idp0015", "1")
     assert dimmer.requested_dimming_state == "longpress_down"
     dimmer.update_channel("idp0001", "9")
-    dimmer.update_channel("idp0002", "80")
+    dimmer._inputs["idp0016"] = dimmer._inputs.pop("idp0002")
+    dimmer.update_channel("idp0016", "80")
     assert dimmer.requested_dimming_state == "longpress_down"
+    assert dimmer.requested_brightness == 80
+    dimmer.update_channel("idp0002", "20")
+    assert dimmer.requested_brightness == 80
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("0", 0), ("100", 100), ("40", 40), ("40.5", 40.5), ("50.0", 50)],
+)
+def test_brightness_requests(dimmer, device, value, expected):
+    """Preserve percentages and repeated live requests without changing feedback."""
+    requested = Mock()
+    unrelated = Mock()
+    dimmer.register_callback("requested_brightness", requested)
+    for attribute in ("state", "requested_state", "requested_dimming_state"):
+        dimmer.register_callback(attribute, unrelated)
+    for _ in range(2):
+        dimmer.update_channel("idp0002", value)
+    assert dimmer.requested_brightness == expected
+    assert requested.call_args_list == [call(), call()]
+    assert dimmer.state is False
+    assert dimmer.requested_state is True
+    assert dimmer.requested_dimming_state == "longpress_up"
+    unrelated.assert_not_called()
+    device.api.set_datapoint.assert_not_called()
+    dimmer.remove_callback("requested_brightness", requested)
+    dimmer.update_channel("idp0002", value)
+    assert requested.call_count == 2
+
+
+@pytest.mark.parametrize(
+    "value", ["invalid", "-1", "100.1", "nan", "inf", "-inf", True, [], {}]
+)
+def test_invalid_brightness_ignored(dimmer, caplog, value):
+    """Reject invalid requests visibly without emitting the previous valid value."""
+    requested = Mock()
+    dimmer.register_callback("requested_brightness", requested)
+    dimmer.update_channel("idp0002", value)
+    assert dimmer.requested_brightness == 50
+    requested.assert_not_called()
+    assert "brightness" in caplog.text
+
+
+@pytest.mark.parametrize("value", [None, ""])
+def test_unset_brightness(device, value):
+    """Treat unpopulated configuration inputs as unknown, not zero."""
+    channel = VirtualDimmingActuator(
+        device,
+        "ch0000",
+        "Dimmer",
+        {"idp0002": {"pairingID": 17, "value": value}},
+        {},
+        {},
+    )
+    assert channel.requested_brightness is None
+
+
+def test_brightness_feedback_is_not_a_request(dimmer):
+    """Actual brightness outputs must not emit an absolute-brightness request."""
+    requested = Mock()
+    dimmer.register_callback("requested_brightness", requested)
+    dimmer._outputs["odp0001"] = {"pairingID": 272, "value": "0"}
+    dimmer.update_channel("odp0001", "80")
+    assert dimmer.requested_brightness == 50
+    requested.assert_not_called()
 
 
 def test_feedback_callback(dimmer):
@@ -179,15 +249,19 @@ def test_feedback_callback(dimmer):
 
 @pytest.mark.asyncio
 async def test_refresh_state(dimmer, device):
-    """Refresh feedback and both supported input pairings."""
-    device.api.get_datapoint.side_effect = [["1"], ["0"], ["8"]]
+    """Refresh feedback and all supported input pairings without callbacks."""
+    requested = Mock()
+    dimmer.register_callback("requested_brightness", requested)
+    device.api.get_datapoint.side_effect = [["1"], ["0"], ["8"], ["65.5"]]
     await dimmer.refresh_state()
     assert dimmer.state is True
     assert dimmer.requested_state is False
     assert dimmer.requested_dimming_state == "longpress_up_release"
+    assert dimmer.requested_brightness == 65.5
+    requested.assert_not_called()
     assert device.api.get_datapoint.await_args_list == [
         call(device_serial="6000F66D1DA7", channel_id="ch0000", datapoint=datapoint)
-        for datapoint in ("odp0000", "idp0000", "idp0001")
+        for datapoint in ("odp0000", "idp0000", "idp0001", "idp0002")
     ]
 
 
@@ -242,3 +316,26 @@ async def test_snapshot_replay_suppresses_unchanged_dimmer(device, dimmer):
     device.api.is_priming = False
     await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0001": "9"}})
     requested.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_brightness_websocket_and_priming(device, dimmer):
+    """Suppress unchanged snapshots but preserve live repeats and changed snapshots."""
+    freeathome = FreeAtHome(device.api, include_orphan_channels=True)
+    freeathome._devices[device.device_serial] = device
+    observed = []
+    dimmer.register_callback(
+        "requested_brightness", lambda: observed.append(dimmer.requested_brightness)
+    )
+    device.api.is_priming = True
+    await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0002": "50"}})
+    assert observed == []
+    await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0002": "60.5"}})
+    assert observed == [60.5]
+    device.api.is_priming = False
+    for _ in range(2):
+        await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0002": "60.5"}})
+    assert observed == [60.5, 60.5, 60.5]
+    device.api.is_priming = True
+    await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0002": "60.5"}})
+    assert observed == [60.5, 60.5, 60.5]
