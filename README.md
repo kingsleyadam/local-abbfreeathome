@@ -63,8 +63,6 @@ The current channels implemented within the library.
 
 \*DimmingSensor, StaircaseLightSensor, and SwitchSensor: `turn_on_led()` and `turn_off_led()` refer to the LED of the sensor. It only has an effect when the "LED mode" is set to "Status Indication".
 
-The virtual `DimmingActuator` (`VirtualDimmingActuator`) exposes incoming commands through its `requested_*` properties. Its setters publish feedback to free@home; requests are not automatically acknowledged. `set_brightness()` accepts integers clamped to 1-100 and does not change the On/Off state.
-
 ## FreeAtHome Class Structure and API Interaction
 
 The general structure of the Python libary looks similar to this:
