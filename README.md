@@ -51,6 +51,7 @@ The current channels implemented within the library.
 | WindowDoorSensor | | `state`, `position` |
 | **Virtual Devices:** | | |
 | BrightnessSensor | `turn_on()`, `turn_off()`, `set_brightness()` | `brightness`, `alarm` |
+| DimmingActuator | `turn_on()`, `turn_off()`, `set_brightness()` | `state`, `brightness`, `requested_state`, `requested_dimming_state`, `requested_brightness` |
 | EnergyBattery | `set_battery_power()`, `set_soc()`, `set_imported_today()`, `set_exported_today()`, `set_imported_total()`, `set_exported_total()` | `battery`, `soc`, `imported_today`, `exported_today`, `imported_total` `exported_total` |
 | EnergyInverter | `set_current_power()`, `set_imported_today()`, `set_imported_total()` | `current_power`, `imported_today`, `imported_total` |
 | EnergyTwoWayMeter | `set_current_power()`, `set_imported_today()`, `set_exported_today()`, `set_imported_total()`, `set_exported_total()` | `current_power`, `imported_today`, `exported_today`, `imported_total` `exported_total` |
@@ -61,6 +62,8 @@ The current channels implemented within the library.
 | WindowDoorSensor | `turn_on()`, `turn_off()` | `state` |
 
 \*DimmingSensor, StaircaseLightSensor, and SwitchSensor: `turn_on_led()` and `turn_off_led()` refer to the LED of the sensor. It only has an effect when the "LED mode" is set to "Status Indication".
+
+The virtual `DimmingActuator` (`VirtualDimmingActuator`) exposes incoming commands through its `requested_*` properties. Its setters publish feedback to free@home; requests are not automatically acknowledged. `set_brightness()` accepts integers clamped to 1-100 and does not change the On/Off state.
 
 ## FreeAtHome Class Structure and API Interaction
 
