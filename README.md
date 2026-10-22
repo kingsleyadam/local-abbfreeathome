@@ -51,6 +51,7 @@ The current channels implemented within the library.
 | WindowDoorSensor | | `state`, `position` |
 | **Virtual Devices:** | | |
 | BrightnessSensor | `turn_on()`, `turn_off()`, `set_brightness()` | `brightness`, `alarm` |
+| DimmingActuator | `turn_on()`, `turn_off()`, `set_brightness()` | `state`, `brightness`, `requested_state`, `requested_dimming_state`, `requested_brightness` |
 | EnergyBattery | `set_battery_power()`, `set_soc()`, `set_imported_today()`, `set_exported_today()`, `set_imported_total()`, `set_exported_total()` | `battery`, `soc`, `imported_today`, `exported_today`, `imported_total` `exported_total` |
 | EnergyInverter | `set_current_power()`, `set_imported_today()`, `set_imported_total()` | `current_power`, `imported_today`, `imported_total` |
 | EnergyTwoWayMeter | `set_current_power()`, `set_imported_today()`, `set_exported_today()`, `set_imported_total()`, `set_exported_total()` | `current_power`, `imported_today`, `exported_today`, `imported_total` `exported_total` |

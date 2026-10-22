@@ -14,7 +14,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class VirtualDimmingActuator(VirtualSwitchActuator):
-    """Receive switching, relative dimming and absolute brightness requests."""
+    """Receive dimming requests and publish virtual actuator feedback."""
+
+    _state_refresh_pairings: list[Pairing] = [
+        Pairing.AL_INFO_ON_OFF,
+        Pairing.AL_INFO_ACTUAL_DIMMING_VALUE,
+    ]
 
     _input_refresh_pairings: list[Pairing] = [
         Pairing.AL_SWITCH_ON_OFF,
@@ -23,6 +28,7 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
     ]
     _callback_attributes: list[str] = [
         "state",
+        "brightness",
         "requested_state",
         "requested_dimming_state",
         "requested_brightness",
@@ -40,6 +46,7 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
         room_name: str | None = None,
     ) -> None:
         """Initialize the virtual dimmer and its requested states."""
+        self._brightness: int | None = None
         self._requested_dimming_state = DimmingSensorState.unknown
         self._requested_brightness: float | None = None
         super().__init__(
@@ -55,6 +62,30 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
         # The inherited update handler also accepts updates without subscribers.
         for attribute in self._callback_attributes:
             self._callbacks[attribute] = set()
+
+    @property
+    def brightness(self) -> int | None:
+        """Return reported brightness, independently of requested brightness."""
+        return self._brightness
+
+    async def set_brightness(self, value: int):
+        """Publish brightness feedback, clamping integer percentages to 1-100."""
+        if isinstance(value, bool) or not isinstance(value, int):
+            message = "Brightness must be an integer percentage"
+            raise TypeError(message)
+        value = min(100, max(1, value))
+        await self._set_brightness_datapoint(str(value))
+        self._brightness = value
+
+    async def _set_brightness_datapoint(self, value: str):
+        """Publish brightness to the virtual output, not the request input."""
+        output_id, _ = self.get_output_by_pairing(Pairing.AL_INFO_ACTUAL_DIMMING_VALUE)
+        return await self.device.api.set_datapoint(
+            device_serial=self.device_serial,
+            channel_id=self.channel_id,
+            datapoint=output_id,
+            value=value,
+        )
 
     @property
     def requested_dimming_state(self) -> str:
@@ -73,28 +104,36 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
         return self._requested_brightness
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
-        """Decode dimming requests without changing actual feedback."""
-        if datapoint.get("pairingID") == Pairing.AL_ABSOLUTE_SET_VALUE_CONTROL.value:
+        """Decode reported brightness and requests independently."""
+        pairing = datapoint.get("pairingID")
+        if pairing in (
+            Pairing.AL_ABSOLUTE_SET_VALUE_CONTROL.value,
+            Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value,
+        ):
+            feedback = pairing == Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value
+            label = "brightness feedback" if feedback else "requested brightness"
             value = datapoint.get("value")
             if value is None or value == "":
-                _LOGGER.debug("No requested brightness for %s", self.channel_name)
+                _LOGGER.debug("No %s for %s", label, self.channel_name)
                 return None
             try:
                 brightness = float(value)
             except (TypeError, ValueError, OverflowError):
-                _LOGGER.warning(
-                    "Invalid requested brightness %r for %s", value, self.channel_name
-                )
+                _LOGGER.warning("Invalid %s %r for %s", label, value, self.channel_name)
                 return None
             if isinstance(value, bool) or not 0 <= brightness <= 100:
                 _LOGGER.warning(
-                    "Requested brightness %r outside 0-100 percent for %s",
+                    "%s %r outside 0-100 percent for %s",
+                    label,
                     value,
                     self.channel_name,
                 )
                 return None
-            self._requested_brightness = brightness
-            return "requested_brightness"
+            if feedback:
+                self._brightness = int(brightness)
+            else:
+                self._requested_brightness = brightness
+            return "brightness" if feedback else "requested_brightness"
         if datapoint.get("pairingID") == Pairing.AL_RELATIVE_SET_VALUE_CONTROL.value:
             try:
                 self._requested_dimming_state = DimmingSensorState(
