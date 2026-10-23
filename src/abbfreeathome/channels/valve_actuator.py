@@ -32,7 +32,7 @@ class ValveActuatorMixin:
 
     def _refresh_valve_position_from_datapoint(
         self, datapoint: dict[str, Any], attr_name: str
-    ) -> str:
+    ) -> list[str]:
         """
         Refresh valve position from a datapoint.
 
@@ -41,7 +41,7 @@ class ValveActuatorMixin:
             attr_name: The internal attribute name
 
         Returns:
-            The attribute name that was refreshed
+            The names of the attributes that were refreshed
 
         """
         value = datapoint.get("value")
@@ -49,7 +49,7 @@ class ValveActuatorMixin:
             setattr(self, attr_name, int(float(value)))
         except (ValueError, TypeError):
             setattr(self, attr_name, None)
-        return attr_name.lstrip("_")
+        return [attr_name.lstrip("_")]
 
     async def _set_valve_datapoint(self, input_pairing: Pairing, value: str):
         """Set a valve position datapoint on the API."""
@@ -116,11 +116,11 @@ class HeatingActuator(ValveActuatorMixin, Base):
             input_pairing=Pairing.AL_ACTUATING_VALUE_HEATING,
         )
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         pairing_id = datapoint.get("pairingID")
 
@@ -129,7 +129,7 @@ class HeatingActuator(ValveActuatorMixin, Base):
                 datapoint=datapoint,
                 attr_name="_position",
             )
-        return None
+        return []
 
 
 class CoolingActuator(ValveActuatorMixin, Base):
@@ -186,11 +186,11 @@ class CoolingActuator(ValveActuatorMixin, Base):
             input_pairing=Pairing.AL_ACTUATING_VALUE_COOLING,
         )
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         pairing_id = datapoint.get("pairingID")
 
@@ -199,7 +199,7 @@ class CoolingActuator(ValveActuatorMixin, Base):
                 datapoint=datapoint,
                 attr_name="_position",
             )
-        return None
+        return []
 
 
 class HeatingCoolingActuator(ValveActuatorMixin, Base):
@@ -278,11 +278,11 @@ class HeatingCoolingActuator(ValveActuatorMixin, Base):
             input_pairing=Pairing.AL_ACTUATING_VALUE_COOLING,
         )
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         pairing_id = datapoint.get("pairingID")
 
@@ -298,4 +298,4 @@ class HeatingCoolingActuator(ValveActuatorMixin, Base):
                 attr_name="_cooling_position",
             )
 
-        return None
+        return []

@@ -145,7 +145,7 @@ def test_refresh_state_from_datapoint_heating(heating_cooling_actuator):
     result = heating_cooling_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 305, "value": "50"},
     )
-    assert result == "heating_position"
+    assert result == ["heating_position"]
     assert heating_cooling_actuator.heating_position == 50
 
 
@@ -154,7 +154,7 @@ def test_refresh_state_from_datapoint_cooling(heating_cooling_actuator):
     result = heating_cooling_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 306, "value": "75"},
     )
-    assert result == "cooling_position"
+    assert result == ["cooling_position"]
     assert heating_cooling_actuator.cooling_position == 75
 
 
@@ -164,7 +164,7 @@ def test_refresh_state_from_datapoint_invalid(heating_cooling_actuator):
     result = heating_cooling_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 9999, "value": "1"},
     )
-    assert result is None
+    assert result == []
     # Ensure no state changed
     assert heating_cooling_actuator.heating_position == 81
     assert heating_cooling_actuator.cooling_position == 0
@@ -199,7 +199,7 @@ def test_heating_position_with_float_value(heating_cooling_actuator):
     result = heating_cooling_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 305, "value": "75.5"},
     )
-    assert result == "heating_position"
+    assert result == ["heating_position"]
     assert heating_cooling_actuator.heating_position == 75
 
 
@@ -208,7 +208,7 @@ def test_cooling_position_with_float_value(heating_cooling_actuator):
     result = heating_cooling_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 306, "value": "50.7"},
     )
-    assert result == "cooling_position"
+    assert result == ["cooling_position"]
     assert heating_cooling_actuator.cooling_position == 50
 
 

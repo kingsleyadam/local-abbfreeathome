@@ -65,19 +65,19 @@ class WindSensor(Base):
         """Get the force state of the sensor."""
         return self._force
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_WIND_SPEED.value:
             self._state = float(datapoint.get("value"))
-            return "state"
+            return ["state"]
         if datapoint.get("pairingID") == Pairing.AL_WIND_ALARM.value:
             self._alarm = datapoint.get("value") == "1"
-            return "alarm"
+            return ["alarm"]
         if datapoint.get("pairingID") == Pairing.AL_WIND_FORCE.value:
             self._force = int(datapoint.get("value"))
-            return "force"
-        return None
+            return ["force"]
+        return []

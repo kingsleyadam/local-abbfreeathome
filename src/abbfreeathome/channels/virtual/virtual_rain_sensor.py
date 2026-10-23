@@ -59,17 +59,17 @@ class VirtualRainSensor(Base):
         await self._set_alarm_datapoint("0")
         self._alarm = False
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_RAIN_ALARM.value:
             self._alarm = datapoint.get("value") == "1"
-            return "alarm"
+            return ["alarm"]
 
-        return None
+        return []
 
     async def _set_alarm_datapoint(self, value: str):
         """Set the sensor datapoint on the api."""

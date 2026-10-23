@@ -70,19 +70,19 @@ class WindowDoorSensor(Base):
         """Get the sensor position."""
         return self._position.name
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_WINDOW_DOOR.value:
             self._state = datapoint.get("value") == "1"
-            return "state"
+            return ["state"]
         if datapoint.get("pairingID") == Pairing.AL_WINDOW_DOOR_POSITION.value:
             try:
                 self._position = WindowDoorSensorPosition(datapoint.get("value"))
             except ValueError:
                 self._position = WindowDoorSensorPosition.unknown
-            return "position"
-        return None
+            return ["position"]
+        return []

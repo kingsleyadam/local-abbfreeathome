@@ -42,12 +42,12 @@ class DesDoorRingingSensor(Base):
             room_name,
         )
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_TIMED_START_STOP.value:
-            return "state"
-        return None
+            return ["state"]
+        return []

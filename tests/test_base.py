@@ -8,6 +8,17 @@ from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.bin.parameter import Parameter
 from src.abbfreeathome.channels.base import Base
+from src.abbfreeathome.channels.switch_sensor import SwitchSensor
+from src.abbfreeathome.channels.virtual.virtual_dimming_actuator import (
+    VirtualDimmingActuator,
+)
+from src.abbfreeathome.channels.virtual.virtual_room_temperature_controller import (
+    VirtualRoomTemperatureController,
+)
+from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
+    VirtualSwitchActuator,
+)
+from src.abbfreeathome.channels.virtual.virtual_trigger import VirtualTrigger
 from src.abbfreeathome.device import Device
 from src.abbfreeathome.exceptions import (
     InvalidDeviceChannelPairing,
@@ -180,6 +191,119 @@ def test_update_channel(base_instance):
     """Test when input-datapoint is provided."""
 
     base_instance.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")
+
+
+@pytest.fixture(
+    params=[
+        (Base, "outputs"),
+        (SwitchSensor, "outputs"),
+        (SwitchSensor, "inputs"),
+        (VirtualSwitchActuator, "outputs"),
+        (VirtualSwitchActuator, "inputs"),
+        (VirtualDimmingActuator, "outputs"),
+        (VirtualDimmingActuator, "inputs"),
+        (VirtualRoomTemperatureController, "outputs"),
+        (VirtualRoomTemperatureController, "inputs"),
+        (VirtualTrigger, "outputs"),
+        (VirtualTrigger, "inputs"),
+    ]
+)
+def multi_attribute_channel(request, mock_device, monkeypatch):
+    """Exercise every callback dispatcher with multiple affected attributes."""
+    channel_class, direction = request.param
+    io_key = "odp0000" if direction == "outputs" else "idp0000"
+    datapoints = {io_key: {"pairingID": 9999, "value": "0"}}
+    channel = channel_class(
+        device=mock_device,
+        channel_id="ch0000",
+        channel_name="Channel Name",
+        inputs=datapoints if direction == "inputs" else {},
+        outputs=datapoints if direction == "outputs" else {},
+        parameters={},
+    )
+    channel._callback_attributes = ["test", "other", "unsubscribed"]
+    monkeypatch.setattr(
+        channel,
+        "_refresh_state_from_datapoint",
+        MagicMock(return_value=["test", "other", "test", "unsubscribed"]),
+    )
+    return channel, io_key, datapoints[io_key]
+
+
+def test_update_channel_multiple_attributes(multi_attribute_channel):
+    """Notify every affected group, invoking shared subscribers only once."""
+    channel, io_key, datapoint = multi_attribute_channel
+    first_callback = MagicMock()
+    second_callback = MagicMock()
+    observed_values = []
+    shared_callback = MagicMock(
+        side_effect=lambda: observed_values.append(datapoint["value"])
+    )
+    channel.register_callback("test", first_callback)
+    channel.register_callback("other", second_callback)
+    channel.register_callback("test", shared_callback)
+    channel.register_callback("other", shared_callback)
+
+    channel.update_channel(f"device/ch0000/{io_key}", "1")
+
+    first_callback.assert_called_once_with()
+    second_callback.assert_called_once_with()
+    shared_callback.assert_called_once_with()
+    assert observed_values == ["1"]
+    channel._refresh_state_from_datapoint.assert_called_once_with(datapoint=datapoint)
+
+
+@pytest.mark.parametrize(
+    ("value", "is_priming", "callback_count"),
+    [("0", True, 0), ("1", True, 1), ("0", False, 1)],
+)
+def test_update_channel_multiple_attributes_priming(
+    multi_attribute_channel, value, is_priming, callback_count
+):
+    """Suppress unchanged priming updates but preserve normal notifications."""
+    channel, io_key, datapoint = multi_attribute_channel
+    first_callback = MagicMock()
+    second_callback = MagicMock()
+    channel.register_callback("test", first_callback)
+    channel.register_callback("other", second_callback)
+
+    channel.update_channel(f"device/ch0000/{io_key}", value, is_priming=is_priming)
+
+    assert first_callback.call_count == callback_count
+    assert second_callback.call_count == callback_count
+    assert datapoint["value"] == value
+    channel._refresh_state_from_datapoint.assert_called_once_with(datapoint=datapoint)
+
+
+def test_update_channel_multiple_attributes_without_subscribers(
+    multi_attribute_channel,
+):
+    """Refresh multiple attributes even when no callbacks are registered."""
+    channel, io_key, datapoint = multi_attribute_channel
+
+    channel.update_channel(f"device/ch0000/{io_key}", "1")
+
+    assert datapoint["value"] == "1"
+    assert not any(channel._callbacks.values())
+
+
+def test_update_channel_without_affected_attributes(
+    multi_attribute_channel,
+):
+    """An unhandled datapoint must not dispatch any callbacks."""
+    channel, io_key, _ = multi_attribute_channel
+    channel._refresh_state_from_datapoint.return_value = []
+    callback = MagicMock()
+    channel.register_callback("test", callback)
+
+    channel.update_channel(f"device/ch0000/{io_key}", "1")
+
+    callback.assert_not_called()
+
+
+def test_base_refresh_returns_empty_list(base_instance):
+    """The base implementation reports no affected attributes."""
+    assert base_instance._refresh_state_from_datapoint({}) == []
 
 
 def test_repr(base_instance):

@@ -57,21 +57,21 @@ class MovementDetector(Base):
         """Get the brightness level of the sensor."""
         return self._brightness
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         match datapoint.get("pairingID"):
             case Pairing.AL_TIMED_MOVEMENT.value:
                 self._state = datapoint.get("value") == "1"
-                return "state"
+                return ["state"]
             case Pairing.AL_BRIGHTNESS_LEVEL.value:
                 self._brightness = float(datapoint.get("value"))
-                return "brightness"
+                return ["brightness"]
             case _:
-                return None
+                return []
 
 
 class BlockableMovementDetector(MovementDetector):
@@ -128,10 +128,10 @@ class BlockableMovementDetector(MovementDetector):
         await self._set_blocking_datapoint("0")
         self._blocked = False
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         if datapoint.get("pairingID") == Pairing.AL_INFO_LOCKED_SENSOR.value:
             self._blocked = datapoint.get("value") == "1"
-            return "blocked"
+            return ["blocked"]
         return super()._refresh_state_from_datapoint(datapoint)
 
     async def _set_blocking_datapoint(self, value: str):

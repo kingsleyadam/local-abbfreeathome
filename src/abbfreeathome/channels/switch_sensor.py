@@ -96,11 +96,11 @@ class SwitchSensor(Base):
         await self._set_led_datapoint("0")
         self._led = False
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return whether the state was refreshed as a boolean value.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_SWITCH_ON_OFF.value:
             try:
@@ -109,7 +109,7 @@ class SwitchSensor(Base):
                 self._switch_sensor_state = SwitchSensorState.unknown
 
             self._state = self._switch_sensor_state
-            return "state"
+            return ["state"]
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             try:
                 _, _parameter_value = self.get_channel_parameter(
@@ -117,10 +117,10 @@ class SwitchSensor(Base):
                 )
                 if _parameter_value == "2":
                     self._led = datapoint.get("value") == "1"
-                    return "led"
+                    return ["led"]
             except InvalidDeviceChannelParameter:
-                return None
-        return None
+                return []
+        return []
 
     async def _set_led_datapoint(self, value: str):
         """Set the led datapoint on the api."""
@@ -137,23 +137,21 @@ class SwitchSensor(Base):
     def update_channel(self, datapoint_key, datapoint_value, is_priming: bool = False):
         """Update the channel state."""
         super().update_channel(datapoint_key, datapoint_value, is_priming=is_priming)
-        _callback_attribute = None
+        _callback_attributes: list[str] = []
         _changed = True
         _io_key = datapoint_key.split("/")[-1]
 
         if _io_key in self._inputs:
             _changed = self._inputs[_io_key].get("value") != datapoint_value
             self._inputs[_io_key]["value"] = datapoint_value
-            _callback_attribute = self._refresh_state_from_datapoint(
+            _callback_attributes = self._refresh_state_from_datapoint(
                 datapoint=self._inputs[_io_key]
             )
 
         if is_priming and not _changed:
             return
 
-        if _callback_attribute and self._callbacks[_callback_attribute]:
-            for callback in self._callbacks[_callback_attribute]:
-                callback()
+        self._notify_callbacks(_callback_attributes)
 
     async def refresh_state(self):
         """Refresh the state of the channel from the api."""
@@ -226,14 +224,14 @@ class DimmingSensor(SwitchSensor):
         """Get the dimming state."""
         return self._dimming_sensor_state.name
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         _return_value = super()._refresh_state_from_datapoint(datapoint)
-        if _return_value is not None:
+        if _return_value:
             return _return_value
 
         if datapoint.get("pairingID") == Pairing.AL_RELATIVE_SET_VALUE_CONTROL.value:
@@ -243,8 +241,8 @@ class DimmingSensor(SwitchSensor):
                 self._dimming_sensor_state = DimmingSensorState.unknown
 
             self._state = self._dimming_sensor_state
-            return "state"
-        return None
+            return ["state"]
+        return []
 
 
 class StaircaseLightSensor(SwitchSensor):
@@ -261,14 +259,14 @@ class StaircaseLightSensor(SwitchSensor):
         Pairing.AL_TIMED_START_STOP,
     ]
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         _return_value = super()._refresh_state_from_datapoint(datapoint)
-        if _return_value is not None:
+        if _return_value:
             return _return_value
 
         if datapoint.get("pairingID") == Pairing.AL_TIMED_START_STOP.value:
@@ -278,5 +276,5 @@ class StaircaseLightSensor(SwitchSensor):
                 self._switch_sensor_state = SwitchSensorState.unknown
 
             self._state = self._switch_sensor_state
-            return "state"
-        return None
+            return ["state"]
+        return []
