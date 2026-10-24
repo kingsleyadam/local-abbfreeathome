@@ -18,7 +18,10 @@ from .channels.dimming_actuator import ColorTemperatureActuator, DimmingActuator
 from .channels.force_on_off_sensor import ForceOnOffSensor
 from .channels.movement_detector import BlockableMovementDetector, MovementDetector
 from .channels.rain_sensor import RainSensor
-from .channels.room_temperature_controller import RoomTemperatureController
+from .channels.room_temperature_controller import (
+    RadiatorActuator,
+    RoomTemperatureController,
+)
 from .channels.smoke_detector import SmokeDetector
 from .channels.switch_actuator import (
     MWireSwitchActuator,
@@ -113,6 +116,7 @@ FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_MOVEMENT_DETECTOR: MovementDetector,
     Function.FID_MOVEMENT_DETECTOR_TYPE0: BlockableMovementDetector,
     Function.FID_MOVEMENT_DETECTOR_TYPE7: MovementDetector,
+    Function.FID_RADIATOR_ACTUATOR_MASTER: RadiatorActuator,
     Function.FID_RAIN_SENSOR: RainSensor,
     Function.FID_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITH_FAN: (
         RoomTemperatureController

@@ -209,3 +209,84 @@ class RoomTemperatureController(Base):
             datapoint=_temperature_input_id,
             value=value,
         )
+
+
+class RadiatorActuator(RoomTemperatureController):
+    """
+    Free@Home RadiatorActuator Class.
+
+    A radiator thermostat carries the same datapoints as a room temperature
+    controller, except for the heating state: it reports AL_HEATING_ACTIVE and
+    AL_HEATING_DEMAND instead of AL_ACTUATING_VALUE_HEATING and
+    AL_ACTUATING_VALUE_COOLING, and it does not cool at all.
+    """
+
+    _state_refresh_pairings: list[Pairing] = [
+        Pairing.AL_SET_POINT_TEMPERATURE,
+        Pairing.AL_STATE_INDICATION,
+        Pairing.AL_MEASURED_TEMPERATURE,
+        Pairing.AL_CONTROLLER_ON_OFF,
+        Pairing.AL_HEATING_ACTIVE,
+        Pairing.AL_HEATING_DEMAND,
+    ]
+    _callback_attributes: list[str] = [
+        "state",
+        "current_temperature",
+        "heating",
+        "cooling",
+        "target_temperature",
+        "eco_mode",
+        "heating_active",
+    ]
+
+    def __init__(
+        self,
+        device: "Device",
+        channel_id: str,
+        channel_name: str,
+        inputs: dict[str, dict[str, Any]],
+        outputs: dict[str, dict[str, Any]],
+        parameters: dict[str, dict[str, Any]],
+        floor_name: str | None = None,
+        room_name: str | None = None,
+    ) -> None:
+        """Initialize the Free@Home RadiatorActuator class."""
+        self._heating_active: bool = False
+
+        super().__init__(
+            device,
+            channel_id,
+            channel_name,
+            inputs,
+            outputs,
+            parameters,
+            floor_name,
+            room_name,
+        )
+
+    @property
+    def heating_active(self) -> bool:
+        """
+        Get whether the radiator is currently heating.
+
+        Falls back to the heating demand for thermostats that report a demand
+        without setting the active flag.
+        """
+        return self._heating_active or bool(self._heating)
+
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+        """
+        Refresh the state of the channel from a given output.
+
+        This will return the name of the attribute, which was refreshed or None.
+        """
+        if datapoint.get("pairingID") == Pairing.AL_HEATING_ACTIVE.value:
+            self._heating_active = datapoint.get("value") == "1"
+            return "heating_active"
+        if datapoint.get("pairingID") == Pairing.AL_HEATING_DEMAND.value:
+            try:
+                self._heating = int(float(datapoint.get("value")))
+            except (TypeError, ValueError):
+                self._heating = 0
+            return "heating"
+        return super()._refresh_state_from_datapoint(datapoint)
