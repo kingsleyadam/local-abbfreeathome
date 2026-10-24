@@ -103,7 +103,7 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
         """Return the last valid requested percentage, not actual brightness."""
         return self._requested_brightness
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """Decode reported brightness and requests independently."""
         pairing = datapoint.get("pairingID")
         if pairing in (
@@ -115,12 +115,12 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
             value = datapoint.get("value")
             if value is None or value == "":
                 _LOGGER.debug("No %s for %s", label, self.channel_name)
-                return None
+                return []
             try:
                 brightness = float(value)
             except (TypeError, ValueError, OverflowError):
                 _LOGGER.warning("Invalid %s %r for %s", label, value, self.channel_name)
-                return None
+                return []
             if isinstance(value, bool) or not 0 <= brightness <= 100:
                 _LOGGER.warning(
                     "%s %r outside 0-100 percent for %s",
@@ -128,12 +128,12 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
                     value,
                     self.channel_name,
                 )
-                return None
+                return []
             if feedback:
                 self._brightness = int(brightness)
             else:
                 self._requested_brightness = brightness
-            return "brightness" if feedback else "requested_brightness"
+            return ["brightness" if feedback else "requested_brightness"]
         if datapoint.get("pairingID") == Pairing.AL_RELATIVE_SET_VALUE_CONTROL.value:
             try:
                 self._requested_dimming_state = DimmingSensorState(
@@ -141,7 +141,7 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
                 )
             except ValueError:
                 self._requested_dimming_state = DimmingSensorState.unknown
-            return "requested_dimming_state"
+            return ["requested_dimming_state"]
         return super()._refresh_state_from_datapoint(datapoint)
 
     def _refresh_state_from_datapoints(self):

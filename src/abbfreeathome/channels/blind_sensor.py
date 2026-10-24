@@ -73,11 +73,11 @@ class BlindSensor(Base):
         """Get the move state property."""
         return self._move_state.name
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_STOP_STEP_UP_DOWN.value:
             """
@@ -94,7 +94,7 @@ class BlindSensor(Base):
                 self._step_state = BlindSensorState.unknown
 
             self._state = self._step_state
-            return "state"
+            return ["state"]
 
         if datapoint.get("pairingID") == Pairing.AL_MOVE_UP_DOWN.value:
             """
@@ -111,5 +111,5 @@ class BlindSensor(Base):
                 self._move_state = BlindSensorState.unknown
 
             self._state = self._move_state
-            return "state"
-        return None
+            return ["state"]
+        return []

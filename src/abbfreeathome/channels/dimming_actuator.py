@@ -119,18 +119,18 @@ class DimmingActuator(Base):
 
         self._forced_position = _position
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return whether the state was refreshed as a boolean value.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
-            return "state"
+            return ["state"]
         if datapoint.get("pairingID") == Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value:
             self._brightness = int(float(datapoint.get("value")))
-            return "brightness"
+            return ["brightness"]
         if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
                 self._forced_position = DimmingActuatorForcedPosition(
@@ -138,8 +138,8 @@ class DimmingActuator(Base):
                 )
             except ValueError:
                 self._forced_position = DimmingActuatorForcedPosition.unknown
-            return "forced_position"
-        return None
+            return ["forced_position"]
+        return []
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""
@@ -259,15 +259,15 @@ class ColorTemperatureActuator(DimmingActuator):
         await self._set_color_temperature_datapoint(str(value))
         self._color_temperature = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_INFO_COLOR_TEMPERATURE.value:
             self._color_temperature = int(float(datapoint.get("value")))
-            return "color_temperature"
+            return ["color_temperature"]
         return super()._refresh_state_from_datapoint(datapoint)
 
     async def _set_color_temperature_datapoint(self, value: str):

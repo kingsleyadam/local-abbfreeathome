@@ -59,16 +59,16 @@ class DesDoorOpenerActuator(Base):
         await self._set_switching_datapoint("1")
         self._state = True
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
-            return "state"
-        return None
+            return ["state"]
+        return []
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""

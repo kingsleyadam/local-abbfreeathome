@@ -69,16 +69,16 @@ class SimpleSwitchActuator(Base):
         await self._set_switching_datapoint("0")
         self._state = False
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
-            return "state"
-        return None
+            return ["state"]
+        return []
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""
@@ -104,16 +104,16 @@ class MWireSwitchActuator(SimpleSwitchActuator):
         Pairing.AL_MWIRE_SWITCH_ON_OFF,
     ]
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_MWIRE_SWITCH_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
-            return "state"
-        return None
+            return ["state"]
+        return []
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""
@@ -188,14 +188,14 @@ class SwitchActuator(SimpleSwitchActuator):
 
         self._forced_position = _position
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         _return_value = super()._refresh_state_from_datapoint(datapoint)
-        if _return_value is not None:
+        if _return_value:
             return _return_value
 
         if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
@@ -205,8 +205,8 @@ class SwitchActuator(SimpleSwitchActuator):
                 )
             except ValueError:
                 self._forced_position = SwitchActuatorForcedPosition.unknown
-            return "forced_position"
-        return None
+            return ["forced_position"]
+        return []
 
     async def _set_force_datapoint(self, value: str):
         """Set the force datapoint on the api."""

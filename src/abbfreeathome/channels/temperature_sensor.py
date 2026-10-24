@@ -57,19 +57,19 @@ class TemperatureSensor(Base):
         """Get the alarm state of the sensor."""
         return self._alarm
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> bool:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_OUTDOOR_TEMPERATURE.value:
             try:
                 self._state = float(datapoint.get("value"))
             except (ValueError, TypeError):
                 self._state = None
-            return "state"
+            return ["state"]
         if datapoint.get("pairingID") == Pairing.AL_FROST_ALARM.value:
             self._alarm = datapoint.get("value") == "1"
-            return "alarm"
-        return None
+            return ["alarm"]
+        return []

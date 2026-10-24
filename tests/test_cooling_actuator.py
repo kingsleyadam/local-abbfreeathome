@@ -87,7 +87,7 @@ def test_refresh_state_from_datapoint(cooling_actuator):
     result = cooling_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 306, "value": "85"},
     )
-    assert result == "position"
+    assert result == ["position"]
     assert cooling_actuator.position == 85
 
 
@@ -96,7 +96,7 @@ def test_refresh_state_from_datapoint_float(cooling_actuator):
     result = cooling_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 306, "value": "65.7"},
     )
-    assert result == "position"
+    assert result == ["position"]
     assert cooling_actuator.position == 65
 
 
@@ -105,7 +105,7 @@ def test_refresh_state_from_datapoint_invalid(cooling_actuator):
     result = cooling_actuator._refresh_state_from_datapoint(
         datapoint={"pairingID": 999, "value": "50"},
     )
-    assert result is None
+    assert result == []
     # Position should remain unchanged at 75
     assert cooling_actuator.position == 75
 

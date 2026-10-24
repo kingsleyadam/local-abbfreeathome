@@ -131,14 +131,14 @@ def test_refresh_state_from_datapoint_co2(air_quality_sensor):
     result = air_quality_sensor._refresh_state_from_datapoint(
         datapoint={"pairingID": 1563, "value": "850.5"},
     )
-    assert result == "co2"
+    assert result == ["co2"]
     assert air_quality_sensor.co2 == 850.5
 
     # Test CO2 alert
     result = air_quality_sensor._refresh_state_from_datapoint(
         datapoint={"pairingID": 1576, "value": "0"},
     )
-    assert result == "co2_alert"
+    assert result == ["co2_alert"]
     assert air_quality_sensor.co2_alert is False
 
 
@@ -148,14 +148,14 @@ def test_refresh_state_from_datapoint_voc(air_quality_sensor):
     result = air_quality_sensor._refresh_state_from_datapoint(
         datapoint={"pairingID": 1570, "value": "120"},
     )
-    assert result == "voc_index"
+    assert result == ["voc_index"]
     assert air_quality_sensor.voc_index == 120
 
     # Test VOC alert
     result = air_quality_sensor._refresh_state_from_datapoint(
         datapoint={"pairingID": 1577, "value": "0"},
     )
-    assert result == "voc_alert"
+    assert result == ["voc_alert"]
     assert air_quality_sensor.voc_alert is False
 
 
@@ -164,7 +164,7 @@ def test_refresh_state_from_datapoint_humidity(air_quality_sensor):
     result = air_quality_sensor._refresh_state_from_datapoint(
         datapoint={"pairingID": 337, "value": "65"},
     )
-    assert result == "humidity"
+    assert result == ["humidity"]
     assert air_quality_sensor.humidity == 65
 
 
@@ -174,7 +174,7 @@ def test_refresh_state_from_datapoint_invalid(air_quality_sensor):
     result = air_quality_sensor._refresh_state_from_datapoint(
         datapoint={"pairingID": 9999, "value": "1"},
     )
-    assert result is None
+    assert result == []
     # Ensure no state changed
     assert air_quality_sensor.co2 == 1669.12
     assert air_quality_sensor.voc_index == 193

@@ -126,11 +126,11 @@ class VirtualEnergyTwoWayMeter(Base):
         await self._set_exported_total_datapoint(str(value))
         self._exported_total = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if (
             datapoint.get("pairingID")
@@ -140,7 +140,7 @@ class VirtualEnergyTwoWayMeter(Base):
                 self._current_power = float(datapoint.get("value"))
             except ValueError:
                 self._current_power = 0.0
-            return "current_power"
+            return ["current_power"]
         if (
             datapoint.get("pairingID")
             == Pairing.AL_MEASURED_IMPORTED_ENERGY_TODAY.value
@@ -149,7 +149,7 @@ class VirtualEnergyTwoWayMeter(Base):
                 self._imported_today = int(datapoint.get("value"))
             except ValueError:
                 self._imported_today = 0
-            return "imported_today"
+            return ["imported_today"]
         if (
             datapoint.get("pairingID")
             == Pairing.AL_MEASURED_EXPORTED_ENERGY_TODAY.value
@@ -158,7 +158,7 @@ class VirtualEnergyTwoWayMeter(Base):
                 self._exported_today = int(datapoint.get("value"))
             except ValueError:
                 self._exported_today = 0
-            return "exported_today"
+            return ["exported_today"]
         if (
             datapoint.get("pairingID")
             == Pairing.AL_MEASURED_TOTAL_ENERGY_IMPORTED.value
@@ -167,7 +167,7 @@ class VirtualEnergyTwoWayMeter(Base):
                 self._imported_total = int(datapoint.get("value"))
             except ValueError:
                 self._imported_total = 0
-            return "imported_total"
+            return ["imported_total"]
         if (
             datapoint.get("pairingID")
             == Pairing.AL_MEASURED_TOTAL_ENERGY_EXPORTED.value
@@ -176,9 +176,9 @@ class VirtualEnergyTwoWayMeter(Base):
                 self._exported_total = int(datapoint.get("value"))
             except ValueError:
                 self._exported_total = 0
-            return "exported_total"
+            return ["exported_total"]
 
-        return None
+        return []
 
     async def _set_current_power_datapoint(self, value: str):
         """Set the sensor datapoint on the api."""

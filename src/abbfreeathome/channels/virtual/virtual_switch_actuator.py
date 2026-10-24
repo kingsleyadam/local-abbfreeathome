@@ -74,19 +74,19 @@ class VirtualSwitchActuator(Base):
         await self._set_switching_datapoint("0")
         self._state = False
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_SWITCH_ON_OFF.value:
             self._requested_state = datapoint.get("value") == "1"
-            return "requested_state"
+            return ["requested_state"]
         if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
-            return "state"
-        return None
+            return ["state"]
+        return []
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""
@@ -110,29 +110,28 @@ class VirtualSwitchActuator(Base):
             datapoint_key,
             datapoint_value,
         )
-        _callback_attribute = None
+        _callback_attributes: list[str] = []
         _changed = True
         _io_key = datapoint_key.rsplit("/", maxsplit=1)[-1]
 
         if _io_key in self._outputs:
             _changed = self._outputs[_io_key].get("value") != datapoint_value
             self._outputs[_io_key]["value"] = datapoint_value
-            _callback_attribute = self._refresh_state_from_datapoint(
+            _callback_attributes = self._refresh_state_from_datapoint(
                 datapoint=self._outputs[_io_key]
             )
 
         if _io_key in self._inputs:
             _changed = self._inputs[_io_key].get("value") != datapoint_value
             self._inputs[_io_key]["value"] = datapoint_value
-            _callback_attribute = self._refresh_state_from_datapoint(
+            _callback_attributes = self._refresh_state_from_datapoint(
                 datapoint=self._inputs[_io_key]
             )
 
         if is_priming and not _changed:
             return
 
-        for callback in self._callbacks.get(_callback_attribute, ()):
-            callback()
+        self._notify_callbacks(_callback_attributes)
 
     def update_scene(
         self, datapoint_key: str, datapoint_value: str, is_priming: bool = False

@@ -148,18 +148,18 @@ class CoverActuator(Base):
         await self._set_position_datapoint(str(value))
         self._position = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return whether the state was refreshed as a boolean value.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_INFO_MOVE_UP_DOWN.value:
             try:
                 self._state = CoverActuatorState(datapoint.get("value"))
             except ValueError:
                 self._state = CoverActuatorState.unknown
-            return "state"
+            return ["state"]
         if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
                 self._forced_position = CoverActuatorForcedPosition(
@@ -167,14 +167,14 @@ class CoverActuator(Base):
                 )
             except ValueError:
                 self._forced_position = CoverActuatorForcedPosition.unknown
-            return "forced_position"
+            return ["forced_position"]
         if (
             datapoint.get("pairingID")
             == Pairing.AL_CURRENT_ABSOLUTE_POSITION_BLINDS_PERCENTAGE.value
         ):
             self._position = int(float(datapoint.get("value")))
-            return "position"
-        return None
+            return ["position"]
+        return []
 
     async def _set_moving_datapoint(self, value: str):
         """Set the move_up_down datapoint on the api."""
@@ -260,17 +260,17 @@ class AwningActuator(CoverActuator):
         await self._set_position_datapoint(str(100 - value))
         self._position = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str | None:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """Refresh the state, inverting the raw awning position/direction."""
-        attribute = super()._refresh_state_from_datapoint(datapoint)
-        if attribute == "position" and self._position is not None:
+        attributes = super()._refresh_state_from_datapoint(datapoint)
+        if "position" in attributes and self._position is not None:
             self._position = 100 - self._position
-        elif attribute == "state":
+        elif "state" in attributes:
             if self._state == CoverActuatorState.opening:
                 self._state = CoverActuatorState.closing
             elif self._state == CoverActuatorState.closing:
                 self._state = CoverActuatorState.opening
-        return attribute
+        return attributes
 
 
 class BlindActuator(CoverActuator):
@@ -341,18 +341,18 @@ class ShutterActuator(CoverActuator):
         await self._set_tilt_datapoint(str(value))
         self._tilt_position = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if (
             datapoint.get("pairingID")
             == Pairing.AL_CURRENT_ABSOLUTE_POSITION_SLATS_PERCENTAGE.value
         ):
             self._tilt_position = int(float(datapoint.get("value")))
-            return "tilt_position"
+            return ["tilt_position"]
         return super()._refresh_state_from_datapoint(datapoint)
 
     async def _set_tilt_datapoint(self, value: str):

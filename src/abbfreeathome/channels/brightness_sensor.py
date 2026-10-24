@@ -57,16 +57,16 @@ class BrightnessSensor(Base):
         """Get the alarm state of the sensor."""
         return self._alarm
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_BRIGHTNESS_LEVEL.value:
             self._state = float(datapoint.get("value"))
-            return "state"
+            return ["state"]
         if datapoint.get("pairingID") == Pairing.AL_BRIGHTNESS_ALARM.value:
             self._alarm = datapoint.get("value") == "1"
-            return "alarm"
-        return None
+            return ["alarm"]
+        return []

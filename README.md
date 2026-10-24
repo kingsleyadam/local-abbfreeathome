@@ -98,16 +98,16 @@ Within the channel class any number of methods and functions can be implemented 
 All channel states can be derived from the `inputs`, `outputs`, and `parameters` class attributes that will be available to all channel classes and is set in the `Base` channel class. The state of a channel is generally set using the channel `outputs`. An example if getting the current state of the SwitchActuator
 
 ```python
-def _refresh_state_from_output(self, output: dict[str, Any]) -> bool:
+def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
     """
     Refresh the state of the device from a given output.
 
-    This will return whether the state was refreshed as a boolean value.
+    Return all affected attribute names, or an empty list if unhandled.
     """
-    if output.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
-        self._state = output.get("value") == "1"
-        return True
-    return False
+    if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
+        self._state = datapoint.get("value") == "1"
+        return ["state"]
+    return []
 ```
 
 This is called when the channel class is initiated to know the current state of the channel. Because the `inputs`, `outputs`, and `parameters` are fed to the channel class from the `FreeAtHome` class, it does not need to interact directly with the api server. This is important, this ensures we don't have to invoke the Api every time we create an instance of a new channel class.
@@ -138,8 +138,8 @@ async def refresh_state(self):
             )
         )[0]
 
-        self._refresh_state_from_output(
-            output={
+        self._refresh_state_from_datapoint(
+            datapoint={
                 "pairingID": _pairing.value,
                 "value": _datapoint,
             }

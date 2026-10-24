@@ -128,18 +128,18 @@ class RoomTemperatureController(Base):
         await self._set_temperature_datapoint(str(value))
         self._target_temperature = value
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:  # noqa: PLR0911
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:  # noqa: PLR0911
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_SET_POINT_TEMPERATURE.value:
             self._target_temperature = float(datapoint.get("value"))
-            return "target_temperature"
+            return ["target_temperature"]
         if datapoint.get("pairingID") == Pairing.AL_CONTROLLER_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
-            return "state"
+            return ["state"]
         if datapoint.get("pairingID") == Pairing.AL_STATE_INDICATION.value:
             """
             This returns a integer bitwise-ORed with the following masks:
@@ -156,23 +156,23 @@ class RoomTemperatureController(Base):
             """
             self._state_indication = int(datapoint.get("value"))
             self._eco_mode = int(datapoint.get("value")) & 0x04 == 0x04
-            return "eco_mode"
+            return ["eco_mode"]
         if datapoint.get("pairingID") == Pairing.AL_MEASURED_TEMPERATURE.value:
             self._current_temperature = float(datapoint.get("value"))
-            return "current_temperature"
+            return ["current_temperature"]
         if datapoint.get("pairingID") == Pairing.AL_ACTUATING_VALUE_HEATING.value:
             try:
                 self._heating = int(float(datapoint.get("value")))
             except ValueError:
                 self._heating = 0
-            return "heating"
+            return ["heating"]
         if datapoint.get("pairingID") == Pairing.AL_ACTUATING_VALUE_COOLING.value:
             try:
                 self._cooling = int(float(datapoint.get("value")))
             except ValueError:
                 self._cooling = 0
-            return "cooling"
-        return None
+            return ["cooling"]
+        return []
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""

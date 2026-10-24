@@ -81,28 +81,28 @@ class AirQualitySensor(Base):
         """Get the humidity percentage."""
         return self._humidity
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         pairing_id = datapoint.get("pairingID")
         value = datapoint.get("value")
 
         if pairing_id == Pairing.AL_INFO_CO_2.value:
             self._co2 = float(value)
-            return "co2"
+            return ["co2"]
         if pairing_id == Pairing.AL_CO2_ALERT.value:
             self._co2_alert = value == "1"
-            return "co2_alert"
+            return ["co2_alert"]
         if pairing_id == Pairing.AL_INFO_VOC_INDEX.value:
             self._voc_index = int(value)
-            return "voc_index"
+            return ["voc_index"]
         if pairing_id == Pairing.AL_VOC_ALERT.value:
             self._voc_alert = value == "1"
-            return "voc_alert"
+            return ["voc_alert"]
         if pairing_id == Pairing.AL_HUMIDITY.value:
             self._humidity = int(value)
-            return "humidity"
-        return None
+            return ["humidity"]
+        return []
