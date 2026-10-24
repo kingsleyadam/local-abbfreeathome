@@ -274,19 +274,23 @@ class RadiatorActuator(RoomTemperatureController):
         """
         return self._heating_active or bool(self._heating)
 
-    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> str:
+    def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
         Refresh the state of the channel from a given output.
 
-        This will return the name of the attribute, which was refreshed or None.
+        Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_HEATING_ACTIVE.value:
             self._heating_active = datapoint.get("value") == "1"
-            return "heating_active"
+            return ["heating_active"]
         if datapoint.get("pairingID") == Pairing.AL_HEATING_DEMAND.value:
+            was_heating_active = self.heating_active
             try:
                 self._heating = int(float(datapoint.get("value")))
             except (TypeError, ValueError):
                 self._heating = 0
-            return "heating"
+            attributes = ["heating"]
+            if self.heating_active != was_heating_active:
+                attributes.append("heating_active")
+            return attributes
         return super()._refresh_state_from_datapoint(datapoint)

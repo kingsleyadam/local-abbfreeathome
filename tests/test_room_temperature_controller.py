@@ -301,26 +301,87 @@ async def test_radiator_initial_state(radiator_actuator):
 @pytest.mark.asyncio
 async def test_radiator_heating_active(radiator_actuator):
     """Test the heating state comes from AL_HEATING_ACTIVE."""
-    assert (
-        radiator_actuator._refresh_state_from_datapoint(
-            {"pairingID": 331, "value": "1"}
-        )
-        == "heating_active"
-    )
+    assert radiator_actuator._refresh_state_from_datapoint(
+        {"pairingID": 331, "value": "1"}
+    ) == ["heating_active"]
     assert radiator_actuator.heating_active is True
 
 
 @pytest.mark.asyncio
 async def test_radiator_heating_demand(radiator_actuator):
     """Test the heating value comes from AL_HEATING_DEMAND."""
-    assert (
-        radiator_actuator._refresh_state_from_datapoint(
-            {"pairingID": 333, "value": "55"}
-        )
-        == "heating"
-    )
+    assert radiator_actuator._refresh_state_from_datapoint(
+        {"pairingID": 333, "value": "55"}
+    ) == ["heating", "heating_active"]
     assert radiator_actuator.heating == 55
     assert radiator_actuator.heating_active is True
+
+
+@pytest.mark.parametrize("is_priming", [False, True])
+def test_radiator_demand_notifies_heating_active(radiator_actuator, is_priming):
+    """Demand transitions notify both groups, including changed priming updates."""
+    active_states = []
+    heating_callback = MagicMock()
+    active_callback = MagicMock(
+        side_effect=lambda: active_states.append(radiator_actuator.heating_active)
+    )
+    radiator_actuator.register_callback("heating", heating_callback)
+    radiator_actuator.register_callback("heating_active", active_callback)
+
+    for demand in ("55", "0"):
+        radiator_actuator.update_channel(
+            "AL_HEATING_DEMAND/odp0009", demand, is_priming=is_priming
+        )
+        assert radiator_actuator.heating == int(demand)
+
+    assert radiator_actuator._outputs["odp0008"]["value"] == "0"
+    assert active_states == [True, False]
+    assert heating_callback.call_count == 2
+    assert active_callback.call_count == 2
+
+    radiator_actuator.update_channel("AL_HEATING_DEMAND/odp0009", "0", is_priming=True)
+    assert heating_callback.call_count == 2
+    assert active_callback.call_count == 2
+
+
+@pytest.mark.parametrize(
+    ("active_flag", "initial_demand", "demand"),
+    [("0", "55", "60"), ("1", "0", "55"), ("1", "55", "0")],
+)
+def test_radiator_demand_preserves_heating_active(
+    radiator_actuator, active_flag, initial_demand, demand
+):
+    """Demand changes that leave the effective boolean unchanged notify heating only."""
+    radiator_actuator.update_channel("AL_HEATING_ACTIVE/odp0008", active_flag)
+    radiator_actuator.update_channel("AL_HEATING_DEMAND/odp0009", initial_demand)
+    heating_callback = MagicMock()
+    active_callback = MagicMock()
+    radiator_actuator.register_callback("heating", heating_callback)
+    radiator_actuator.register_callback("heating_active", active_callback)
+
+    radiator_actuator.update_channel("AL_HEATING_DEMAND/odp0009", demand)
+
+    assert radiator_actuator.heating == int(demand)
+    assert radiator_actuator.heating_active is True
+    heating_callback.assert_called_once_with()
+    active_callback.assert_not_called()
+
+
+def test_radiator_active_flag_notifies_subscribers(radiator_actuator):
+    """Direct flag updates notify active subscribers without heating callbacks."""
+    heating_callback = MagicMock()
+    active_states = []
+    radiator_actuator.register_callback("heating", heating_callback)
+    radiator_actuator.register_callback(
+        "heating_active",
+        lambda: active_states.append(radiator_actuator.heating_active),
+    )
+
+    for active_flag in ("1", "0"):
+        radiator_actuator.update_channel("AL_HEATING_ACTIVE/odp0008", active_flag)
+
+    assert active_states == [True, False]
+    heating_callback.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -333,12 +394,9 @@ async def test_radiator_unparsable_heating_demand(radiator_actuator):
 @pytest.mark.asyncio
 async def test_radiator_inherits_room_temperature_controller(radiator_actuator):
     """Test the inherited datapoints are still handled."""
-    assert (
-        radiator_actuator._refresh_state_from_datapoint(
-            {"pairingID": 304, "value": "19.5"}
-        )
-        == "current_temperature"
-    )
+    assert radiator_actuator._refresh_state_from_datapoint(
+        {"pairingID": 304, "value": "19.5"}
+    ) == ["current_temperature"]
     assert radiator_actuator.current_temperature == 19.5
 
 
