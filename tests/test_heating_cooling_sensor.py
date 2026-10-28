@@ -6,7 +6,10 @@ import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.pairing import Pairing
-from src.abbfreeathome.channels.heating_cooling_sensor import HeatingCoolingSensor
+from src.abbfreeathome.channels.heating_cooling_sensor import (
+    HeatingCoolingSensor,
+    HeatingCoolingSensorState,
+)
 from src.abbfreeathome.device import Device
 
 
@@ -42,12 +45,12 @@ def heating_cooling_sensor(mock_floorplan):
 def test_discovery_and_initial_state(heating_cooling_sensor):
     """Discover FID 0x2A and initialize state from AL_HEATING_COOLING."""
     assert isinstance(heating_cooling_sensor, HeatingCoolingSensor)
-    assert heating_cooling_sensor.state is True
+    assert heating_cooling_sensor.state == HeatingCoolingSensorState.cooling.name
 
 
-@pytest.mark.parametrize(("value", "expected"), [("0", False), ("1", True)])
+@pytest.mark.parametrize(("value", "expected"), [("0", "heating"), ("1", "cooling")])
 def test_initial_state(value, expected):
-    """Initialize either boolean value without interpreting the contact type."""
+    """Decode ABB's mode values without reinterpreting the contact type."""
     sensor = HeatingCoolingSensor(
         device=MagicMock(spec=Device),
         channel_id="ch0000",
@@ -56,7 +59,7 @@ def test_initial_state(value, expected):
         outputs={"odp0007": {"pairingID": 309, "value": value}},
         parameters={"par0010": "1"},
     )
-    assert sensor.state is expected
+    assert sensor.state == expected
 
 
 def test_missing_changeover_output():
@@ -69,7 +72,7 @@ def test_missing_changeover_output():
         outputs={"odp0000": {"pairingID": 256, "value": "1"}},
         parameters={},
     )
-    assert sensor.state is None
+    assert sensor.state == HeatingCoolingSensorState.unknown.name
 
 
 @pytest.mark.asyncio
@@ -79,7 +82,7 @@ async def test_refresh_state(heating_cooling_sensor):
 
     await heating_cooling_sensor.refresh_state()
 
-    assert heating_cooling_sensor.state is False
+    assert heating_cooling_sensor.state == HeatingCoolingSensorState.heating.name
     heating_cooling_sensor.device.api.get_datapoint.assert_awaited_once_with(
         device_serial="ABB204E73951",
         channel_id="ch0000",
@@ -92,10 +95,10 @@ def test_updates_notify_state_subscribers(heating_cooling_sensor):
     callback = MagicMock()
     heating_cooling_sensor.register_callback("state", callback)
 
-    for value, expected in [("0", False), ("1", True)]:
+    for value, expected in [("0", "heating"), ("1", "cooling")]:
         callback.reset_mock()
         heating_cooling_sensor.update_channel("ABB204E73951/ch0000/odp0007", value)
-        assert heating_cooling_sensor.state is expected
+        assert heating_cooling_sensor.state == expected
         callback.assert_called_once_with()
 
 
@@ -106,7 +109,7 @@ def test_unrelated_update_ignored(heating_cooling_sensor):
 
     heating_cooling_sensor.update_channel("ABB204E73951/ch0000/odp0008", "1")
 
-    assert heating_cooling_sensor.state is True
+    assert heating_cooling_sensor.state == HeatingCoolingSensorState.cooling.name
     callback.assert_not_called()
 
 
@@ -119,14 +122,14 @@ def test_invalid_value_sets_unknown(heating_cooling_sensor, caplog, value):
 
     attributes = heating_cooling_sensor._refresh_state_from_datapoint(datapoint)
 
-    assert heating_cooling_sensor.state is None
+    assert heating_cooling_sensor.state == HeatingCoolingSensorState.unknown.name
     assert attributes == ["state"]
     assert "Invalid heating/cooling value" in caplog.text
     assert heating_cooling_sensor.channel_name in caplog.text
 
     heating_cooling_sensor.update_channel("ABB204E73951/ch0000/odp0007", "0")
 
-    assert heating_cooling_sensor.state is False
+    assert heating_cooling_sensor.state == HeatingCoolingSensorState.heating.name
     callback.assert_called_once_with()
 
 
@@ -136,7 +139,7 @@ def test_missing_value_sets_unknown(heating_cooling_sensor, caplog):
         {"pairingID": 309}
     )
 
-    assert heating_cooling_sensor.state is None
+    assert heating_cooling_sensor.state == HeatingCoolingSensorState.unknown.name
     assert attributes == ["state"]
     assert "Invalid heating/cooling value None" in caplog.text
 
@@ -148,5 +151,5 @@ def test_invalid_update_notifies_subscribers(heating_cooling_sensor):
 
     heating_cooling_sensor.update_channel("ABB204E73951/ch0000/odp0007", "invalid")
 
-    assert heating_cooling_sensor.state is None
+    assert heating_cooling_sensor.state == HeatingCoolingSensorState.unknown.name
     callback.assert_called_once_with()

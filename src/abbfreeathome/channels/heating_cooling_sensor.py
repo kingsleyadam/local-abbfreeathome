@@ -1,5 +1,6 @@
 """Free@Home HeatingCoolingSensor Class."""
 
+import enum
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -10,6 +11,19 @@ if TYPE_CHECKING:
     from ..device import Device
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class HeatingCoolingSensorState(enum.Enum):
+    """
+    Heating/cooling changeover states defined by AL_HEATING_COOLING.
+
+    ABB SDK defines heating = 0 / cooling = 1:
+    https://github.com/Busch-Jaeger/node-free-at-home/blob/master/src/pairingIds.ts
+    """
+
+    unknown = None
+    heating = "0"
+    cooling = "1"
 
 
 class HeatingCoolingSensor(Base):
@@ -34,7 +48,7 @@ class HeatingCoolingSensor(Base):
         room_name: str | None = None,
     ) -> None:
         """Initialize the Free@Home HeatingCoolingSensor class."""
-        self._state: bool | None = None
+        self._state: HeatingCoolingSensorState = HeatingCoolingSensorState.unknown
 
         super().__init__(
             device,
@@ -48,23 +62,20 @@ class HeatingCoolingSensor(Base):
         )
 
     @property
-    def state(self) -> bool | None:
-        """
-        Get the raw changeover signal, with "1" represented as True.
-
-        Missing or invalid values are represented as None.
-        The heating/cooling meaning of this signal is not yet confirmed.
-        """
-        return self._state
+    def state(self) -> str:
+        """Get the heating/cooling mode, or unknown for missing or invalid data."""
+        return self._state.name
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """Refresh state and return the affected attribute names."""
         if datapoint.get("pairingID") == Pairing.AL_HEATING_COOLING.value:
             value = datapoint.get("value")
-            if value in ("0", "1"):
-                self._state = value == "1"
+            if value == "0":
+                self._state = HeatingCoolingSensorState.heating
+            elif value == "1":
+                self._state = HeatingCoolingSensorState.cooling
             else:
-                self._state = None
+                self._state = HeatingCoolingSensorState.unknown
                 _LOGGER.warning(
                     "Invalid heating/cooling value %r for %s",
                     value,
