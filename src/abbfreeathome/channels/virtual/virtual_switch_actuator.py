@@ -61,7 +61,7 @@ class VirtualSwitchActuator(Base):
 
     @property
     def requested_state(self) -> bool | None:
-        """Get the requested state of the switch."""
+        """Get the requested state, or None for missing or invalid values."""
         return self._requested_state
 
     async def turn_on(self):
@@ -80,13 +80,29 @@ class VirtualSwitchActuator(Base):
 
         Return the names of the attributes refreshed by this datapoint.
         """
-        if datapoint.get("pairingID") == Pairing.AL_SWITCH_ON_OFF.value:
-            self._requested_state = datapoint.get("value") == "1"
+        pairing = datapoint.get("pairingID")
+        if pairing not in (
+            Pairing.AL_SWITCH_ON_OFF.value,
+            Pairing.AL_INFO_ON_OFF.value,
+        ):
+            return []
+
+        value = datapoint.get("value")
+        state = None
+        if value in ("0", "1"):
+            state = value == "1"
+        elif value is None or value == "":
+            _LOGGER.debug("No switching value for %s", self.channel_name)
+        else:
+            _LOGGER.warning(
+                "Invalid switching value %r for %s", value, self.channel_name
+            )
+
+        if pairing == Pairing.AL_SWITCH_ON_OFF.value:
+            self._requested_state = state
             return ["requested_state"]
-        if datapoint.get("pairingID") == Pairing.AL_INFO_ON_OFF.value:
-            self._state = datapoint.get("value") == "1"
-            return ["state"]
-        return []
+        self._state = state
+        return ["state"]
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""
@@ -146,6 +162,6 @@ class VirtualSwitchActuator(Base):
 
         # A triggered scene is a command, even if its value is unchanged or the
         # websocket is priming. Ordinary output feedback must not emit requests.
-        self._requested_state = datapoint_value == "1"
+        self._requested_state = self._state
         for callback in self._callbacks.get("requested_state", ()):
             callback()

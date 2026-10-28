@@ -160,6 +160,46 @@ def test_update_channel_priming_suppresses_noop_callback(virtual_switch_actuator
     callback.assert_called_once()
 
 
+@pytest.mark.parametrize("value", [None, "", "invalid", "2", "01", " 1", 0, 1, True])
+@pytest.mark.parametrize(
+    ("datapoint", "attribute"),
+    [("idp0000", "requested_state"), ("odp0000", "state")],
+)
+def test_invalid_switching_value(
+    virtual_switch_actuator, value, datapoint, attribute, caplog
+):
+    """Expose malformed switching telegrams as unknown and recover on valid data."""
+    callback = MagicMock()
+    virtual_switch_actuator.register_callback(attribute, callback)
+    virtual_switch_actuator.update_channel(datapoint, "1")
+    callback.reset_mock()
+
+    virtual_switch_actuator.update_channel(datapoint, value)
+
+    assert getattr(virtual_switch_actuator, attribute) is None
+    callback.assert_called_once_with()
+    if value is not None and value != "":
+        assert "Invalid switching value" in caplog.text
+
+    virtual_switch_actuator.update_channel(datapoint, "0")
+    assert getattr(virtual_switch_actuator, attribute) is False
+
+
+@pytest.mark.parametrize("value", [None, "", "invalid", "2"])
+def test_invalid_scene_request(virtual_switch_actuator, value):
+    """Do not turn malformed scene values into off requests."""
+    requested_states = []
+    virtual_switch_actuator.register_callback(
+        "requested_state",
+        lambda: requested_states.append(virtual_switch_actuator.requested_state),
+    )
+
+    for scene_value in ("1", value, "0"):
+        virtual_switch_actuator.update_scene("odp0000", scene_value)
+
+    assert requested_states == [True, None, False]
+
+
 @pytest.mark.parametrize("is_priming", [False, True])
 def test_update_scene_repeated_request(virtual_switch_actuator, is_priming):
     """Test every scene emits a request, including repeats and event-only users."""
