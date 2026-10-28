@@ -124,6 +124,38 @@ def test_switch_request(dimmer, value, expected):
     unrelated.assert_not_called()
 
 
+@pytest.mark.parametrize("value", [None, "", "invalid", "2", "01", " 1", 0, 1, True])
+def test_invalid_switch_request(dimmer, value):
+    """Surface invalid switching inputs as unknown without changing feedback."""
+    requested_states = []
+    unrelated = Mock()
+    dimmer.register_callback(
+        "requested_state", lambda: requested_states.append(dimmer.requested_state)
+    )
+    dimmer.register_callback("state", unrelated)
+
+    for request_value in (value, "0", "1"):
+        dimmer.update_channel("6000F66D1DA7/ch0000/idp0000", request_value)
+
+    assert requested_states == [None, False, True]
+    assert dimmer.state is False
+    unrelated.assert_not_called()
+
+
+@pytest.mark.parametrize("value", [None, "", "invalid", "2"])
+def test_invalid_initial_switch_request(device, value):
+    """Do not initialize malformed switching inputs as off requests."""
+    channel = VirtualDimmingActuator(
+        device,
+        "ch0000",
+        "Dimmer",
+        {"idp0000": {"pairingID": 1, "value": value}},
+        {},
+        {},
+    )
+    assert channel.requested_state is None
+
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
