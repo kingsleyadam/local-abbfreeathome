@@ -38,6 +38,7 @@ The current channels implemented within the library.
 | DimmingSensor\* | `turn_on_led()`, `turn_off_led()` | `state` |
 | ForceOnOffSensor | | `state` |
 | HeatingActuator | `set_position()` | `position` |
+| HeatingCoolingSensor | | `state` |
 | MovementDetector | | `state`, `brightness` |
 | RadiatorActuator | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `heating`, `cooling`, `target_temperature`, `state_indication`, `eco_mode`, `heating_active` |
 | RainSensor | | `state` |
@@ -63,6 +64,8 @@ The current channels implemented within the library.
 | WindowDoorSensor | `turn_on()`, `turn_off()` | `state` |
 
 \*DimmingSensor, StaircaseLightSensor, and SwitchSensor: `turn_on_led()` and `turn_off_led()` refer to the LED of the sensor. It only has an effect when the "LED mode" is set to "Status Indication".
+
+`HeatingCoolingSensor.state` exposes the raw `AL_HEATING_COOLING` signal (`"1"` as `True`, `"0"` as `False`). Its heating/cooling polarity is not yet confirmed.
 
 ## FreeAtHome Class Structure and API Interaction
 
