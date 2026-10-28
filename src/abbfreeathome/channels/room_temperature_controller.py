@@ -26,7 +26,10 @@ class RoomTemperatureController(Base):
         "heating",
         "cooling",
         "target_temperature",
+        "state_indication",
         "eco_mode",
+        "heating_mode",
+        "heating_cooling_active",
     ]
 
     def __init__(
@@ -95,6 +98,20 @@ class RoomTemperatureController(Base):
         """Get the state of the eco_mode."""
         return self._eco_mode
 
+    @property
+    def heating_mode(self) -> bool | None:
+        """Get the indicated mode: True for heating, False for cooling."""
+        if self._state_indication is None:
+            return None
+        return bool(self._state_indication & 0x20)
+
+    @property
+    def heating_cooling_active(self) -> bool | None:
+        """Get whether the indication allows heating/cooling rather than idle."""
+        if self._state_indication is None:
+            return None
+        return not bool(self._state_indication & 0x40)
+
     async def turn_on(self):
         """Turn on the RTC."""
         await self._set_switching_datapoint("1")
@@ -151,12 +168,15 @@ class RoomTemperatureController(Base):
             0x20 - heat (set) / cool (unset)    (33)
             0x40 - no heating/cooling (set)
             0x80 - frost alarm
-
-            At the moment only 0x04 (eco mode) is needed
             """
             self._state_indication = int(datapoint.get("value"))
-            self._eco_mode = int(datapoint.get("value")) & 0x04 == 0x04
-            return ["eco_mode"]
+            self._eco_mode = self._state_indication & 0x04 == 0x04
+            return [
+                "state_indication",
+                "eco_mode",
+                "heating_mode",
+                "heating_cooling_active",
+            ]
         if datapoint.get("pairingID") == Pairing.AL_MEASURED_TEMPERATURE.value:
             self._current_temperature = float(datapoint.get("value"))
             return ["current_temperature"]
@@ -235,7 +255,10 @@ class RadiatorActuator(RoomTemperatureController):
         "heating",
         "cooling",
         "target_temperature",
+        "state_indication",
         "eco_mode",
+        "heating_mode",
+        "heating_cooling_active",
         "heating_active",
     ]
 
