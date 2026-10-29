@@ -16,6 +16,7 @@ from .channels.des_door_opener_actuator import DesDoorOpenerActuator
 from .channels.des_door_ringing_sensor import DesDoorRingingSensor
 from .channels.dimming_actuator import ColorTemperatureActuator, DimmingActuator
 from .channels.force_on_off_sensor import ForceOnOffSensor
+from .channels.heating_cooling_sensor import HeatingCoolingSensor
 from .channels.movement_detector import BlockableMovementDetector, MovementDetector
 from .channels.rain_sensor import RainSensor
 from .channels.room_temperature_controller import (
@@ -111,6 +112,7 @@ FUNCTION_CHANNEL_MAPPING: dict[Function, Base] = {
     Function.FID_HEATING_ACTUATOR: HeatingActuator,
     Function.FID_HEATING_COOLING_ACTUATOR: HeatingCoolingActuator,
     Function.FID_HEATING_COOLING_ACTUATOR_TYPE1: HeatingCoolingActuator,
+    Function.FID_HEATING_COOLING_SENSOR: HeatingCoolingSensor,
     Function.FID_MWIRE_SWITCH_OUTPUT_TYPE0: MWireSwitchActuator,
     Function.FID_MWIRE_SWITCH_OUTPUT_TYPE1: MWireSwitchActuator,
     Function.FID_MOVEMENT_DETECTOR: MovementDetector,

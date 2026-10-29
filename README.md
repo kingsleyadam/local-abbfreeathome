@@ -38,6 +38,7 @@ The current channels implemented within the library.
 | DimmingSensor\* | `turn_on_led()`, `turn_off_led()` | `state` |
 | ForceOnOffSensor | | `state` |
 | HeatingActuator | `set_position()` | `position` |
+| HeatingCoolingSensor | | `state` (`heating`, `cooling`, or `unknown`) |
 | MovementDetector | | `state`, `brightness` |
 | RadiatorActuator | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `heating`, `cooling`, `target_temperature`, `state_indication`, `eco_mode`, `heating_active` |
 | RainSensor | | `state` |
