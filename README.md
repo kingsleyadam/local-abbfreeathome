@@ -40,9 +40,9 @@ The current channels implemented within the library.
 | HeatingActuator | `set_position()` | `position` |
 | HeatingCoolingSensor | | `state` (`heating`, `cooling`, or `unknown`) |
 | MovementDetector | | `state`, `brightness` |
-| RadiatorActuator | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `heating`, `cooling`, `target_temperature`, `state_indication`, `eco_mode`, `heating_active` |
+| RadiatorActuator | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `heating`, `cooling`, `target_temperature`, `state_indication`, `eco_mode`, `heating_mode`, `heating_cooling_active`, `heating_active` |
 | RainSensor | | `state` |
-| RoomTemperatureController | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `valve`, `target_temperature`, `state_indication`, `eco_mode` |
+| RoomTemperatureController | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `valve`, `target_temperature`, `state_indication`, `eco_mode`, `heating_mode`, `heating_cooling_active` |
 | SmokeDetector | | `state` |
 | StaircaseLightSensor\* | `turn_on_led()`, `turn_off_led()` | `state` |
 | SwitchActuator | `turn_on()`, `turn_off()`, `set_forced_position()` | `state`, `forced_position` |

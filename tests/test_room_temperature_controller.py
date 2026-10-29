@@ -152,6 +152,8 @@ async def test_refresh_state(room_temperature_controller):
     room_temperature_controller.device.api.get_datapoint.return_value = ["1"]
     await room_temperature_controller.refresh_state()
     assert room_temperature_controller.state is True
+    assert room_temperature_controller.heating_mode is False
+    assert room_temperature_controller.heating_cooling_active is True
     room_temperature_controller.device.api.get_datapoint.assert_called_with(
         device_serial="ABB700D72CC9",
         channel_id="ch0000",
@@ -432,3 +434,118 @@ def test_radiator_is_mapped_to_its_function():
         FUNCTION_CHANNEL_MAPPING[Function.FID_RADIATOR_ACTUATOR_MASTER]
         is RadiatorActuator
     )
+
+
+@pytest.mark.parametrize("channel_class", [RoomTemperatureController, RadiatorActuator])
+@pytest.mark.parametrize(
+    ("indication", "heating_mode", "active", "eco_mode"),
+    [
+        ("65", False, False, False),
+        ("33", True, True, False),
+        ("68", False, False, True),
+        ("96", True, False, False),
+        ("1", False, True, False),
+        ("37", True, True, True),
+        ("0", False, True, False),
+    ],
+)
+def test_state_indication_bits(
+    mock_device, channel_class, indication, heating_mode, active, eco_mode
+):
+    """Decode reported idle/heating values and active cooling for both channels."""
+    channel = channel_class(
+        device=mock_device,
+        channel_id="ch0000",
+        channel_name="Thermostat",
+        inputs={},
+        outputs={"odp0003": {"pairingID": 54, "value": indication}},
+        parameters={},
+    )
+
+    assert channel.state_indication == int(indication)
+    assert channel.heating_mode is heating_mode
+    assert channel.heating_cooling_active is active
+    assert channel.eco_mode is eco_mode
+
+
+@pytest.mark.parametrize("channel_class", [RoomTemperatureController, RadiatorActuator])
+def test_missing_state_indication(mock_device, channel_class):
+    """Keep mode and activity unknown until a state indication arrives."""
+    channel = channel_class(
+        device=mock_device,
+        channel_id="ch0000",
+        channel_name="Thermostat",
+        inputs={},
+        outputs={},
+        parameters={},
+    )
+
+    assert channel.state_indication is None
+    assert channel.heating_mode is None
+    assert channel.heating_cooling_active is None
+    assert channel.eco_mode is None
+
+    channel._refresh_state_from_datapoint({"pairingID": 54, "value": "33"})
+
+    assert channel.heating_mode is True
+    assert channel.heating_cooling_active is True
+
+
+@pytest.mark.parametrize(
+    ("fixture_name", "datapoint"),
+    [
+        ("room_temperature_controller", "odp0009"),
+        ("radiator_actuator", "odp0003"),
+    ],
+)
+def test_state_indication_callbacks(request, fixture_name, datapoint):
+    """Notify subscribers after decoding mode, activity, eco, and raw state."""
+    channel = request.getfixturevalue(fixture_name)
+    attributes = (
+        "state_indication",
+        "eco_mode",
+        "heating_mode",
+        "heating_cooling_active",
+    )
+    callbacks = {attribute: MagicMock() for attribute in attributes}
+    observed_states = []
+    for attribute, callback in callbacks.items():
+        channel.register_callback(attribute, callback)
+
+    def shared_callback():
+        observed_states.append(
+            (
+                channel.state_indication,
+                channel.heating_mode,
+                channel.heating_cooling_active,
+            )
+        )
+
+    for attribute in attributes:
+        channel.register_callback(attribute, shared_callback)
+
+    for indication in ("33", "1", "96", "68"):
+        channel.update_channel(f"AL_STATE_INDICATION/{datapoint}", indication)
+
+    assert observed_states == [
+        (33, True, True),
+        (1, False, True),
+        (96, True, False),
+        (68, False, False),
+    ]
+    assert channel.eco_mode is True
+    for callback in callbacks.values():
+        assert callback.call_count == 4
+
+
+def test_cooling_demand_does_not_override_inactive_indication(
+    room_temperature_controller,
+):
+    """Keep an idle room inactive despite a nonzero cooling demand."""
+    room_temperature_controller.update_channel(
+        "AL_ACTUATING_VALUE_COOLING/odp0001", "100"
+    )
+
+    assert room_temperature_controller.cooling == 100
+    assert room_temperature_controller.state_indication == 65
+    assert room_temperature_controller.heating_cooling_active is False
