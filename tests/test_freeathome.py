@@ -7,6 +7,7 @@ import pytest
 
 from src.abbfreeathome import DevicesChangedEvent
 from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.bin.function import Function
 from src.abbfreeathome.bin.interface import Interface
 from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.channels.switch_actuator import SwitchActuator
@@ -1728,14 +1729,137 @@ async def test_discovery_event_batches_exact_additions(api_mock):
 
 
 @pytest.mark.asyncio
-async def test_location_update_without_cached_config(freeathome):
+@pytest.mark.parametrize("channel_id", ["ch0000", "ch0003"])
+@pytest.mark.parametrize("is_priming", [False, True])
+async def test_placement_replay_updates_refreshed_cache(
+    api_mock, channel_id, is_priming
+):
+    """Replay input-derived state and synchronize refreshed discovery caches."""
+    api_mock.is_priming = is_priming
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    serial = "ABB_NEW"
+    device_data = deepcopy(
+        api_mock.get_configuration.return_value["devices"]["ABB7F500E17A"]
+    )
+    device_data["channels"] = {channel_id: device_data["channels"][channel_id]}
+    for section in (device_data, device_data["channels"][channel_id]):
+        section.pop("floor")
+        section.pop("room")
+    await freeathome.update(
+        {"devicesAdded": [serial], "devices": {serial: device_data}}
+    )
+    device = freeathome.get_device_by_serial(serial)
+    channel = device.channels[channel_id]
+    api_mock.get_configuration.return_value = deepcopy(await freeathome.get_config())
+    cached = await freeathome.get_config(refresh=True)
+    observed = []
+
+    def discovered(event):
+        cached_device = cached["devices"][serial]
+        cached_channel = cached_device["channels"][channel_id]
+        observed.append(
+            (
+                event,
+                cached_device["parameters"]["par00ed"],
+                cached_channel["parameters"]["par0007"],
+                cached_channel["outputs"]["odp0000"]["value"],
+            )
+        )
+
+    freeathome.register_devices_changed_callback(discovered)
+    snapshot = deepcopy(device_data)
+    snapshot["parameters"]["par00ed"] = "2"
+    snapshot["channels"][channel_id].update(
+        {
+            "floor": "02",
+            "room": "02",
+            "parameters": {"par0007": "2"},
+        }
+    )
+    snapshot["channels"][channel_id]["inputs"]["idp0000"]["value"] = "1"
+    snapshot["channels"][channel_id]["outputs"]["odp0000"]["value"] = "0"
+    await freeathome.update(
+        {
+            "devices": {serial: snapshot},
+            "datapoints": {f"{serial}/{channel_id}/odp0000": "0"},
+            "scenesTriggered": {
+                serial: {
+                    "channels": {channel_id: {"outputs": {"odp0000": {"value": "1"}}}}
+                }
+            },
+        }
+    )
+    assert freeathome.get_device_by_serial(serial) is device
+    assert channel.get_parameter(7) == "2"
+    if isinstance(channel, SwitchSensor):
+        assert channel.led is True
+        assert channel.get_input_by_pairing(Pairing.AL_INFO_ON_OFF)[1] == "1"
+        assert (
+            cached["devices"][serial]["channels"][channel_id]["inputs"]["idp0000"][
+                "value"
+            ]
+            == "1"
+        )
+    assert observed == [(DevicesChangedEvent(added_channels=(channel,)), "2", "2", "1")]
+
+
+@pytest.mark.asyncio
+async def test_overflowing_addition_does_not_abort_discovery(api_mock, caplog):
+    """Reject an overflowing dimmer while processing subsequent valid devices."""
+    api_mock.is_priming = False
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    good = deepcopy(api_mock.get_configuration.return_value["devices"]["ABB7F500E17A"])
+    bad = deepcopy(good)
+    bad["channels"]["ch0003"].update(
+        {
+            "functionID": f"{Function.FID_DIMMING_ACTUATOR.value:x}",
+            "outputs": {
+                "odp0000": {
+                    "pairingID": Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value,
+                    "value": "1e1000",
+                }
+            },
+        }
+    )
+    events = []
+    freeathome.register_devices_changed_callback(events.append)
+    await freeathome.update(
+        {
+            "devicesAdded": ["ABB_BAD", "ABB_GOOD"],
+            "devices": {"ABB_BAD": bad, "ABB_GOOD": good},
+            "datapoints": {"ABB7F500E17A/ch0003/odp0000": "1"},
+        }
+    )
+    assert freeathome.get_device_by_serial("ABB_BAD") is None
+    assert "ABB_BAD" not in (await freeathome.get_config())["devices"]
+    assert events[0].added_devices == (freeathome.get_device_by_serial("ABB_GOOD"),)
+    assert freeathome.get_channels()["ABB7F500E17A/ch0003"].state is True
+    assert any(
+        record.exc_info and record.exc_info[0] is OverflowError
+        for record in caplog.records
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("orphan", [False, True])
+async def test_location_update_without_cached_config(freeathome, orphan):
     """Explicit location updates do not introduce REST requests for known objects."""
     device, channel = _params_freeathome(freeathome)
+    if orphan:
+        device.channels_data["ch0000"].pop("floor")
+        device.channels_data["ch0000"].pop("room")
+    events = []
+    freeathome.register_devices_changed_callback(events.append)
     await freeathome.update(
         {"devices": {device.device_serial: {"channels": {"ch0000": {"room": "02"}}}}}
     )
     assert device.channels["ch0000"] is channel
     assert device.channels_data["ch0000"]["room"] == "02"
+    assert events == (
+        [DevicesChangedEvent(added_channels=(channel,))] if orphan else []
+    )
     freeathome.api.get_configuration.assert_not_awaited()
 
 

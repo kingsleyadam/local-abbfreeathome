@@ -189,8 +189,31 @@ class FreeAtHome:
             _event = DevicesChangedEvent(
                 added_devices=_added_devices, added_channels=_added_channels
             )
+            self._sync_discovery_config(_event)
             for _callback in tuple(self._devices_changed_callbacks):
                 _callback(_event)
+
+    def _sync_discovery_config(self, event: DevicesChangedEvent) -> None:
+        """Copy exposed objects' applied values into the current config cache."""
+        if self._config is None:
+            return
+        for _device in (
+            *event.added_devices,
+            *(_channel.device for _channel in event.added_channels),
+        ):
+            _cached = self._config["devices"][_device.device_serial]
+            _cached.setdefault("parameters", {}).update(_device.parameters)
+        for _channel in event.added_channels:
+            _cached_channel = self._config["devices"][_channel.device_serial][
+                "channels"
+            ][_channel.channel_id]
+            _cached_channel.setdefault("parameters", {}).update(_channel.parameters)
+            _channel_data = _channel.device.channels_data[_channel.channel_id]
+            for _direction in ("inputs", "outputs"):
+                _cached_points = _cached_channel.setdefault(_direction, {})
+                for _point_id, _point in _channel_data.get(_direction, {}).items():
+                    _cached_point = _cached_points.setdefault(_point_id, dict(_point))
+                    _cached_point["value"] = _point.get("value")
 
     async def _update_devices(self, data: dict) -> tuple[Device, ...]:
         _device_updates = data.get("devices") or {}
@@ -246,6 +269,7 @@ class FreeAtHome:
             except (
                 AttributeError,
                 KeyError,
+                OverflowError,
                 TypeError,
                 ValueError,
                 InvalidDeviceChannelPairing,
@@ -304,8 +328,9 @@ class FreeAtHome:
                 .get("channels", {})
                 .get(_channel_id, {})
             )
-            for _output_id, _output in (_channel_data.get("outputs") or {}).items():
-                _datapoints[f"{_unique_id}/{_output_id}"] = _output.get("value")
+            for _direction in ("inputs", "outputs"):
+                for _point_id, _point in (_channel_data.get(_direction) or {}).items():
+                    _datapoints[f"{_unique_id}/{_point_id}"] = _point.get("value")
         return _datapoints
 
     def _update_parameters(self, data: dict) -> None:
