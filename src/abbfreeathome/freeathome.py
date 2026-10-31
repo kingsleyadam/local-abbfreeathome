@@ -15,12 +15,20 @@ from .floorplan import Floorplan
 _LOGGER = logging.getLogger(__name__)
 
 
+def _copy_locations(target: dict, update: dict) -> None:
+    """Copy explicitly supplied floor/room fields."""
+    for _key in ("floor", "room"):
+        if _key in update:
+            target[_key] = update[_key]
+
+
 @dataclass(frozen=True, slots=True)
 class DevicesChangedEvent:
     """Describe exact device additions and newly visible, filtered channels."""
 
     added_devices: tuple[Device, ...] = ()
     added_channels: tuple[Base, ...] = ()
+    removed_device_serials: tuple[str, ...] = ()
 
 
 class FreeAtHome:
@@ -212,12 +220,15 @@ class FreeAtHome:
             if _device is None or not isinstance(_device_data, dict):
                 continue
             _device.update_locations(_device_data, _floorplan)
-            # Channel data is shared with the config; device data is copied.
+            # Keep a refreshed config cache in sync with explicit locations.
             _cached = _cached_devices.get(_serial)
             if _cached is not None:
-                for _key in ("floor", "room"):
-                    if _key in _device_data:
-                        _cached[_key] = _device_data[_key]
+                _copy_locations(_cached, _device_data)
+                _channel_updates = _device_data.get("channels") or {}
+                for _channel_id, _update in _channel_updates.items():
+                    _cached_channel = (_cached.get("channels") or {}).get(_channel_id)
+                    if isinstance(_update, dict) and isinstance(_cached_channel, dict):
+                        _copy_locations(_cached_channel, _update)
             self._filtered_channels = None
         return _added_devices
 
@@ -255,6 +266,15 @@ class FreeAtHome:
                 InvalidDeviceChannelPairing,
             ):
                 _LOGGER.exception("Cannot initialize added device %s", _serial)
+                continue
+            if _device is not None and not all(
+                isinstance(_section.get("parameters") or {}, dict)
+                for _section in (
+                    _device_data,
+                    *(_device_data.get("channels") or {}).values(),
+                )
+            ):
+                _LOGGER.error("Cannot add device %s: invalid parameters", _serial)
                 continue
             _config.setdefault("devices", {})[_serial] = _device_data
             if _device is not None:

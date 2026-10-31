@@ -1621,6 +1621,16 @@ async def test_device_discovery_respects_filters(
         None,
         "invalid",
         {"channels": {"bad": []}},
+        {"channels": {}, "parameters": ["invalid"]},
+        {
+            "channels": {
+                "ch0003": {
+                    "functionID": "7",
+                    "outputs": {"odp0000": {"pairingID": 256, "value": "0"}},
+                    "parameters": ["invalid"],
+                }
+            }
+        },
         {
             "channels": {
                 "bad": {
@@ -1684,6 +1694,23 @@ async def test_malformed_devices_added_does_not_abort_frame(
     assert (freeathome.get_device_by_serial("ABB_GOOD") is not None) is expect_good
     assert freeathome.get_channels()["ABB7F500E17A/ch0003"].state is True
     assert "Ignoring invalid devicesAdded" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_location_update_syncs_refreshed_cache(api_mock):
+    """Explicit channel locations reach a refreshed cache; omitted ones do not."""
+    serial = "ABB7F500E17A"
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    api_mock.get_configuration.return_value = deepcopy(await freeathome.get_config())
+    cached = (await freeathome.get_config(refresh=True))["devices"][serial]
+    cached["channels"]["ch0000"]["room"] = "03"
+    await freeathome.update(
+        {"devices": {serial: {"channels": {"ch0003": {"floor": "02", "room": "02"}}}}}
+    )
+    assert cached["channels"]["ch0003"]["floor"] == "02"
+    assert cached["channels"]["ch0003"]["room"] == "02"
+    assert cached["channels"]["ch0000"]["room"] == "03"
 
 
 @pytest.mark.asyncio

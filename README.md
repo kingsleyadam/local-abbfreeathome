@@ -118,7 +118,8 @@ freeathome.remove_devices_changed_callback(discover_devices)
 Callbacks run once per message, after its state updates are applied, and receive
 the newly added devices and newly visible channels. Startup filters still apply, and
 channels placed on the floorplan at runtime are reported as `added_channels`.
-Device removal and additions missed while disconnected are not handled.
+Device removal and additions missed while disconnected are not handled;
+`removed_device_serials` is reserved for removal support and is always empty.
 
 ### Channel Api Interaction (Update Channel)
 
