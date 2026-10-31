@@ -125,6 +125,12 @@ channels placed on the floorplan at runtime are reported as `added_channels`.
 by interface filters. Unresponsive or expired virtual devices are not removed.
 Changes missed while disconnected are not handled.
 
+Device availability is exposed as `Device.unresponsive` (and `Base.unresponsive`
+on channels). Register a synchronous, zero-argument callback with
+`device.register_unresponsive_callback()` to be notified when the flag changes;
+remove it with `device.remove_unresponsive_callback()`. Unresponsive devices and
+their channels remain loaded.
+
 ### Channel Api Interaction (Update Channel)
 
 Within the channel class any number of methods and functions can be implemented in order to both expose the information from the api as channel properties (e.g. lux, state) or set the state of a channel in Free@Home using the api object.

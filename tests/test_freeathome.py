@@ -1918,6 +1918,40 @@ async def test_device_removal_before_initial_load(api_mock):
 
 
 @pytest.mark.asyncio
+async def test_device_unresponsive_updates(freeathome, api_mock):
+    """Availability changes notify once, keep identities, and match the cache."""
+    serial = "ABB7F62F6C0B"
+    await freeathome.load()
+    device = freeathome.get_device_by_serial(serial)
+    channel = freeathome.get_channels()[f"{serial}/ch0003"]
+    cached = (await freeathome.get_config())["devices"][serial]
+    assert device.unresponsive is False
+    seen = []
+    callback = MagicMock(
+        side_effect=lambda: seen.append((device.unresponsive, cached["unresponsive"]))
+    )
+    device.register_unresponsive_callback(callback)
+
+    api_mock.is_priming = True
+    await freeathome.update({"devices": {serial: {"unresponsive": True}}})
+    await freeathome.update({"devices": {serial: {"unresponsive": True}}})
+    api_mock.is_priming = False
+    await freeathome.update({"devices": {serial: {"displayName": "x"}}})
+    await freeathome.update({"devices": {serial: {"unresponsive": "false"}}})
+    assert seen == [(True, True)]
+    assert channel.unresponsive is True
+    assert freeathome.get_channels()[f"{serial}/ch0003"] is channel
+
+    await freeathome.update({"devices": {serial: {"unresponsive": False}}})
+    assert seen == [(True, True), (False, False)]
+
+    device.remove_unresponsive_callback(callback)
+    await freeathome.update({"devices": {serial: {"unresponsive": True}}})
+    assert callback.call_count == 2
+    assert device.unresponsive is True
+
+
+@pytest.mark.asyncio
 async def test_overflowing_addition_does_not_abort_discovery(api_mock, caplog):
     """Reject an overflowing dimmer while processing subsequent valid devices."""
     api_mock.is_priming = False
