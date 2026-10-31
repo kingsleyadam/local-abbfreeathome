@@ -91,6 +91,36 @@ To make things simple and easy to test each channel should map to a single Free@
 
 If multiple functions share a number of the same properties but are slightly different we can create additional levels to the class inheritence hierachy as needed to avoid repeat code.
 
+### Runtime Device Discovery
+
+While `FreeAtHome.ws_listen()` is running, devices reported in `devicesAdded` are
+loaded from their WebSocket configuration using the same rules as initial loading.
+Existing device and channel objects, including their subscriptions, are preserved.
+
+Subscribe with a synchronous callback receiving a `DevicesChangedEvent`:
+
+```python
+from abbfreeathome import DevicesChangedEvent
+
+
+def discover_devices(event: DevicesChangedEvent):
+    for device in event.added_devices:
+        register_device(device)
+    for channel in event.added_channels:
+        add_entity(channel)
+
+
+freeathome.register_devices_changed_callback(discover_devices)
+# On consumer teardown:
+freeathome.remove_devices_changed_callback(discover_devices)
+```
+
+Callbacks run once per message, after its state updates are applied, and receive
+the newly added devices and newly visible channels. Startup filters still apply, and
+channels placed on the floorplan at runtime are reported as `added_channels`.
+Device removal and additions missed while disconnected are not handled;
+`removed_device_serials` is reserved for removal support and is always empty.
+
 ### Channel Api Interaction (Update Channel)
 
 Within the channel class any number of methods and functions can be implemented in order to both expose the information from the api as channel properties (e.g. lux, state) or set the state of a channel in Free@Home using the api object.
