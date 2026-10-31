@@ -8,18 +8,11 @@ import logging
 from .api import FreeAtHomeApi
 from .bin.interface import Interface
 from .channels.base import Base
-from .device import Device
+from .device import Device, copy_locations
 from .exceptions import InvalidDeviceChannelPairing
 from .floorplan import Floorplan
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _copy_locations(target: dict, update: dict) -> None:
-    """Copy explicitly supplied floor/room fields."""
-    for _key in ("floor", "room"):
-        if _key in update:
-            target[_key] = update[_key]
 
 
 @dataclass(frozen=True, slots=True)
@@ -223,12 +216,12 @@ class FreeAtHome:
             # Keep a refreshed config cache in sync with explicit locations.
             _cached = _cached_devices.get(_serial)
             if _cached is not None:
-                _copy_locations(_cached, _device_data)
+                copy_locations(_cached, _device_data)
                 _channel_updates = _device_data.get("channels") or {}
                 for _channel_id, _update in _channel_updates.items():
                     _cached_channel = (_cached.get("channels") or {}).get(_channel_id)
                     if isinstance(_update, dict) and isinstance(_cached_channel, dict):
-                        _copy_locations(_cached_channel, _update)
+                        copy_locations(_cached_channel, _update)
             self._filtered_channels = None
         return _added_devices
 

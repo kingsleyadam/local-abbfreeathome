@@ -1714,6 +1714,32 @@ async def test_location_update_syncs_refreshed_cache(api_mock):
 
 
 @pytest.mark.asyncio
+async def test_location_update_ignores_invalid_values(api_mock):
+    """Non-string locations are ignored without aborting the message."""
+    serial = "ABB7F500E17A"
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    cached = (await freeathome.get_config())["devices"][serial]
+    channel = freeathome.get_channels()[f"{serial}/ch0003"]
+    await freeathome.update(
+        {
+            "devices": {
+                serial: {
+                    "floor": {"invalid": 1},
+                    "channels": {"ch0003": {"floor": ["invalid"], "room": "02"}},
+                }
+            },
+            "datapoints": {f"{serial}/ch0003/odp0000": "1"},
+        }
+    )
+    assert freeathome.get_device_by_serial(serial).floor_name == "Ground Floor"
+    assert cached["floor"] == "01"
+    assert cached["channels"]["ch0003"]["floor"] == "01"
+    assert cached["channels"]["ch0003"]["room"] == "02"
+    assert channel.state is True
+
+
+@pytest.mark.asyncio
 async def test_addition_before_initial_load(api_mock):
     """Use cached REST floorplan information even if discovery precedes load."""
     api_mock.is_priming = False

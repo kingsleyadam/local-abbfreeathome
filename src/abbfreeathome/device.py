@@ -11,6 +11,14 @@ from .floorplan import Floorplan
 from .parameters import ParametersMixin
 
 
+def copy_locations(target: dict, update: dict) -> None:
+    """Copy explicitly supplied floor/room fields, ignoring non-string values."""
+    for _key in ("floor", "room"):
+        _value = update.get(_key)
+        if _key in update and (_value is None or isinstance(_value, str)):
+            target[_key] = _value
+
+
 class Device(ParametersMixin):
     """Represents a Free@Home device with all its attributes."""
 
@@ -149,8 +157,10 @@ class Device(ParametersMixin):
 
     def update_locations(self, data: dict, floorplan: Floorplan) -> None:
         """Apply explicit location updates while preserving channel objects."""
-        self._floor = data.get("floor", self._floor)
-        self._room = data.get("room", self._room)
+        _locations = {"floor": self._floor, "room": self._room}
+        copy_locations(_locations, data)
+        self._floor = _locations["floor"]
+        self._room = _locations["room"]
         self._floor_name = floorplan.get_floor_name(self._floor)
         self._room_name = floorplan.get_room_name(self._floor, self._room)
 
@@ -158,9 +168,7 @@ class Device(ParametersMixin):
         for _channel_id, _channel_data in self._channels_data.items():
             _update = _channel_updates.get(_channel_id)
             if isinstance(_update, dict):
-                for _key in ("floor", "room"):
-                    if _key in _update:
-                        _channel_data[_key] = _update[_key]
+                copy_locations(_channel_data, _update)
             _channel = self._channels.get(_channel_id)
             if _channel is not None:
                 _channel.update_location(
