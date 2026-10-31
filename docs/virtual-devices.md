@@ -49,6 +49,6 @@ Function names match the [`Function` enum](../src/abbfreeathome/bin/function.py)
 | `WindowActuator` | `ch0000` (`0062`) | `FID_ATTIC_WINDOW_ACTUATOR` | Not implemented |
 | `WindowSensor` | `ch0000` (`000f`) | `FID_WINDOW_DOOR_SENSOR` | `VirtualWindowDoorSensor` |
 
-[^source]: Based on [data collected](https://gist.github.com/kingsleyadam/91fcd0743ed9e4e6fc10ee57dc2f9cf1) on one SysAP on 2026-10-30 with local-abbfreeathome 3.10.0 (firmware not recorded). Channel loading was verified, not command/feedback operation; availability may vary by firmware. Of 42 advertised types, `KNX-SwitchSensor` and `AirQualityFull` were rejected and are excluded. `Trigger` was not advertised and no type produced the library's `VirtualTrigger` channel (`0045`).
+[^source]: Based on [data collected](https://gist.github.com/kingsleyadam/91fcd0743ed9e4e6fc10ee57dc2f9cf1) on one SysAP on 2026-10-30 with firmware 3.5.4 and local-abbfreeathome 3.10.0. Channel loading was verified, not command/feedback operation; availability may vary by firmware. Of 42 advertised types, `KNX-SwitchSensor` and `AirQualityFull` were rejected and are excluded. `Trigger` was not advertised and no type produced the library's `VirtualTrigger` channel (`0045`).
 
 [^energy]: Channels shown use properties `flavor: "E"` and `capabilities: [16, 17, 18, 19, 22, 28]`; other combinations were not tested. Capability IDs are distinct from channel function IDs.
