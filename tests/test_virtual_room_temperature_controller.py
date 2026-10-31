@@ -59,6 +59,22 @@ async def test_initial_state(virtual_room_temperature_controller):
     assert virtual_room_temperature_controller.state is False
 
 
+@pytest.mark.parametrize("value", ["", None, "invalid", "nan", "1e1000"])
+def test_unset_or_invalid_temperature_request(
+    virtual_room_temperature_controller, caplog, value
+):
+    """Unset or invalid requests preserve the last valid value without events."""
+    controller = virtual_room_temperature_controller
+    controller.update_channel("60002AF0162C/ch0000/idp0016", "21.5")
+    callback = MagicMock()
+    controller.register_callback("requested_target_temperature", callback)
+    controller.update_channel("60002AF0162C/ch0000/idp0016", value)
+    assert controller.requested_target_temperature == 21.5
+    callback.assert_not_called()
+    if value not in ("", None):
+        assert "Invalid requested temperature" in caplog.text
+
+
 @pytest.mark.asyncio
 async def test_turn_on(virtual_room_temperature_controller):
     """Test to turning on of the controller."""

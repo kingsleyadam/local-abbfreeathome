@@ -1,6 +1,7 @@
 """Free@Home Virtual RoomTemperatureController."""
 
 import logging
+from math import isfinite
 from typing import TYPE_CHECKING, Any
 
 from ...bin.pairing import Pairing
@@ -164,7 +165,20 @@ class VirtualRoomTemperatureController(Base):
             datapoint.get("pairingID")
             == Pairing.AL_INFO_ABSOLUTE_SET_POINT_REQUEST.value
         ):
-            self._requested_target_temperature = float(datapoint.get("value"))
+            _value = datapoint.get("value")
+            try:
+                _temperature = self._parse_temperature_request(_value)
+            except (TypeError, ValueError, OverflowError):
+                _LOGGER.warning(
+                    "Invalid requested temperature %r for %s",
+                    _value,
+                    self.channel_name,
+                )
+                return []
+            if _temperature is None:
+                _LOGGER.debug("No requested temperature for %s", self.channel_name)
+                return []
+            self._requested_target_temperature = _temperature
             return ["requested_target_temperature"]
         if datapoint.get("pairingID") == Pairing.AL_SET_POINT_TEMPERATURE.value:
             self._target_temperature = float(datapoint.get("value"))
@@ -173,6 +187,29 @@ class VirtualRoomTemperatureController(Base):
             self._current_temperature = float(datapoint.get("value"))
             return ["current_temperature"]
         return []
+
+    @staticmethod
+    def _parse_temperature_request(value: Any) -> float | None:
+        """Parse an optional numeric request, rejecting malformed values."""
+        if value is None or value == "":
+            return None
+        _temperature = float(value)
+        if not isfinite(_temperature):
+            msg = "Non-finite requested temperature"
+            raise ValueError(msg)
+        return _temperature
+
+    def _refresh_state_from_datapoints(self):
+        """Initialize feedback and validate temperature requests before exposure."""
+        super()._refresh_state_from_datapoints()
+        for _datapoint in self._inputs.values():
+            if (
+                _datapoint.get("pairingID")
+                == Pairing.AL_INFO_ABSOLUTE_SET_POINT_REQUEST.value
+            ):
+                self._requested_target_temperature = self._parse_temperature_request(
+                    _datapoint.get("value")
+                )
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""

@@ -234,7 +234,12 @@ class FreeAtHome:
                     for _key in ("floor", "room"):
                         if _key in _device_data:
                             _cached[_key] = _device_data[_key]
-                    for _channel_id, _channel_data in _device.channels_data.items():
+                    for _channel_id in _device.channels_data:
+                        _channel_data = (_device_data.get("channels") or {}).get(
+                            _channel_id
+                        )
+                        if not isinstance(_channel_data, dict):
+                            continue
                         _cached_channel = _cached.setdefault("channels", {}).setdefault(
                             _channel_id, {}
                         )

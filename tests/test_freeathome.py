@@ -1843,6 +1843,130 @@ async def test_overflowing_addition_does_not_abort_discovery(api_mock, caplog):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("include_orphans", [False, True])
+@pytest.mark.parametrize(
+    ("request_value", "valid", "expected"),
+    [
+        ("", True, None),
+        (None, True, None),
+        ("21.5", True, 21.5),
+        ("invalid", False, None),
+        ("nan", False, None),
+    ],
+)
+async def test_temperature_request_discovery(
+    api_mock, caplog, include_orphans, request_value, valid, expected
+):
+    """Initialize requests before publishing, rejecting only malformed additions."""
+    freeathome = FreeAtHome(api_mock, include_orphan_channels=include_orphans)
+    await freeathome.load()
+    serial = "600000000001"
+    controller = {
+        "channels": {
+            "ch0000": {
+                "functionID": (
+                    f"{Function.FID_ROOM_TEMPERATURE_CONTROLLER_MASTER_WITHOUT_FAN.value:x}"
+                ),
+                "inputs": {
+                    "idp0016": {
+                        "pairingID": Pairing.AL_INFO_ABSOLUTE_SET_POINT_REQUEST.value,
+                        "value": request_value,
+                    }
+                },
+                "outputs": {
+                    "odp0006": {
+                        "pairingID": Pairing.AL_SET_POINT_TEMPERATURE.value,
+                        "value": "20",
+                    }
+                },
+            }
+        }
+    }
+    good = deepcopy(api_mock.get_configuration.return_value["devices"]["ABB7F500E17A"])
+    events = []
+    freeathome.register_devices_changed_callback(events.append)
+    data = {
+        "devicesAdded": [serial, "ABB_GOOD"],
+        "devices": {serial: controller, "ABB_GOOD": good},
+    }
+    await freeathome.update(data)
+    assert len(events) == 1
+    assert {device.device_serial for device in events[0].added_devices} == (
+        {serial, "ABB_GOOD"} if valid else {"ABB_GOOD"}
+    )
+    assert (serial in (await freeathome.get_config())["devices"]) is valid
+    if valid:
+        channel = freeathome.get_device_by_serial(serial).channels["ch0000"]
+        assert channel.requested_target_temperature == expected
+        events.clear()
+        await freeathome.update(
+            {
+                "devices": {
+                    serial: {"channels": {"ch0000": {"floor": "01", "room": "01"}}}
+                }
+            }
+        )
+        assert events == (
+            [] if include_orphans else [DevicesChangedEvent(added_channels=(channel,))]
+        )
+    else:
+        assert any(record.levelname == "ERROR" for record in caplog.records)
+    events.clear()
+    await freeathome.update(data)
+    assert events == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("include_sibling", [False, True])
+async def test_placement_preserves_refreshed_sibling_locations(
+    api_mock, include_sibling
+):
+    """An omitted sibling must retain its refreshed cache location."""
+    serial = "ABB7F500E17A"
+    orphan = api_mock.get_configuration.return_value["devices"][serial]["channels"][
+        "ch0003"
+    ]
+    orphan.pop("floor")
+    orphan.pop("room")
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    device = freeathome.get_device_by_serial(serial)
+    sibling = device.channels["ch0000"]
+    fresh = deepcopy(await freeathome.get_config())
+    fresh["devices"][serial]["channels"]["ch0000"].update({"floor": "02", "room": "02"})
+    api_mock.get_configuration.return_value = fresh
+    cached = await freeathome.get_config(refresh=True)
+    locations = []
+    freeathome.register_devices_changed_callback(
+        lambda event: locations.append(
+            (
+                cached["devices"][serial]["channels"]["ch0000"]["floor"],
+                cached["devices"][serial]["channels"]["ch0000"]["room"],
+            )
+        )
+    )
+    await freeathome.update(
+        {
+            "devices": {
+                serial: {
+                    "channels": {
+                        "ch0003": {"floor": "02", "room": "02"},
+                        **(
+                            {"ch0000": {"parameters": {"par0002": "50"}}}
+                            if include_sibling
+                            else {}
+                        ),
+                    }
+                }
+            }
+        }
+    )
+    assert locations == [("02", "02")]
+    assert device.channels["ch0000"] is sibling
+    assert sibling.room_name == "Living Room"
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("orphan", [False, True])
 async def test_location_update_without_cached_config(freeathome, orphan):
     """Explicit location updates do not introduce REST requests for known objects."""
