@@ -115,22 +115,10 @@ freeathome.register_devices_changed_callback(discover_devices)
 freeathome.remove_devices_changed_callback(discover_devices)
 ```
 
-Discovery callbacks run once per message, after parameters, datapoints, and scenes
-have been applied. Repeated additions do not trigger duplicate discovery callbacks.
-Interface, exact channel-class, and orphan-channel filters still apply. Explicit
-floor/room updates make previously excluded channels discoverable when placed,
-without replacing their objects.
-
-The event contains immutable tuples of the actual added `Device` objects and
-newly visible, filtered channel objects, so listeners need not scan or compare
-device/channel lists. Room placement can produce `added_channels` with no
-`added_devices`. Membership is a snapshot; the objects remain live references.
-`removed_device_serials` is reserved for removal support and remains empty until
-that separate feature is implemented.
-
-This does not handle device deletion, general configuration reconciliation, or
-additions missed while disconnected. A virtual device's TTL expiring or being set
-to zero is not a deletion event.
+Callbacks run once per message, after its state updates are applied, and receive
+the newly added devices and newly visible channels. Startup filters still apply, and
+channels placed on the floorplan at runtime are reported as `added_channels`.
+Device removal and additions missed while disconnected are not handled.
 
 ### Channel Api Interaction (Update Channel)
 

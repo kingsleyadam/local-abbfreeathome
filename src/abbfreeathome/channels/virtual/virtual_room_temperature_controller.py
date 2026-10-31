@@ -200,16 +200,14 @@ class VirtualRoomTemperatureController(Base):
         return _temperature
 
     def _refresh_state_from_datapoints(self):
-        """Initialize feedback and validate temperature requests before exposure."""
+        """Initialize feedback and the requested temperature from inputs."""
         super()._refresh_state_from_datapoints()
         for _datapoint in self._inputs.values():
             if (
                 _datapoint.get("pairingID")
                 == Pairing.AL_INFO_ABSOLUTE_SET_POINT_REQUEST.value
             ):
-                self._requested_target_temperature = self._parse_temperature_request(
-                    _datapoint.get("value")
-                )
+                self._refresh_state_from_datapoint(_datapoint)
 
     async def _set_switching_datapoint(self, value: str):
         """Set the switching datapoint on the api."""
