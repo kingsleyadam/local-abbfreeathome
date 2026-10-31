@@ -161,7 +161,8 @@ class FreeAtHome:
 
         # Parameters first: channels read them (e.g. LED mode) to interpret
         # datapoints arriving in the same message.
-        self._update_parameters(data)
+        _discovery_data = self._get_discovery_snapshot(data, _added_channels)
+        self._update_parameters(_discovery_data)
 
         # Scene output values use a nested structure instead of datapoint paths.
         # Merge them into a copy so each datapoint is dispatched only once.
@@ -173,7 +174,9 @@ class FreeAtHome:
                     _scene_datapoints[_datapoint_key] = _output["value"]
 
         # A newly placed channel may have missed updates while filtered out.
-        _datapoints = self._get_discovery_datapoints(data, _added_channel_ids)
+        _datapoints = self._get_discovery_datapoints(
+            _discovery_data, _added_channel_ids
+        )
         _datapoints.update(data.get("datapoints") or {})
         _datapoints.update(_scene_datapoints)
 
@@ -201,37 +204,98 @@ class FreeAtHome:
                     if _input is not None:
                         _input["value"] = _datapoint_value
             except KeyError:
-                continue
+                pass
+            self._cache_datapoint(_datapoint_key, _datapoint_value)
 
         if _added_devices or _added_channels:
             _event = DevicesChangedEvent(
                 added_devices=_added_devices, added_channels=_added_channels
             )
-            self._sync_discovery_config(_event)
             for _callback in tuple(self._devices_changed_callbacks):
                 _callback(_event)
 
-    def _sync_discovery_config(self, event: DevicesChangedEvent) -> None:
-        """Copy exposed objects' applied values into the current config cache."""
-        if self._config is None:
+    def _get_discovery_snapshot(self, data: dict, channels: tuple[Base, ...]) -> dict:
+        """Fill omitted discovery state from the latest cache, not stale objects."""
+        if not channels:
+            return data
+        _devices = dict(data.get("devices") or {})
+        for _channel in channels:
+            _serial = _channel.device_serial
+            _channel_id = _channel.channel_id
+            _incoming_device = _devices.get(_serial, {})
+            _cached_device = (self._config or {}).get("devices", {}).get(_serial, {})
+            _incoming_channel = (_incoming_device.get("channels") or {}).get(
+                _channel_id, {}
+            )
+            _cached_channel = (_cached_device.get("channels") or {}).get(
+                _channel_id, {}
+            )
+            _channel_data = _channel.device.channels_data[_channel_id]
+            _snapshot = dict(_incoming_channel)
+            for _section in ("parameters", "inputs", "outputs"):
+                _snapshot[_section] = {
+                    **(_channel_data.get(_section) or {}),
+                    **(_cached_channel.get(_section) or {}),
+                    **(_incoming_channel.get(_section) or {}),
+                }
+            _device_parameters = {
+                **_channel.device.parameters,
+                **(_cached_device.get("parameters") or {}),
+                **(_incoming_device.get("parameters") or {}),
+            }
+            # Explicit paths replace defaults, not explicit snapshot changes.
+            for _path, _parameters, _incoming in (
+                (
+                    _serial,
+                    _device_parameters,
+                    _incoming_device.get("parameters") or {},
+                ),
+                (
+                    f"{_serial}/{_channel_id}",
+                    _snapshot["parameters"],
+                    _incoming_channel.get("parameters") or {},
+                ),
+            ):
+                for _key, _value in (data.get("parameters") or {}).items():
+                    _target_path, _, _parameter_id = _key.rpartition("/")
+                    if _target_path == _path and _parameter_id not in _incoming:
+                        _parameters[_parameter_id] = _value
+            _devices[_serial] = {
+                **_incoming_device,
+                "parameters": _device_parameters,
+                "channels": {
+                    **(_incoming_device.get("channels") or {}),
+                    _channel_id: _snapshot,
+                },
+            }
+        return {**data, "devices": _devices}
+
+    def _cache_datapoint(self, key: str, value: str) -> None:
+        """Retain wire updates even when their channel is filtered out."""
+        _parts = key.split("/")
+        if len(_parts) != 3:
             return
-        for _device in (
-            *event.added_devices,
-            *(_channel.device for _channel in event.added_channels),
-        ):
-            _cached = self._config["devices"][_device.device_serial]
-            _cached.setdefault("parameters", {}).update(_device.parameters)
-        for _channel in event.added_channels:
-            _cached_channel = self._config["devices"][_channel.device_serial][
-                "channels"
-            ][_channel.channel_id]
-            _cached_channel.setdefault("parameters", {}).update(_channel.parameters)
-            _channel_data = _channel.device.channels_data[_channel.channel_id]
-            for _direction in ("inputs", "outputs"):
-                _cached_points = _cached_channel.setdefault(_direction, {})
-                for _point_id, _point in _channel_data.get(_direction, {}).items():
-                    _cached_point = _cached_points.setdefault(_point_id, dict(_point))
-                    _cached_point["value"] = _point.get("value")
+        _serial, _channel_id, _point_id = _parts
+        _device = self._devices.get(_serial)
+        if _device is None:
+            return
+        _channel_data = _device.channels_data.get(_channel_id)
+        if _channel_data is None:
+            return
+        _cached_channel = (
+            (self._config or {})
+            .get("devices", {})
+            .get(_serial, {})
+            .get("channels", {})
+            .get(_channel_id, _channel_data)
+        )
+        for _direction in ("inputs", "outputs"):
+            _point = _channel_data.get(_direction, {}).get(_point_id)
+            if _point is not None:
+                _cached_point = _cached_channel.setdefault(_direction, {}).setdefault(
+                    _point_id, dict(_point)
+                )
+                _cached_point["value"] = value
 
     async def _update_devices(self, data: dict) -> tuple[Device, ...]:
         _device_updates = data.get("devices") or {}
@@ -339,17 +403,33 @@ class FreeAtHome:
                     return False
         return True
 
-    @staticmethod
-    def _get_discovery_datapoints(data: dict, channel_ids: set[str]) -> dict:
-        _datapoints = {}
+    def _get_discovery_datapoints(self, data: dict, channel_ids: set[str]) -> dict:
+        _snapshots = {}
         for _unique_id in channel_ids:
             _serial, _channel_id = _unique_id.split("/")
-            _channel_data = (
+            _snapshots[_unique_id] = (
                 (data.get("devices") or {})
                 .get(_serial, {})
                 .get("channels", {})
                 .get(_channel_id, {})
             )
+        _channels = self.get_channels()
+        for _serial, _device_data in (data.get("devices") or {}).items():
+            _device = self._devices.get(_serial)
+            if _device is None or not isinstance(_device_data, dict):
+                continue
+            for _channel_id, _channel_data in (
+                _device_data.get("channels") or {}
+            ).items():
+                _unique_id = f"{_serial}/{_channel_id}"
+                if (
+                    _unique_id not in _channels
+                    and _channel_id in _device.channels
+                    and isinstance(_channel_data, dict)
+                ):
+                    _snapshots[_unique_id] = _channel_data
+        _datapoints = {}
+        for _unique_id, _channel_data in _snapshots.items():
             for _direction in ("inputs", "outputs"):
                 for _point_id, _point in (_channel_data.get(_direction) or {}).items():
                     _datapoints[f"{_unique_id}/{_point_id}"] = _point.get("value")
@@ -382,12 +462,16 @@ class FreeAtHome:
             if len(_parts) == 3:
                 _target = _device.channels.get(_parts[1])
             if _target is not None:
-                _target.update_parameter(_parts[-1], _value)
+                self._apply_parameters(_target, {_parts[-1]: _value})
 
-    @staticmethod
-    def _apply_parameters(target, parameters: dict | None) -> None:
+    def _apply_parameters(self, target: Device | Base, parameters: dict | None) -> None:
         for _parameter_id, _value in (parameters or {}).items():
             target.update_parameter(_parameter_id, _value)
+        if parameters and self._config is not None:
+            _cached = self._config.get("devices", {}).get(target.device_serial, {})
+            if isinstance(target, Base):
+                _cached = (_cached.get("channels") or {}).get(target.channel_id, {})
+            _cached.setdefault("parameters", {}).update(parameters)
 
     async def ws_close(self):
         """Close the websocket connection."""
