@@ -261,7 +261,7 @@ class FreeAtHome:
                 _LOGGER.exception("Cannot initialize added device %s", _serial)
                 continue
             if _device is not None and not all(
-                isinstance(_section.get("parameters") or {}, dict)
+                isinstance(_section.get("parameters", {}), dict)
                 for _section in (
                     _device_data,
                     *(_device_data.get("channels") or {}).values(),

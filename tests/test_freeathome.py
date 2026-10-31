@@ -1633,6 +1633,15 @@ async def test_device_discovery_respects_filters(
         },
         {
             "channels": {
+                "ch0003": {
+                    "functionID": "7",
+                    "outputs": {"odp0000": {"pairingID": 256, "value": "0"}},
+                    "parameters": [],
+                }
+            }
+        },
+        {
+            "channels": {
                 "bad": {
                     "functionID": "43",
                     "outputs": {
