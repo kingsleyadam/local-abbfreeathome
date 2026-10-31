@@ -1912,6 +1912,93 @@ async def test_metadata_only_placement_replays_latest_state(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("direction", ["inputs", "outputs"])
+@pytest.mark.parametrize(
+    ("stage", "fields"),
+    [("hidden", {}), ("placement", {}), ("placement", {"value": None})],
+)
+async def test_partial_datapoint_records_preserve_omitted_values(
+    api_mock, direction, stage, fields
+):
+    """Omitted values preserve latest state; explicit null values remain updates."""
+    api_mock.is_priming = False
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    serial = "ABB_NEW"
+    data = deepcopy(api_mock.get_configuration.return_value["devices"]["ABB7F500E17A"])
+    data["channels"] = {"ch0000": data["channels"]["ch0000"]}
+    for section in (data, data["channels"]["ch0000"]):
+        section.pop("floor")
+        section.pop("room")
+    await freeathome.update({"devicesAdded": [serial], "devices": {serial: data}})
+    channel = freeathome.get_device_by_serial(serial).channels["ch0000"]
+    input_id, _value = channel.get_input_by_pairing(Pairing.AL_INFO_ON_OFF)
+    output_id, _value = channel.get_output_by_pairing(Pairing.AL_SWITCH_ON_OFF)
+    fresh = deepcopy(await freeathome.get_config())
+    cached_channel = fresh["devices"][serial]["channels"]["ch0000"]
+    cached_channel["parameters"]["par0007"] = "2"
+    cached_channel["inputs"][input_id]["value"] = "1"
+    cached_channel["outputs"][output_id]["value"] = "1"
+    api_mock.get_configuration.return_value = fresh
+    await freeathome.get_config(refresh=True)
+    point_id = input_id if direction == "inputs" else output_id
+    metadata = {
+        direction: {
+            point_id: {
+                "pairingID": cached_channel[direction][point_id]["pairingID"],
+                **fields,
+            }
+        }
+    }
+    original = deepcopy(metadata)
+    if stage == "hidden":
+        await freeathome.update(
+            {"devices": {serial: {"channels": {"ch0000": metadata}}}}
+        )
+        assert cached_channel[direction][point_id]["value"] == "1"
+    observed = []
+
+    def discovered(event):
+        observed.append(
+            (
+                event,
+                channel.state,
+                channel.led,
+                cached_channel["inputs"][input_id]["value"],
+                cached_channel["outputs"][output_id]["value"],
+            )
+        )
+
+    freeathome.register_devices_changed_callback(discovered)
+    await freeathome.update(
+        {
+            "devices": {
+                serial: {
+                    "channels": {
+                        "ch0000": {
+                            "floor": "02",
+                            "room": "02",
+                            **(metadata if stage == "placement" else {}),
+                        }
+                    }
+                }
+            }
+        }
+    )
+    assert metadata == original
+    value = None if fields else "1"
+    assert observed == [
+        (
+            DevicesChangedEvent(added_channels=(channel,)),
+            "unknown" if direction == "outputs" and fields else "on",
+            not (direction == "inputs" and fields),
+            value if direction == "inputs" else "1",
+            value if direction == "outputs" else "1",
+        )
+    ]
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("parameter_source", ["snapshot", "individual", "both"])
 async def test_partial_placement_overrides_cached_defaults(api_mock, parameter_source):
     """Explicit placement values win without applying intermediate parameters."""

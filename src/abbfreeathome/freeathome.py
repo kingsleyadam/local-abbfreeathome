@@ -233,11 +233,14 @@ class FreeAtHome:
             _channel_data = _channel.device.channels_data[_channel_id]
             _snapshot = dict(_incoming_channel)
             for _section in ("parameters", "inputs", "outputs"):
-                _snapshot[_section] = {
-                    **(_channel_data.get(_section) or {}),
-                    **(_cached_channel.get(_section) or {}),
-                    **(_incoming_channel.get(_section) or {}),
-                }
+                _snapshot[_section] = {}
+                for _source in (_channel_data, _cached_channel, _incoming_channel):
+                    for _key, _value in (_source.get(_section) or {}).items():
+                        _snapshot[_section][_key] = (
+                            _value
+                            if _section == "parameters"
+                            else {**_snapshot[_section].get(_key, {}), **_value}
+                        )
             _device_parameters = {
                 **_channel.device.parameters,
                 **(_cached_device.get("parameters") or {}),
@@ -432,7 +435,8 @@ class FreeAtHome:
         for _unique_id, _channel_data in _snapshots.items():
             for _direction in ("inputs", "outputs"):
                 for _point_id, _point in (_channel_data.get(_direction) or {}).items():
-                    _datapoints[f"{_unique_id}/{_point_id}"] = _point.get("value")
+                    if "value" in _point:
+                        _datapoints[f"{_unique_id}/{_point_id}"] = _point["value"]
         return _datapoints
 
     def _update_parameters(self, data: dict) -> None:
