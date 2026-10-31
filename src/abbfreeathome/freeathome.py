@@ -140,11 +140,19 @@ class FreeAtHome:
         _previous_channels = self.get_channels()
         _added_devices = await self._update_devices(data)
         _channels = self.get_channels()
-        _added_channel_ids = _channels.keys() - _previous_channels.keys()
-        _added_channels = tuple(
-            _channel
-            for _key, _channel in _channels.items()
-            if _key in _added_channel_ids
+        _added_channel_ids: set[str] = (
+            set()
+            if _channels is _previous_channels
+            else _channels.keys() - _previous_channels.keys()
+        )
+        _added_channels = (
+            tuple(
+                _channel
+                for _key, _channel in _channels.items()
+                if _key in _added_channel_ids
+            )
+            if _added_channel_ids
+            else ()
         )
 
         # Datapoints received during the post-(re)connect priming window are a
@@ -182,6 +190,16 @@ class FreeAtHome:
                     _channel.update_channel(
                         _datapoint_key, _datapoint_value, is_priming=_is_priming
                     )
+                # Sync raw inputs after handlers so priming compares old values.
+                if _unique_id in _added_channel_ids:
+                    _io_key = _datapoint_key.rsplit("/", maxsplit=1)[-1]
+                    _input = (
+                        _channel.device.channels_data[_channel.channel_id]
+                        .get("inputs", {})
+                        .get(_io_key)
+                    )
+                    if _input is not None:
+                        _input["value"] = _datapoint_value
             except KeyError:
                 continue
 
@@ -226,26 +244,25 @@ class FreeAtHome:
             _device = self._devices.get(_serial)
             if _device is None or not isinstance(_device_data, dict):
                 continue
-            if _device.update_locations(_device_data, _floorplan):
-                if self._config is not None:
-                    _cached = self._config.setdefault("devices", {}).setdefault(
-                        _serial, {}
+            _locations_changed = _device.update_locations(_device_data, _floorplan)
+            if self._config is not None:
+                _cached = self._config.setdefault("devices", {}).setdefault(_serial, {})
+                for _key in ("floor", "room"):
+                    if _key in _device_data:
+                        _cached[_key] = _device_data[_key]
+                for _channel_id in _device.channels_data:
+                    _channel_data = (_device_data.get("channels") or {}).get(
+                        _channel_id
+                    )
+                    if not isinstance(_channel_data, dict):
+                        continue
+                    _cached_channel = _cached.setdefault("channels", {}).setdefault(
+                        _channel_id, {}
                     )
                     for _key in ("floor", "room"):
-                        if _key in _device_data:
-                            _cached[_key] = _device_data[_key]
-                    for _channel_id in _device.channels_data:
-                        _channel_data = (_device_data.get("channels") or {}).get(
-                            _channel_id
-                        )
-                        if not isinstance(_channel_data, dict):
-                            continue
-                        _cached_channel = _cached.setdefault("channels", {}).setdefault(
-                            _channel_id, {}
-                        )
-                        for _key in ("floor", "room"):
-                            if _key in _channel_data:
-                                _cached_channel[_key] = _channel_data[_key]
+                        if _key in _channel_data:
+                            _cached_channel[_key] = _channel_data[_key]
+            if _locations_changed:
                 self._filtered_channels = None
         return _added_devices
 

@@ -1751,6 +1751,9 @@ async def test_placement_replay_updates_refreshed_cache(
     )
     device = freeathome.get_device_by_serial(serial)
     channel = device.channels[channel_id]
+    input_callback = MagicMock()
+    if isinstance(channel, SwitchSensor):
+        channel.register_callback("led", input_callback)
     api_mock.get_configuration.return_value = deepcopy(await freeathome.get_config())
     cached = await freeathome.get_config(refresh=True)
     observed = []
@@ -1764,6 +1767,7 @@ async def test_placement_replay_updates_refreshed_cache(
                 cached_device["parameters"]["par00ed"],
                 cached_channel["parameters"]["par0007"],
                 cached_channel["outputs"]["odp0000"]["value"],
+                cached_channel["inputs"]["idp0000"]["value"],
             )
         )
 
@@ -1794,14 +1798,18 @@ async def test_placement_replay_updates_refreshed_cache(
     assert channel.get_parameter(7) == "2"
     if isinstance(channel, SwitchSensor):
         assert channel.led is True
-        assert channel.get_input_by_pairing(Pairing.AL_INFO_ON_OFF)[1] == "1"
-        assert (
-            cached["devices"][serial]["channels"][channel_id]["inputs"]["idp0000"][
-                "value"
-            ]
-            == "1"
-        )
-    assert observed == [(DevicesChangedEvent(added_channels=(channel,)), "2", "2", "1")]
+        input_callback.assert_called_once()
+    assert (
+        channel.get_input_by_pairing(
+            Pairing.AL_INFO_ON_OFF
+            if isinstance(channel, SwitchSensor)
+            else Pairing.AL_SWITCH_ON_OFF
+        )[1]
+        == "1"
+    )
+    assert observed == [
+        (DevicesChangedEvent(added_channels=(channel,)), "2", "2", "1", "1")
+    ]
 
 
 @pytest.mark.asyncio
@@ -1964,6 +1972,67 @@ async def test_placement_preserves_refreshed_sibling_locations(
     assert locations == [("02", "02")]
     assert device.channels["ch0000"] is sibling
     assert sibling.room_name == "Living Room"
+
+
+@pytest.mark.asyncio
+async def test_datapoint_dispatch_does_not_scan_cached_channels(api_mock):
+    """Cached dispatch must stay proportional to incoming datapoints."""
+
+    class LookupOnlyChannels(dict):
+        """Allow point lookups but reject full-channel scans."""
+
+        def keys(self):
+            """Reject key scans on the cached datapoint path."""
+            msg = "Datapoint-only dispatch scanned channel keys"
+            raise AssertionError(msg)
+
+        def items(self):
+            """Reject item scans on the cached datapoint path."""
+            msg = "Datapoint-only dispatch scanned channel items"
+            raise AssertionError(msg)
+
+    api_mock.is_priming = False
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    channels = freeathome.get_channels()
+    channel = channels["ABB7F500E17A/ch0003"]
+    callback = MagicMock()
+    channel.register_callback("state", callback)
+    freeathome._filtered_channels = LookupOnlyChannels(channels)
+    for _ in range(2):
+        await freeathome.update({"datapoints": {"ABB7F500E17A/ch0003/odp0000": "1"}})
+    assert channel.state is True
+    assert callback.call_count == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("device_location", [False, True])
+async def test_explicit_unchanged_location_updates_refreshed_cache(
+    api_mock, device_location
+):
+    """Explicit locations override fresh cache values even if objects agree."""
+    serial = "ABB7F500E17A"
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    channels = freeathome.get_channels()
+    fresh = deepcopy(await freeathome.get_config())
+    target = fresh["devices"][serial]
+    if not device_location:
+        target = target["channels"]["ch0003"]
+    target.update({"floor": "02", "room": "02"})
+    api_mock.get_configuration.return_value = fresh
+    cached = await freeathome.get_config(refresh=True)
+    updated_target = cached["devices"][serial]
+    location = {"floor": "01", "room": "01"}
+    if not device_location:
+        updated_target = updated_target["channels"]["ch0003"]
+        location = {"channels": {"ch0003": location}}
+    callback = MagicMock()
+    freeathome.register_devices_changed_callback(callback)
+    await freeathome.update({"devices": {serial: location}})
+    assert (updated_target["floor"], updated_target["room"]) == ("01", "01")
+    assert freeathome.get_channels() is channels
+    callback.assert_not_called()
 
 
 @pytest.mark.asyncio
