@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from copy import deepcopy
+from dataclasses import dataclass
 import logging
 
 from .api import FreeAtHomeApi
@@ -12,6 +13,15 @@ from .exceptions import InvalidDeviceChannelPairing
 from .floorplan import Floorplan
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class DevicesChangedEvent:
+    """Describe exact device additions and newly visible, filtered channels."""
+
+    added_devices: tuple[Device, ...] = ()
+    added_channels: tuple[Base, ...] = ()
+    removed_device_serials: tuple[str, ...] = ()
 
 
 class FreeAtHome:
@@ -28,7 +38,9 @@ class FreeAtHome:
         self._config: dict | None = None
         self._devices: dict[str, Device] = {}
         self._filtered_channels: dict[str, Base] | None = None
-        self._devices_changed_callbacks: set[Callable[[], None]] = set()
+        self._devices_changed_callbacks: set[Callable[[DevicesChangedEvent], None]] = (
+            set()
+        )
 
         self.api: FreeAtHomeApi = api
 
@@ -90,11 +102,15 @@ class FreeAtHome:
         """Load from the Free@Home api into the FreeAtHome class."""
         await self._load_devices()
 
-    def register_devices_changed_callback(self, callback: Callable[[], None]) -> None:
-        """Subscribe to additions and newly eligible channels after state updates."""
+    def register_devices_changed_callback(
+        self, callback: Callable[[DevicesChangedEvent], None]
+    ) -> None:
+        """Subscribe to explicit discovery events after state updates."""
         self._devices_changed_callbacks.add(callback)
 
-    def remove_devices_changed_callback(self, callback: Callable[[], None]) -> None:
+    def remove_devices_changed_callback(
+        self, callback: Callable[[DevicesChangedEvent], None]
+    ) -> None:
         """Remove a discovery subscription."""
         self._devices_changed_callbacks.discard(callback)
 
@@ -122,8 +138,14 @@ class FreeAtHome:
     async def update(self, data: dict):
         """Update channel based on websocket data."""
         _previous_channels = self.get_channels()
-        _devices_changed = await self._update_devices(data)
+        _added_devices = await self._update_devices(data)
         _channels = self.get_channels()
+        _added_channel_ids = _channels.keys() - _previous_channels.keys()
+        _added_channels = tuple(
+            _channel
+            for _key, _channel in _channels.items()
+            if _key in _added_channel_ids
+        )
 
         # Datapoints received during the post-(re)connect priming window are a
         # replayed snapshot, not real events: update caches but skip callbacks.
@@ -143,9 +165,7 @@ class FreeAtHome:
                     _scene_datapoints[_datapoint_key] = _output["value"]
 
         # A newly placed channel may have missed updates while filtered out.
-        _datapoints = self._get_discovery_datapoints(
-            data, _channels.keys() - _previous_channels.keys()
-        )
+        _datapoints = self._get_discovery_datapoints(data, _added_channel_ids)
         _datapoints.update(data.get("datapoints") or {})
         _datapoints.update(_scene_datapoints)
 
@@ -165,22 +185,24 @@ class FreeAtHome:
             except KeyError:
                 continue
 
-        if _devices_changed:
+        if _added_devices or _added_channels:
+            _event = DevicesChangedEvent(
+                added_devices=_added_devices, added_channels=_added_channels
+            )
             for _callback in tuple(self._devices_changed_callbacks):
-                _callback()
+                _callback(_event)
 
-    async def _update_devices(self, data: dict) -> bool:
+    async def _update_devices(self, data: dict) -> tuple[Device, ...]:
         _device_updates = data.get("devices") or {}
         if not _device_updates and not data.get("devicesAdded"):
-            return False
+            return ()
 
-        _changed = await self._add_devices(data)
+        _added_devices = await self._add_devices(data)
         _floorplan = Floorplan.from_config(self._config or {})
         for _serial, _device_data in _device_updates.items():
             _device = self._devices.get(_serial)
             if _device is None or not isinstance(_device_data, dict):
                 continue
-            _previous_channels = self.get_channels()
             if _device.update_locations(_device_data, _floorplan):
                 if self._config is not None:
                     _cached = self._config.setdefault("devices", {}).setdefault(
@@ -197,16 +219,15 @@ class FreeAtHome:
                             if _key in _channel_data:
                                 _cached_channel[_key] = _channel_data[_key]
                 self._filtered_channels = None
-                _changed |= bool(self.get_channels().keys() - _previous_channels.keys())
-        return _changed
+        return _added_devices
 
-    async def _add_devices(self, data: dict) -> bool:
+    async def _add_devices(self, data: dict) -> tuple[Device, ...]:
         _added = data.get("devicesAdded") or []
         if not _added:
-            return False
+            return ()
         _config = await self.get_config()
         _floorplan = Floorplan.from_config(_config)
-        _changed = False
+        _added_devices = []
         for _serial in _added:
             if _serial in self._devices:
                 continue
@@ -235,9 +256,9 @@ class FreeAtHome:
             if _device is not None:
                 self._devices[_serial] = _device
                 self._filtered_channels = None
-                _changed = True
+                _added_devices.append(_device)
 
-        return _changed
+        return tuple(_added_devices)
 
     @staticmethod
     def _valid_device_config(data: dict) -> bool:

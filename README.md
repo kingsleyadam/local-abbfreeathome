@@ -97,14 +97,17 @@ While `FreeAtHome.ws_listen()` is running, devices reported in `devicesAdded` ar
 loaded from their WebSocket configuration using the same rules as initial loading.
 Existing device and channel objects, including their subscriptions, are preserved.
 
-Subscribe to additions and newly eligible channels with a synchronous,
-zero-argument callback:
+Subscribe with a synchronous callback receiving a `DevicesChangedEvent`:
 
 ```python
-def discover_devices():
-    devices = freeathome.get_devices()
-    channels = freeathome.get_channels()
-    # Discover consumer-specific entities from these updated views.
+from abbfreeathome import DevicesChangedEvent
+
+
+def discover_devices(event: DevicesChangedEvent):
+    for device in event.added_devices:
+        register_device(device)
+    for channel in event.added_channels:
+        add_entity(channel)
 
 
 freeathome.register_devices_changed_callback(discover_devices)
@@ -117,6 +120,13 @@ have been applied. Repeated additions do not trigger duplicate discovery callbac
 Interface, exact channel-class, and orphan-channel filters still apply. Explicit
 floor/room updates make previously excluded channels discoverable when placed,
 without replacing their objects.
+
+The event contains immutable tuples of the actual added `Device` objects and
+newly visible, filtered channel objects, so listeners need not scan or compare
+device/channel lists. Room placement can produce `added_channels` with no
+`added_devices`. Membership is a snapshot; the objects remain live references.
+`removed_device_serials` is reserved for removal support and remains empty until
+that separate feature is implemented.
 
 This does not handle device deletion, general configuration reconciliation, or
 additions missed while disconnected. A virtual device's TTL expiring or being set

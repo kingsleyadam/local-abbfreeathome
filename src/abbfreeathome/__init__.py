@@ -1,6 +1,11 @@
 """ABB-Free@Home API library."""
 
 from .api import FreeAtHomeApi, FreeAtHomeSettings
-from .freeathome import FreeAtHome
+from .freeathome import DevicesChangedEvent, FreeAtHome
 
-__all__ = ["FreeAtHomeApi", "FreeAtHome", "FreeAtHomeSettings"]
+__all__ = [
+    "DevicesChangedEvent",
+    "FreeAtHomeApi",
+    "FreeAtHome",
+    "FreeAtHomeSettings",
+]

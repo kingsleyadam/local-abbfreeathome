@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from src.abbfreeathome import DevicesChangedEvent
 from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.interface import Interface
 from src.abbfreeathome.bin.pairing import Pairing
@@ -1392,10 +1393,13 @@ async def test_device_addition_initializes_before_discovery(
     device_data = deepcopy(api_mock.get_configuration.return_value["devices"][source])
     snapshots = []
 
-    def discovered():
-        device = freeathome.get_device_by_serial(serial)
-        channel = freeathome.get_channels()[f"{serial}/{channel_id}"]
-        snapshots.append((device, channel, channel.state, channel.get_parameter(0x15)))
+    def discovered(event):
+        channel = next(
+            channel
+            for channel in event.added_channels
+            if channel.channel_id == channel_id
+        )
+        snapshots.append((event, channel.state, channel.get_parameter(0x15)))
 
     freeathome.register_devices_changed_callback(discovered)
     freeathome.register_devices_changed_callback(discovered)
@@ -1416,7 +1420,16 @@ async def test_device_addition_initializes_before_discovery(
 
     device = freeathome.get_device_by_serial(serial)
     channel = device.channels[channel_id]
-    assert snapshots == [(device, channel, True, "90")]
+    assert snapshots == [
+        (
+            DevicesChangedEvent(
+                added_devices=(device,),
+                added_channels=tuple(freeathome.get_channels_by_device(serial)),
+            ),
+            True,
+            "90",
+        )
+    ]
     assert type(channel) is channel_class
     assert channel.device is device
     assert channel.floor_name == "Ground Floor"
@@ -1485,9 +1498,15 @@ async def test_discovery_after_orphan_placement(
         {"devicesAdded": [serial], "devices": {serial: device_data}}
     )
     discovery.assert_called_once()
-    discovery.reset_mock()
     device = freeathome.get_device_by_serial(serial)
     channel = device.channels["ch0003"]
+    assert discovery.call_args.args == (
+        DevicesChangedEvent(
+            added_devices=(device,),
+            added_channels=tuple(freeathome.get_channels_by_device(serial)),
+        ),
+    )
+    discovery.reset_mock()
     channel_callback = MagicMock()
     channel.register_callback("state", channel_callback)
     device_parameter_callback = MagicMock()
@@ -1497,8 +1516,8 @@ async def test_discovery_after_orphan_placement(
     await freeathome.get_config(refresh=True)
     snapshots = []
 
-    def discovered():
-        snapshots.append((channel.state, channel.floor_name, channel.room_name))
+    def discovered(event):
+        snapshots.append((event, channel.state, channel.floor_name, channel.room_name))
 
     freeathome.register_devices_changed_callback(discovered)
     data = {
@@ -1537,7 +1556,18 @@ async def test_discovery_after_orphan_placement(
     channel_callback.assert_called_once()
     device_parameter_callback.assert_called_once()
     assert discovery.call_count == (0 if include_orphans else 1)
-    assert snapshots == ([] if include_orphans else [(True, "First Floor", "Bedroom")])
+    assert snapshots == (
+        []
+        if include_orphans
+        else [
+            (
+                DevicesChangedEvent(added_channels=(channel,)),
+                True,
+                "First Floor",
+                "Bedroom",
+            )
+        ]
+    )
     config = await freeathome.get_config()
     assert config["devices"][serial].get("floor") == ("02" if parent_location else None)
     assert config["devices"][serial]["channels"]["ch0003"]["room"] == "02"
@@ -1654,6 +1684,47 @@ async def test_addition_before_initial_load(api_mock):
     assert freeathome.get_device_by_serial("ABB_NEW").room_name == "Living Room"
     assert freeathome.get_channels()["ABB_NEW/ch0003"].state is False
     api_mock.get_configuration.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_discovery_event_batches_exact_additions(api_mock):
+    """One message reports only added objects, excluding existing devices."""
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    events = []
+    freeathome.register_devices_changed_callback(events.append)
+    sources = {
+        "ABB_NEW": "ABB7F500E17A",
+        "600000000001": "60005D808C54",
+    }
+    devices = {
+        serial: deepcopy(api_mock.get_configuration.return_value["devices"][source])
+        for serial, source in sources.items()
+    }
+    data = {
+        "devicesAdded": [*sources, "ABB_NEW"],
+        "devices": {
+            **devices,
+            "ABB7F500E17A": api_mock.get_configuration.return_value["devices"][
+                "ABB7F500E17A"
+            ],
+        },
+    }
+    await freeathome.update(data)
+    assert events == [
+        DevicesChangedEvent(
+            added_devices=tuple(
+                freeathome.get_device_by_serial(serial) for serial in sources
+            ),
+            added_channels=tuple(
+                channel
+                for channel in freeathome.get_channels().values()
+                if channel.device_serial in sources
+            ),
+        )
+    ]
+    await freeathome.update(data)
+    assert len(events) == 1
 
 
 @pytest.mark.asyncio
