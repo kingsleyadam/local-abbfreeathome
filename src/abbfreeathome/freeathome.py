@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass(frozen=True, slots=True)
 class DevicesChangedEvent:
-    """Describe exact device additions and newly visible, filtered channels."""
+    """Describe exact device additions, removals, and newly visible channels."""
 
     added_devices: tuple[Device, ...] = ()
     added_channels: tuple[Base, ...] = ()
@@ -138,6 +138,7 @@ class FreeAtHome:
     async def update(self, data: dict):
         """Update channel based on websocket data."""
         _previous_channels = self.get_channels()
+        _removed_serials = self._remove_devices(data)
         _added_devices = await self._update_devices(data)
         _channels = self.get_channels()
         _added_channels = (
@@ -193,12 +194,33 @@ class FreeAtHome:
                     _datapoint_key, _datapoint_value, is_priming=_is_priming
                 )
 
-        if _added_devices or _added_channels:
+        if _added_devices or _added_channels or _removed_serials:
             _event = DevicesChangedEvent(
-                added_devices=_added_devices, added_channels=_added_channels
+                added_devices=_added_devices,
+                added_channels=_added_channels,
+                removed_device_serials=_removed_serials,
             )
             for _callback in tuple(self._devices_changed_callbacks):
                 _callback(_event)
+
+    def _remove_devices(self, data: dict) -> tuple[str, ...]:
+        _removed = data.get("devicesRemoved") or []
+        if not isinstance(_removed, list):
+            _LOGGER.error("Ignoring invalid devicesRemoved: %r", _removed)
+            return ()
+        _cached_devices = (self._config or {}).get("devices") or {}
+        _removed_serials = []
+        for _serial in _removed:
+            if not isinstance(_serial, str):
+                _LOGGER.error("Ignoring invalid devicesRemoved entry: %r", _serial)
+                continue
+            _device = self._devices.pop(_serial, None)
+            _cached = _cached_devices.pop(_serial, None)
+            if _device is not None:
+                self._filtered_channels = None
+            if _device is not None or _cached is not None:
+                _removed_serials.append(_serial)
+        return tuple(_removed_serials)
 
     async def _update_devices(self, data: dict) -> tuple[Device, ...]:
         _added_devices = await self._add_devices(data)
