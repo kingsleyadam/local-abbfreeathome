@@ -147,6 +147,42 @@ class Device(ParametersMixin):
         """Clear channels from the device."""
         self._channels.clear()
 
+    def update_locations(self, data: dict, floorplan: Floorplan) -> bool:
+        """Apply explicit location updates while preserving channel objects."""
+        _channel_updates = data.get("channels") or {}
+        if not any(_key in data for _key in ("floor", "room")) and not any(
+            isinstance(_update, dict)
+            and any(_key in _update for _key in ("floor", "room"))
+            for _update in _channel_updates.values()
+        ):
+            return False
+        _floor = data.get("floor", self._floor)
+        _room = data.get("room", self._room)
+        _changed = (_floor, _room) != (self._floor, self._room)
+        self._floor = _floor
+        self._room = _room
+        self._floor_name = floorplan.get_floor_name(_floor)
+        self._room_name = floorplan.get_room_name(_floor, _room)
+
+        for _channel_id, _channel_data in self._channels_data.items():
+            _update = _channel_updates.get(_channel_id)
+            if isinstance(_update, dict):
+                for _key in ("floor", "room"):
+                    if _key in _update and _update[_key] != _channel_data.get(_key):
+                        _channel_data[_key] = _update[_key]
+                        _changed = True
+            _channel = self._channels.get(_channel_id)
+            if _channel is not None:
+                _channel.update_location(
+                    floorplan.get_floor_name(_channel_data.get("floor"))
+                    or self.floor_name,
+                    floorplan.get_room_name(
+                        _channel_data.get("floor"), _channel_data.get("room")
+                    )
+                    or self.room_name,
+                )
+        return _changed
+
     def load_channels(self, floorplan: Floorplan):
         """Load the channels object."""
         # Select appropriate mapping based on virtual status

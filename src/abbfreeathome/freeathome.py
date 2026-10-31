@@ -1,10 +1,17 @@
 """ABB-Free@Home wrapper for interacting with the ABB-free@home API."""
 
+from collections.abc import Callable
+from copy import deepcopy
+import logging
+
 from .api import FreeAtHomeApi
 from .bin.interface import Interface
 from .channels.base import Base
 from .device import Device
+from .exceptions import InvalidDeviceChannelPairing
 from .floorplan import Floorplan
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class FreeAtHome:
@@ -21,6 +28,7 @@ class FreeAtHome:
         self._config: dict | None = None
         self._devices: dict[str, Device] = {}
         self._filtered_channels: dict[str, Base] | None = None
+        self._devices_changed_callbacks: set[Callable[[], None]] = set()
 
         self.api: FreeAtHomeApi = api
 
@@ -82,6 +90,14 @@ class FreeAtHome:
         """Load from the Free@Home api into the FreeAtHome class."""
         await self._load_devices()
 
+    def register_devices_changed_callback(self, callback: Callable[[], None]) -> None:
+        """Subscribe to additions and newly eligible channels after state updates."""
+        self._devices_changed_callbacks.add(callback)
+
+    def remove_devices_changed_callback(self, callback: Callable[[], None]) -> None:
+        """Remove a discovery subscription."""
+        self._devices_changed_callbacks.discard(callback)
+
     def unload_channel(self, device_serial: str, channel_id: str):
         """Unload a specific channel by device serial and channel id."""
         try:
@@ -105,6 +121,8 @@ class FreeAtHome:
 
     async def update(self, data: dict):
         """Update channel based on websocket data."""
+        _previous_channels = self.get_channels()
+        _devices_changed = await self._update_devices(data)
         _channels = self.get_channels()
 
         # Datapoints received during the post-(re)connect priming window are a
@@ -124,7 +142,11 @@ class FreeAtHome:
                     _datapoint_key = f"{_serial}/{_channel_id}/{_output_id}"
                     _scene_datapoints[_datapoint_key] = _output["value"]
 
-        _datapoints = dict(data.get("datapoints") or {})
+        # A newly placed channel may have missed updates while filtered out.
+        _datapoints = self._get_discovery_datapoints(
+            data, _channels.keys() - _previous_channels.keys()
+        )
+        _datapoints.update(data.get("datapoints") or {})
         _datapoints.update(_scene_datapoints)
 
         for _datapoint_key, _datapoint_value in _datapoints.items():
@@ -142,6 +164,128 @@ class FreeAtHome:
                     )
             except KeyError:
                 continue
+
+        if _devices_changed:
+            for _callback in tuple(self._devices_changed_callbacks):
+                _callback()
+
+    async def _update_devices(self, data: dict) -> bool:
+        _device_updates = data.get("devices") or {}
+        if not _device_updates and not data.get("devicesAdded"):
+            return False
+
+        _changed = await self._add_devices(data)
+        _floorplan = Floorplan.from_config(self._config or {})
+        for _serial, _device_data in _device_updates.items():
+            _device = self._devices.get(_serial)
+            if _device is None or not isinstance(_device_data, dict):
+                continue
+            _previous_channels = self.get_channels()
+            if _device.update_locations(_device_data, _floorplan):
+                if self._config is not None:
+                    _cached = self._config.setdefault("devices", {}).setdefault(
+                        _serial, {}
+                    )
+                    for _key in ("floor", "room"):
+                        if _key in _device_data:
+                            _cached[_key] = _device_data[_key]
+                    for _channel_id, _channel_data in _device.channels_data.items():
+                        _cached_channel = _cached.setdefault("channels", {}).setdefault(
+                            _channel_id, {}
+                        )
+                        for _key in ("floor", "room"):
+                            if _key in _channel_data:
+                                _cached_channel[_key] = _channel_data[_key]
+                self._filtered_channels = None
+                _changed |= bool(self.get_channels().keys() - _previous_channels.keys())
+        return _changed
+
+    async def _add_devices(self, data: dict) -> bool:
+        _added = data.get("devicesAdded") or []
+        if not _added:
+            return False
+        _config = await self.get_config()
+        _floorplan = Floorplan.from_config(_config)
+        _changed = False
+        for _serial in _added:
+            if _serial in self._devices:
+                continue
+            _device_data = (data.get("devices") or {}).get(_serial)
+            if not isinstance(_device_data, dict) or not self._valid_device_config(
+                _device_data
+            ):
+                _LOGGER.error(
+                    "Cannot add device %s: missing or invalid device configuration",
+                    _serial,
+                )
+                continue
+            _device_data = deepcopy(_device_data)
+            try:
+                _device = self._create_device(_serial, _device_data, _floorplan)
+            except (
+                AttributeError,
+                KeyError,
+                TypeError,
+                ValueError,
+                InvalidDeviceChannelPairing,
+            ):
+                _LOGGER.exception("Cannot initialize added device %s", _serial)
+                continue
+            _config.setdefault("devices", {})[_serial] = _device_data
+            if _device is not None:
+                self._devices[_serial] = _device
+                self._filtered_channels = None
+                _changed = True
+
+        return _changed
+
+    @staticmethod
+    def _valid_device_config(data: dict) -> bool:
+        _channels = data.get("channels")
+        if not isinstance(_channels, dict) or any(
+            not isinstance(_channel, dict) for _channel in _channels.values()
+        ):
+            return False
+        for _section in (data, *_channels.values()):
+            if not isinstance(_section.get("parameters", {}), dict):
+                return False
+            if any(
+                _section.get(_key) is not None and not isinstance(_section[_key], str)
+                for _key in ("floor", "room")
+            ):
+                return False
+        for _channel in _channels.values():
+            _function_id = _channel.get("functionID")
+            if _function_id:
+                try:
+                    int(_function_id, 16)
+                except (TypeError, ValueError):
+                    return False
+            for _direction in ("inputs", "outputs"):
+                _datapoints = _channel.get(_direction, {})
+                if not isinstance(_datapoints, dict) or any(
+                    not isinstance(_point, dict)
+                    or "value" not in _point
+                    or not isinstance(_point.get("pairingID"), int)
+                    for _point in _datapoints.values()
+                ):
+                    return False
+        return True
+
+    @staticmethod
+    def _get_discovery_datapoints(data: dict, channel_ids: set[str]) -> dict:
+        _datapoints = {}
+        for _unique_id in channel_ids:
+            _serial, _channel_id = _unique_id.split("/")
+            _channel_data = (
+                (data.get("devices") or {})
+                .get(_serial, {})
+                .get("channels", {})
+                .get(_channel_id, {})
+            )
+            for _output_id, _output in (_channel_data.get("outputs") or {}).items():
+                _datapoints[f"{_unique_id}/{_output_id}"] = _output.get("value")
+        return _datapoints
 
     def _update_parameters(self, data: dict) -> None:
         """Apply parameter changes from a websocket message."""
@@ -226,48 +370,41 @@ class FreeAtHome:
         _floorplan = Floorplan.from_config(_config)
 
         for _serial, _data in _config.get("devices", {}).items():
-            # Convert interface string to Interface enum
-            _interface_value = _data.get("interface")
-
-            # Any devices that start with "6000" should be considered virtual
-            if _serial.startswith("6000"):
-                _interface_value = "VD"
-
-            _interface = Interface.from_string(_interface_value)
-
-            # Filter by interface if provided - skip devices not in the interface filter
-            if self._interfaces and _interface not in self._interfaces:
-                continue
-
-            # Get floor and room names using floor plan
-            _floor_id = _data.get("floor")
-            _room_id = _data.get("room")
-
-            _floor_name = _floorplan.get_floor_name(_floor_id)
-            _room_name = _floorplan.get_room_name(_floor_id, _room_id)
-
-            # Extract device attributes from the configuration
-            _device = Device(
-                device_serial=_serial,
-                device_id=_data.get("deviceId", ""),
-                display_name=_data.get("displayName", ""),
-                interface=_interface,
-                unresponsive=_data.get("unresponsive", False),
-                unresponsive_counter=_data.get("unresponsiveCounter", 0),
-                defect=_data.get("defect", False),
-                floor=_floor_id,
-                room=_room_id,
-                floor_name=_floor_name,
-                room_name=_room_name,
-                device_reboots=_data.get("deviceReboots"),
-                native_id=_data.get("nativeId"),
-                parameters=_data.get("parameters", {}),
-                channels_data=_data.get("channels", {}),
-                api=self.api,
-            )
-            _device.load_channels(floorplan=_floorplan)
-
-            self._devices[_serial] = _device
+            _device = self._create_device(_serial, _data, _floorplan)
+            if _device is not None:
+                self._devices[_serial] = _device
 
         # Invalidate the filtered channels cache after loading devices
         self._filtered_channels = None
+
+    def _create_device(
+        self, serial: str, data: dict, floorplan: Floorplan
+    ) -> Device | None:
+        _interface = Interface.from_string(
+            "VD" if serial.startswith("6000") else data.get("interface")
+        )
+        if self._interfaces and _interface not in self._interfaces:
+            return None
+
+        _floor = data.get("floor")
+        _room = data.get("room")
+        _device = Device(
+            device_serial=serial,
+            device_id=data.get("deviceId", ""),
+            display_name=data.get("displayName", ""),
+            interface=_interface,
+            unresponsive=data.get("unresponsive", False),
+            unresponsive_counter=data.get("unresponsiveCounter", 0),
+            defect=data.get("defect", False),
+            floor=_floor,
+            room=_room,
+            floor_name=floorplan.get_floor_name(_floor),
+            room_name=floorplan.get_room_name(_floor, _room),
+            device_reboots=data.get("deviceReboots"),
+            native_id=data.get("nativeId"),
+            parameters=data.get("parameters", {}),
+            channels_data=data.get("channels", {}),
+            api=self.api,
+        )
+        _device.load_channels(floorplan=floorplan)
+        return _device
