@@ -1,5 +1,6 @@
 """ABB-Free@Home Device class."""
 
+from collections.abc import Callable
 from typing import Any
 
 from .api import FreeAtHomeApi
@@ -58,6 +59,7 @@ class Device(ParametersMixin):
         self._parameters = parameters or {}
         self._channels_data = channels_data or {}
         self._channels: dict[str, Base] = {}
+        self._unresponsive_callbacks: set[Callable[[], None]] = set()
 
         # Expose api as public attribute
         self.api: FreeAtHomeApi = api
@@ -86,6 +88,27 @@ class Device(ParametersMixin):
     def unresponsive(self) -> bool:
         """Return True if the device is unresponsive."""
         return self._unresponsive
+
+    def update_unresponsive(self, unresponsive: bool) -> bool:
+        """
+        Update the unresponsive flag, notifying callbacks if it changed.
+
+        Returns True when the value changed.
+        """
+        if self._unresponsive == unresponsive:
+            return False
+        self._unresponsive = unresponsive
+        for _callback in tuple(self._unresponsive_callbacks):
+            _callback()
+        return True
+
+    def register_unresponsive_callback(self, callback: Callable[[], None]) -> None:
+        """Register a callback for unresponsive flag changes."""
+        self._unresponsive_callbacks.add(callback)
+
+    def remove_unresponsive_callback(self, callback: Callable[[], None]) -> None:
+        """Remove a previously registered unresponsive callback."""
+        self._unresponsive_callbacks.discard(callback)
 
     @property
     def unresponsive_counter(self) -> int:

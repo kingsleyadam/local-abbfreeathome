@@ -237,13 +237,18 @@ class FreeAtHome:
             _device.update_locations(_device_data, _floorplan)
             # Keep a refreshed config cache in sync with explicit locations.
             _cached = _cached_devices.get(_serial)
+            _unresponsive = _device_data.get("unresponsive")
             if _cached is not None:
                 copy_locations(_cached, _device_data)
+                if isinstance(_unresponsive, bool):
+                    _cached["unresponsive"] = _unresponsive
                 _channel_updates = _device_data.get("channels") or {}
                 for _channel_id, _update in _channel_updates.items():
                     _cached_channel = (_cached.get("channels") or {}).get(_channel_id)
                     if isinstance(_update, dict) and isinstance(_cached_channel, dict):
                         copy_locations(_cached_channel, _update)
+            if isinstance(_unresponsive, bool):
+                _device.update_unresponsive(_unresponsive)
             self._filtered_channels = None
         return _added_devices
 
