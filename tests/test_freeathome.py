@@ -1879,6 +1879,34 @@ async def test_device_removal_with_addition_and_unresponsive(freeathome, caplog)
 
 
 @pytest.mark.asyncio
+async def test_device_replacement_reports_new_channels(freeathome):
+    """A serial removed and re-added in one message reports its new channels."""
+    serial = "ABB7F500E17A"
+    await freeathome.load()
+    old = freeathome.get_device_by_serial(serial)
+    events = []
+    freeathome.register_devices_changed_callback(events.append)
+    data = deepcopy((await freeathome.get_config())["devices"][serial])
+    await freeathome.update(
+        {
+            "devices": {serial: data},
+            "devicesAdded": [serial],
+            "devicesRemoved": [serial],
+        }
+    )
+    new = freeathome.get_device_by_serial(serial)
+    assert new is not old
+    assert events == [
+        DevicesChangedEvent(
+            added_devices=(new,),
+            added_channels=tuple(freeathome.get_channels_by_device(serial)),
+            removed_device_serials=(serial,),
+        )
+    ]
+    assert events[0].added_channels
+
+
+@pytest.mark.asyncio
 async def test_device_removal_before_initial_load(api_mock):
     """Removals before any configuration is loaded are ignored without fetching."""
     freeathome = FreeAtHome(api_mock)

@@ -147,7 +147,7 @@ class FreeAtHome:
             else tuple(
                 _channel
                 for _key, _channel in _channels.items()
-                if _key not in _previous_channels
+                if _previous_channels.get(_key) is not _channel
             )
         )
 
