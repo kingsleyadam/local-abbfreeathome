@@ -85,6 +85,11 @@ class Base(ParametersMixin):
         """Get the room name."""
         return self._room_name
 
+    def update_location(self, floor_name: str | None, room_name: str | None) -> None:
+        """Update resolved location names without replacing the channel."""
+        self._floor_name = floor_name
+        self._room_name = room_name
+
     @property
     def is_virtual(self) -> bool | None:
         """Get the virtual-status of the device."""
