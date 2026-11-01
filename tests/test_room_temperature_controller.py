@@ -227,6 +227,22 @@ async def test_refresh_state_from_datapoint(
     )
     assert room_temperature_controller.cooling == 5
 
+    # Check outputs that report non-numeric temperatures
+    room_temperature_controller._refresh_state_from_datapoint(
+        datapoint={"pairingID": 51, "value": "invalid"}
+    )
+    assert room_temperature_controller.target_temperature is None
+    room_temperature_controller._refresh_state_from_datapoint(
+        datapoint={"pairingID": 304, "value": "invalid"}
+    )
+    assert room_temperature_controller.current_temperature is None
+    room_temperature_controller._refresh_state_from_datapoint(
+        datapoint={"pairingID": 51, "value": "25"},
+    )
+    room_temperature_controller._refresh_state_from_datapoint(
+        datapoint={"pairingID": 304, "value": "22.56"}
+    )
+
     # Check output that does NOT affects the RTC
     room_temperature_controller._refresh_state_from_datapoint(
         datapoint={"pairingID": 0, "value": "1"},
