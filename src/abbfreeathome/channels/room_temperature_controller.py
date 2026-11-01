@@ -9,6 +9,14 @@ if TYPE_CHECKING:
     from ..device import Device
 
 
+def _parse_temperature(value: Any) -> float | None:
+    """Parse a temperature value, returning None when it is not numeric."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 class RoomTemperatureController(Base):
     """Free@Home RoomTemperatureController Class."""
 
@@ -152,7 +160,7 @@ class RoomTemperatureController(Base):
         Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_SET_POINT_TEMPERATURE.value:
-            self._target_temperature = float(datapoint.get("value"))
+            self._target_temperature = _parse_temperature(datapoint.get("value"))
             return ["target_temperature"]
         if datapoint.get("pairingID") == Pairing.AL_CONTROLLER_ON_OFF.value:
             self._state = datapoint.get("value") == "1"
@@ -178,7 +186,7 @@ class RoomTemperatureController(Base):
                 "heating_cooling_active",
             ]
         if datapoint.get("pairingID") == Pairing.AL_MEASURED_TEMPERATURE.value:
-            self._current_temperature = float(datapoint.get("value"))
+            self._current_temperature = _parse_temperature(datapoint.get("value"))
             return ["current_temperature"]
         if datapoint.get("pairingID") == Pairing.AL_ACTUATING_VALUE_HEATING.value:
             try:
