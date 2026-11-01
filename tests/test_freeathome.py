@@ -1802,6 +1802,122 @@ async def test_discovery_event_batches_exact_additions(api_mock):
 
 
 @pytest.mark.asyncio
+async def test_device_removal(freeathome, caplog):
+    """Explicit removals evict devices once, including interface-filtered ones."""
+    await freeathome.load()
+    config = await freeathome.get_config()
+    kept = freeathome.get_channels()["ABB7F62F6C0B/ch0003"]
+    kept_callback = MagicMock()
+    kept.register_callback(callback_attribute="state", callback=kept_callback)
+    events = []
+    freeathome.register_devices_changed_callback(events.append)
+    data = {
+        "devices": {"ABB7F500E17A": {"parameters": {"par0001": "1"}}},
+        "devicesAdded": [],
+        "devicesRemoved": [
+            "ABB7F500E17A",
+            "60005D808C54",
+            "ABB7F500E17A",
+            "UNKNOWN",
+            ["invalid"],
+        ],
+        "parameters": {"ABB7F500E17A/ch0003/par0001": "1"},
+        "datapoints": {
+            "ABB7F500E17A/ch0003/odp0000": "1",
+            "ABB7F62F6C0B/ch0003/odp0000": "1",
+        },
+    }
+    await freeathome.update(data)
+
+    assert events == [
+        DevicesChangedEvent(removed_device_serials=("ABB7F500E17A", "60005D808C54"))
+    ]
+    assert "ABB7F500E17A" not in freeathome.get_devices()
+    assert not freeathome.get_channels_by_device("ABB7F500E17A")
+    assert "ABB7F500E17A" not in config["devices"]
+    assert "60005D808C54" not in config["devices"]
+    assert freeathome.get_channels()["ABB7F62F6C0B/ch0003"] is kept
+    assert kept.state is True
+    kept_callback.assert_called_once_with()
+    assert "Ignoring invalid devicesRemoved entry" in caplog.text
+
+    await freeathome.update(data)
+    assert len(events) == 1
+
+
+@pytest.mark.asyncio
+async def test_device_removal_with_addition_and_unresponsive(freeathome, caplog):
+    """Mixed lifecycle changes share one event; unresponsiveness is not removal."""
+    await freeathome.load()
+    events = []
+    freeathome.register_devices_changed_callback(events.append)
+    added = deepcopy((await freeathome.get_config())["devices"]["ABB7F500E17A"])
+    await freeathome.update(
+        {
+            "devices": {
+                "ABB_NEW": added,
+                "ABB7F62F6C0B": {"unresponsive": True},
+            },
+            "devicesAdded": ["ABB_NEW"],
+            "devicesRemoved": ["ABB7F500E17A"],
+        }
+    )
+    new_device = freeathome.get_device_by_serial("ABB_NEW")
+    assert events == [
+        DevicesChangedEvent(
+            added_devices=(new_device,),
+            added_channels=tuple(new_device.channels.values()),
+            removed_device_serials=("ABB7F500E17A",),
+        )
+    ]
+    assert freeathome.get_device_by_serial("ABB7F62F6C0B") is not None
+
+    await freeathome.update({"devicesRemoved": "ABB_NEW"})
+    assert freeathome.get_device_by_serial("ABB_NEW") is new_device
+    assert len(events) == 1
+    assert "Ignoring invalid devicesRemoved" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_device_replacement_reports_new_channels(freeathome):
+    """A serial removed and re-added in one message reports its new channels."""
+    serial = "ABB7F500E17A"
+    await freeathome.load()
+    old = freeathome.get_device_by_serial(serial)
+    events = []
+    freeathome.register_devices_changed_callback(events.append)
+    data = deepcopy((await freeathome.get_config())["devices"][serial])
+    await freeathome.update(
+        {
+            "devices": {serial: data},
+            "devicesAdded": [serial],
+            "devicesRemoved": [serial],
+        }
+    )
+    new = freeathome.get_device_by_serial(serial)
+    assert new is not old
+    assert events == [
+        DevicesChangedEvent(
+            added_devices=(new,),
+            added_channels=tuple(freeathome.get_channels_by_device(serial)),
+            removed_device_serials=(serial,),
+        )
+    ]
+    assert events[0].added_channels
+
+
+@pytest.mark.asyncio
+async def test_device_removal_before_initial_load(api_mock):
+    """Removals before any configuration is loaded are ignored without fetching."""
+    freeathome = FreeAtHome(api_mock)
+    events = []
+    freeathome.register_devices_changed_callback(events.append)
+    await freeathome.update({"devicesRemoved": ["ABB7F500E17A"]})
+    assert events == []
+    api_mock.get_configuration.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_overflowing_addition_does_not_abort_discovery(api_mock, caplog):
     """Reject an overflowing dimmer while processing subsequent valid devices."""
     api_mock.is_priming = False

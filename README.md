@@ -94,7 +94,8 @@ If multiple functions share a number of the same properties but are slightly dif
 ### Runtime Device Discovery
 
 While `FreeAtHome.ws_listen()` is running, devices reported in `devicesAdded` are
-loaded from their WebSocket configuration using the same rules as initial loading.
+loaded from their WebSocket configuration using the same rules as initial loading,
+and devices reported in `devicesRemoved` are removed with their channels.
 Existing device and channel objects, including their subscriptions, are preserved.
 
 Subscribe with a synchronous callback receiving a `DevicesChangedEvent`:
@@ -108,6 +109,8 @@ def discover_devices(event: DevicesChangedEvent):
         register_device(device)
     for channel in event.added_channels:
         add_entity(channel)
+    for serial in event.removed_device_serials:
+        remove_device(serial)
 
 
 freeathome.register_devices_changed_callback(discover_devices)
@@ -118,8 +121,9 @@ freeathome.remove_devices_changed_callback(discover_devices)
 Callbacks run once per message, after its state updates are applied, and receive
 the newly added devices and newly visible channels. Startup filters still apply, and
 channels placed on the floorplan at runtime are reported as `added_channels`.
-Device removal and additions missed while disconnected are not handled;
-`removed_device_serials` is reserved for removal support and is always empty.
+`removed_device_serials` lists explicitly deleted devices, including ones excluded
+by interface filters. Unresponsive or expired virtual devices are not removed.
+Changes missed while disconnected are not handled.
 
 ### Channel Api Interaction (Update Channel)
 
