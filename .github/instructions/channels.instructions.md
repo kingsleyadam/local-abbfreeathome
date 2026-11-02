@@ -16,8 +16,13 @@ applyTo: "src/abbfreeathome/**/*.py,tests/**/*.py"
   indexes. Physical actuator commands generally write inputs; virtual actuator
   feedback writes outputs.
 - Initialize subclass state fields before `super().__init__()`: `Base` invokes
-  overridden refresh handlers during construction. Declare REST refresh pairings
+  overridden refresh handlers during construction. Declare output refresh pairings
   in `_state_refresh_pairings` and subscribable properties in `_callback_attributes`.
+  Input pairings listed in `_input_refresh_pairings` are loaded at construction
+  and fetched by `refresh_state()`. `update_channel()` handles output updates and
+  handles input updates only when `_handle_input_updates` is `True`. Enable it
+  for virtual channels and channels that expose `requested_*` values, because
+  physical inputs can share pairing IDs with outputs.
   `_refresh_state_from_datapoint()` updates state and returns affected attribute
   names, or `[]` when unhandled. Callbacks are synchronous, zero-argument
   functions; `_notify_callbacks()` deduplicates a subscriber across attributes.
