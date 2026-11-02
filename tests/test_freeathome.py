@@ -578,7 +578,7 @@ async def test_update(freeathome):
     device._channels = {"ch0003": channel}
 
     # Steady-state: the api is not in the priming window.
-    freeathome.api.is_priming = False
+    freeathome.api.is_priming_datapoint.return_value = False
 
     data = {
         "datapoints": {"ABB7F500E17A/ch0003/256": "0", "ABB7F500E17A/ch0001/0": "0"}
@@ -608,7 +608,7 @@ async def test_update_scene_virtual_switch(
     channel.register_callback(
         callback_attribute="requested_state", callback=request_callback
     )
-    api_mock.is_priming = is_priming
+    api_mock.is_priming_datapoint.return_value = is_priming
     data = {
         "datapoints": {f"{serial}/ch0000/idp0003": "4"},
         "parameters": {},
@@ -646,7 +646,7 @@ async def test_update_scene_duplicate_datapoint(freeathome_virtuals, api_mock):
     channel.register_callback(callback_attribute="state", callback=callback)
     request_callback = MagicMock()
     channel.register_callback("requested_state", request_callback)
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     data = {
         "datapoints": {"60005D808C54/ch0000/odp0000": "1"},
         "scenesTriggered": {
@@ -676,7 +676,7 @@ async def test_update_scene_unchanged_output(freeathome_virtuals, api_mock, is_p
     channel = freeathome_virtuals.get_channels()["60005D808C54/ch0000"]
     callback = MagicMock()
     channel.register_callback(callback_attribute="state", callback=callback)
-    api_mock.is_priming = is_priming
+    api_mock.is_priming_datapoint.return_value = is_priming
 
     await freeathome_virtuals.update(
         {
@@ -706,7 +706,7 @@ async def test_update_scene_without_datapoints(freeathome_virtuals, api_mock):
     channel = freeathome_virtuals.get_channels()["60005D808C54/ch0000"]
     callback = MagicMock()
     channel.register_callback(callback_attribute="state", callback=callback)
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     output = {"outputs": {"odp0000": {"value": "1", "pairingID": 256}}}
     data = {
         "scenesTriggered": {
@@ -739,7 +739,7 @@ async def test_update_scene_physical_switch(freeathome, api_mock):
     channel = freeathome.get_channels()["ABB7F500E17A/ch0003"]
     callback = MagicMock()
     channel.register_callback("state", callback)
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
 
     await freeathome.update(
         {
@@ -768,7 +768,7 @@ async def test_update_scene_multiple_virtual_switches(freeathome_virtuals, api_m
     for serial in serials:
         devices[serial] = deepcopy(device)
     await freeathome_virtuals.load()
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     events = {serial: [] for serial in serials}
     channels = freeathome_virtuals.get_channels()
     for serial in serials:
@@ -826,7 +826,7 @@ async def test_update_priming_suppresses_noop_callback_flood(freeathome, api_moc
     # The loaded cache for odp0000 is "0". Replaying the SAME value during
     # priming is a no-op and must be suppressed.
     assert _channel._outputs["odp0000"]["value"] == "0"
-    api_mock.is_priming = True
+    api_mock.is_priming_datapoint.return_value = True
     await freeathome.update({"datapoints": {"ABB7F500E17A/ch0000/odp0000": "0"}})
 
     _callback.assert_not_called()
@@ -850,7 +850,7 @@ async def test_update_priming_fires_for_changed_value(freeathome, api_mock):
     _channel.register_callback(callback_attribute="state", callback=_callback)
 
     # Cache is "0"; a snapshot value of "1" is a real change -> callback fires.
-    api_mock.is_priming = True
+    api_mock.is_priming_datapoint.return_value = True
     await freeathome.update({"datapoints": {"ABB7F500E17A/ch0000/odp0000": "1"}})
 
     _callback.assert_called_once()
@@ -873,7 +873,7 @@ async def test_update_after_priming_fires_on_while_on(freeathome, api_mock):
     _channel.register_callback(callback_attribute="state", callback=_callback)
 
     # Put the channel into a known "on" state (not priming yet; one callback).
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     await freeathome.update({"datapoints": {"ABB7F500E17A/ch0000/odp0000": "1"}})
     assert _callback.call_count == 1
 
@@ -1337,7 +1337,7 @@ async def test_update_parameters_from_devices_skips_unknown_channels(freeathome)
 async def test_update_applies_parameters_before_datapoints(freeathome):
     """A parameter change is in effect for datapoints in the same message."""
     api = freeathome.api
-    api.is_priming = False
+    api.is_priming_datapoint.return_value = False
     device = Device(
         device_serial="ABB7F500E17A",
         device_id="910C",
@@ -1384,7 +1384,7 @@ async def test_device_addition_initializes_before_discovery(
     api_mock, serial, source, channel_id, channel_class, is_priming
 ):
     """Add devices atomically and notify after same-message state updates."""
-    api_mock.is_priming = is_priming
+    api_mock.is_priming_datapoint.return_value = is_priming
     freeathome = FreeAtHome(api_mock)
     await freeathome.load()
     previous_devices = dict(freeathome.get_devices())
@@ -1484,7 +1484,7 @@ async def test_discovery_after_orphan_placement(
     api_mock, include_orphans, parent_location
 ):
     """Placement updates views and names without losing state or subscriptions."""
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     freeathome = FreeAtHome(api_mock, include_orphan_channels=include_orphans)
     await freeathome.load()
     serial = "ABB000000001"
@@ -1589,7 +1589,7 @@ async def test_device_discovery_respects_filters(
     api_mock, interfaces, classes, source, orphan, loaded, visible
 ):
     """Runtime additions respect startup filters without discarding raw config."""
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     freeathome = FreeAtHome(api_mock, interfaces=interfaces, channel_classes=classes)
     await freeathome.load()
     serial = "600000000001" if source.startswith("6000") else "ABB000000001"
@@ -1659,7 +1659,7 @@ async def test_invalid_addition_does_not_publish_partial_device(
     api_mock, caplog, invalid
 ):
     """Log rejected additions and still discover valid devices in the same frame."""
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     freeathome = FreeAtHome(api_mock)
     await freeathome.load()
     good = deepcopy(api_mock.get_configuration.return_value["devices"]["ABB7F500E17A"])
@@ -1689,7 +1689,7 @@ async def test_malformed_devices_added_does_not_abort_frame(
     api_mock, caplog, added, expect_good
 ):
     """Skip malformed devicesAdded values while processing the rest of the frame."""
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     freeathome = FreeAtHome(api_mock)
     await freeathome.load()
     good = deepcopy(api_mock.get_configuration.return_value["devices"]["ABB7F500E17A"])
@@ -1751,7 +1751,7 @@ async def test_location_update_ignores_invalid_values(api_mock):
 @pytest.mark.asyncio
 async def test_addition_before_initial_load(api_mock):
     """Use cached REST floorplan information even if discovery precedes load."""
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     freeathome = FreeAtHome(api_mock)
     data = deepcopy(api_mock.get_configuration.return_value["devices"]["ABB7F500E17A"])
     await freeathome.update({"devicesAdded": ["ABB_NEW"], "devices": {"ABB_NEW": data}})
@@ -1932,10 +1932,10 @@ async def test_device_unresponsive_updates(freeathome, api_mock):
     )
     device.register_unresponsive_callback(callback)
 
-    api_mock.is_priming = True
+    api_mock.is_priming_datapoint.return_value = True
     await freeathome.update({"devices": {serial: {"unresponsive": True}}})
     await freeathome.update({"devices": {serial: {"unresponsive": True}}})
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     await freeathome.update({"devices": {serial: {"displayName": "x"}}})
     await freeathome.update({"devices": {serial: {"unresponsive": "false"}}})
     assert seen == [(True, True)]
@@ -1954,7 +1954,7 @@ async def test_device_unresponsive_updates(freeathome, api_mock):
 @pytest.mark.asyncio
 async def test_overflowing_addition_does_not_abort_discovery(api_mock, caplog):
     """Reject an overflowing dimmer while processing subsequent valid devices."""
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     freeathome = FreeAtHome(api_mock)
     await freeathome.load()
     good = deepcopy(api_mock.get_configuration.return_value["devices"]["ABB7F500E17A"])
@@ -2067,7 +2067,7 @@ async def test_datapoint_dispatch_does_not_scan_cached_channels(api_mock):
             msg = "Datapoint-only dispatch scanned channel items"
             raise AssertionError(msg)
 
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     freeathome = FreeAtHome(api_mock)
     await freeathome.load()
     channels = freeathome.get_channels()
@@ -2105,7 +2105,7 @@ async def test_location_update_without_cached_config(freeathome, orphan):
 @pytest.mark.asyncio
 async def test_unsupported_channel_placement_does_not_notify(api_mock):
     """Keep unsupported channels filtered when their location changes."""
-    api_mock.is_priming = False
+    api_mock.is_priming_datapoint.return_value = False
     freeathome = FreeAtHome(api_mock)
     await freeathome.load()
     serial = "6000123456789"

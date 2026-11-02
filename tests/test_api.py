@@ -517,6 +517,30 @@ async def test_ws_connect_starts_priming_window(api):
 
 
 @pytest.mark.asyncio
+async def test_is_priming_datapoint_first_delivery_per_connection(api):
+    """Only the first delivery of each datapoint after a connect is replay (#286)."""
+    key = "ABB7F500E17A/ch0003/odp0000"
+    assert api.is_priming_datapoint(key) is False
+
+    with patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock):
+        await api.ws_connect()
+
+    assert api.is_priming_datapoint(key) is True
+    assert api.is_priming_datapoint(key) is False
+    assert api.is_priming_datapoint("ABB7F500E17A/ch0004/odp0000") is True
+
+    # A reconnect starts a new replay.
+    api._ws_response = None
+    with patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock):
+        await api.ws_connect()
+    assert api.is_priming_datapoint(key) is True
+
+    # Unseen datapoints are live once the safety window has elapsed.
+    api._priming_until = monotonic() - 0.1
+    assert api.is_priming_datapoint("ABB7F500E17A/ch0005/odp0000") is False
+
+
+@pytest.mark.asyncio
 async def test_ws_connect_priming_disabled(api):
     """When priming is disabled, is_priming stays False after connecting."""
     api._is_priming_enabled = False

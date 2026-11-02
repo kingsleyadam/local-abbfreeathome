@@ -49,7 +49,7 @@ def device(mock_floorplan):
         },
     )
     # Test live requests after the reconnect snapshot has finished.
-    instance.api.is_priming = False
+    instance.api.is_priming_datapoint.return_value = False
     instance.load_channels(mock_floorplan)
     return instance
 
@@ -530,10 +530,10 @@ async def test_snapshot_replay_suppresses_unchanged_dimmer(device, dimmer):
     freeathome._devices[device.device_serial] = device
     requested = Mock()
     dimmer.register_callback("requested_dimming_state", requested)
-    device.api.is_priming = True
+    device.api.is_priming_datapoint.return_value = True
     await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0001": "9"}})
     requested.assert_not_called()
-    device.api.is_priming = False
+    device.api.is_priming_datapoint.return_value = False
     await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0001": "9"}})
     requested.assert_called_once()
 
@@ -547,16 +547,16 @@ async def test_brightness_websocket_and_priming(device, dimmer):
     dimmer.register_callback(
         "requested_brightness", lambda: observed.append(dimmer.requested_brightness)
     )
-    device.api.is_priming = True
+    device.api.is_priming_datapoint.return_value = True
     await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0002": "50"}})
     assert observed == []
     await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0002": "60.5"}})
     assert observed == [60.5]
-    device.api.is_priming = False
+    device.api.is_priming_datapoint.return_value = False
     for _ in range(2):
         await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0002": "60.5"}})
     assert observed == [60.5, 60.5, 60.5]
-    device.api.is_priming = True
+    device.api.is_priming_datapoint.return_value = True
     await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/idp0002": "60.5"}})
     assert observed == [60.5, 60.5, 60.5]
 
@@ -570,15 +570,15 @@ async def test_feedback_websocket_and_priming(device, dimmer):
     requested = Mock()
     dimmer.register_callback("brightness", lambda: observed.append(dimmer.brightness))
     dimmer.register_callback("requested_brightness", requested)
-    device.api.is_priming = True
+    device.api.is_priming_datapoint.return_value = True
     await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/odp0001": "20"}})
     assert observed == []
     await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/odp0001": "70"}})
     assert observed == [70]
-    device.api.is_priming = False
+    device.api.is_priming_datapoint.return_value = False
     await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/odp0001": "70"}})
     assert observed == [70, 70]
     requested.assert_not_called()
-    device.api.is_priming = True
+    device.api.is_priming_datapoint.return_value = True
     await freeathome.update({"datapoints": {"6000F66D1DA7/ch0000/odp0001": "70"}})
     assert observed == [70, 70]

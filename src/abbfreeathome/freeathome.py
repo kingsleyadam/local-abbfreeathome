@@ -151,10 +151,6 @@ class FreeAtHome:
             )
         )
 
-        # Datapoints received during the post-(re)connect priming window are a
-        # replayed snapshot, not real events: update caches but skip callbacks.
-        _is_priming = self.api.is_priming
-
         # Parameters first: channels read them (e.g. LED mode) to interpret
         # datapoints arriving in the same message.
         self._update_parameters(data)
@@ -184,6 +180,10 @@ class FreeAtHome:
                 _channel = _device.channels.get(_channel_id)
                 if _channel is None:
                     continue
+
+            # The first delivery of a datapoint after a (re)connect is replayed
+            # snapshot, not a real event: update caches but skip no-op callbacks.
+            _is_priming = self.api.is_priming_datapoint(_datapoint_key)
 
             if _datapoint_key in _scene_datapoints:
                 _channel.update_scene(
