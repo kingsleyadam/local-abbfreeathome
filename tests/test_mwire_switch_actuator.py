@@ -114,3 +114,17 @@ def test_update_channel(mwire_switch_actuator):
     # Test scenario where websocket sends update not relevant to the state.
     mwire_switch_actuator.update_channel("AL_MWIRE_SWITCH_ON_OFF/odp0002", "1")
     assert mwire_switch_actuator.state is False
+
+
+def test_update_channel_ignores_command_input(mwire_switch_actuator):
+    """Test a command input sharing the state output's pairing is ignored."""
+    callback = MagicMock()
+    mwire_switch_actuator.register_callback(
+        callback_attribute="state", callback=callback
+    )
+
+    # idp0000 and odp0000 share pairing 419; only the output is confirmed state.
+    mwire_switch_actuator.update_channel("ABB703034BE8/ch0010/idp0000", "0")
+
+    assert mwire_switch_actuator.state is True
+    callback.assert_not_called()
