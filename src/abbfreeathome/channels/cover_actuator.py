@@ -37,11 +37,16 @@ class CoverActuator(Base):
         Pairing.AL_CURRENT_ABSOLUTE_POSITION_BLINDS_PERCENTAGE,
         Pairing.AL_INFO_FORCE,
     ]
+    _input_refresh_pairings: list[Pairing] = [
+        Pairing.AL_SET_ABSOLUTE_POSITION_BLINDS_PERCENTAGE,
+    ]
     _callback_attributes: list[str] = [
         "state",
         "forced_position",
         "position",
+        "target_position",
     ]
+    _handle_input_updates: bool = True
 
     def __init__(
         self,
@@ -57,6 +62,7 @@ class CoverActuator(Base):
         """Initialize the Free@Home CoverActuator class."""
         self._state: CoverActuatorState = CoverActuatorState.unknown
         self._position: int | None = None
+        self._target_position: int | None = None
         self._forced_position: CoverActuatorForcedPosition = (
             CoverActuatorForcedPosition.unknown
         )
@@ -81,6 +87,17 @@ class CoverActuator(Base):
     def position(self) -> int | None:
         """Get the position of the cover."""
         return self._position
+
+    @property
+    def target_position(self) -> int | None:
+        """
+        Get the last requested (target) position of the cover.
+
+        Reflects absolute position commands from any source (free@home app,
+        this library, etc.). Open/close/stop commands and wall switches do not
+        update it, and the value persists after movement completes.
+        """
+        return self._target_position
 
     @property
     def forced_position(self) -> str | None:
@@ -147,10 +164,11 @@ class CoverActuator(Base):
 
         await self._set_position_datapoint(str(value))
         self._position = value
+        self._target_position = value
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """
-        Refresh the state of the channel from a given output.
+        Refresh the state of the channel from a given datapoint.
 
         Return the names of the attributes refreshed by this datapoint.
         """
@@ -174,6 +192,15 @@ class CoverActuator(Base):
         ):
             self._position = int(float(datapoint.get("value")))
             return ["position"]
+        if (
+            datapoint.get("pairingID")
+            == Pairing.AL_SET_ABSOLUTE_POSITION_BLINDS_PERCENTAGE.value
+        ):
+            try:
+                self._target_position = int(float(datapoint.get("value")))
+            except (TypeError, ValueError):
+                self._target_position = None
+            return ["target_position"]
         return []
 
     async def _set_moving_datapoint(self, value: str):
@@ -259,12 +286,15 @@ class AwningActuator(CoverActuator):
 
         await self._set_position_datapoint(str(100 - value))
         self._position = value
+        self._target_position = value
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """Refresh the state, inverting the raw awning position/direction."""
         attributes = super()._refresh_state_from_datapoint(datapoint)
         if "position" in attributes and self._position is not None:
             self._position = 100 - self._position
+        elif "target_position" in attributes and self._target_position is not None:
+            self._target_position = 100 - self._target_position
         elif "state" in attributes:
             if self._state == CoverActuatorState.opening:
                 self._state = CoverActuatorState.closing
@@ -290,6 +320,7 @@ class ShutterActuator(CoverActuator):
         "state",
         "forced_position",
         "position",
+        "target_position",
         "tilt_position",
     ]
 

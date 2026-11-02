@@ -269,6 +269,7 @@ async def test_set_position(cover_actuator):
         value="50",
     )
     assert cover_actuator.position == 50
+    assert cover_actuator.target_position == 50
 
     # Also checking lower and upper boundaries
     await cover_actuator.set_position(-1)
@@ -491,6 +492,7 @@ async def test_awning_set_position(awning_actuator):
         value="70",
     )
     assert awning_actuator.position == 30
+    assert awning_actuator.target_position == 30
 
     # Boundaries
     await awning_actuator.set_position(-1)
@@ -532,3 +534,87 @@ async def test_awning_refresh_position_inverted(awning_actuator):
         datapoint={"pairingID": 0, "value": "1"}
     )
     assert awning_actuator.position == 70
+
+
+@pytest.mark.asyncio
+async def test_target_position_initial_state(cover_actuator, awning_actuator):
+    """Test the target position is loaded from the input datapoint."""
+    assert cover_actuator.target_position == 70
+    # Raw 70 -> public 30 for awnings
+    assert awning_actuator.target_position == 30
+
+
+@pytest.mark.asyncio
+async def test_target_position_invalid_value(cover_actuator):
+    """Test an empty or invalid target position input resolves to None."""
+    cover_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 35, "value": ""}
+    )
+    assert cover_actuator.target_position is None
+
+
+@pytest.mark.asyncio
+async def test_update_channel_target_position(cover_actuator):
+    """Test input updates refresh target_position and notify every time."""
+    callback = MagicMock()
+    position_callback = MagicMock()
+    cover_actuator.register_callback("target_position", callback)
+    cover_actuator.register_callback("position", position_callback)
+
+    cover_actuator.update_channel("ABB2AC253651/ch0003/idp0002", "75")
+    assert cover_actuator.target_position == 75
+    assert cover_actuator._inputs["idp0002"]["value"] == "75"
+    assert callback.call_count == 1
+
+    # The same target requested again is still a new request
+    cover_actuator.update_channel("ABB2AC253651/ch0003/idp0002", "75")
+    assert callback.call_count == 2
+
+    # Output updates still refresh the current position only
+    cover_actuator.update_channel("ABB2AC253651/ch0003/odp0001", "75")
+    assert cover_actuator.position == 75
+    assert position_callback.call_count == 1
+    assert callback.call_count == 2
+
+    # Unknown datapoints are ignored
+    cover_actuator.update_channel("ABB2AC253651/ch0003/idp0099", "1")
+    assert callback.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_update_channel_target_position_priming(cover_actuator):
+    """Test priming replays only notify when the target position changed."""
+    callback = MagicMock()
+    cover_actuator.register_callback("target_position", callback)
+
+    cover_actuator.update_channel("ABB2AC253651/ch0003/idp0002", "70", is_priming=True)
+    callback.assert_not_called()
+
+    cover_actuator.update_channel("ABB2AC253651/ch0003/idp0002", "40", is_priming=True)
+    assert cover_actuator.target_position == 40
+    callback.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_awning_update_channel_target_position_inverted(awning_actuator):
+    """Test the raw awning target position is inverted to the public value."""
+    awning_actuator.update_channel("ABB2AC253651/ch0003/idp0002", "100")
+    assert awning_actuator.target_position == 0
+
+    awning_actuator.update_channel("ABB2AC253651/ch0003/idp0002", "")
+    assert awning_actuator.target_position is None
+
+
+@pytest.mark.asyncio
+async def test_refresh_state_target_position(cover_actuator):
+    """Test refresh_state fetches the target position input from the api."""
+    cover_actuator.device.api.get_datapoint.return_value = ["25"]
+
+    await cover_actuator.refresh_state()
+
+    cover_actuator.device.api.get_datapoint.assert_any_call(
+        device_serial="ABB2AC253651",
+        channel_id="ch0003",
+        datapoint="idp0002",
+    )
+    assert cover_actuator.target_position == 25

@@ -31,7 +31,7 @@ The current channels implemented within the library.
 | BrightnessSensor | | `state`, `alarm` |
 | CarbonMonoxideSensor | | `state` |
 | ColorTemperatureActuator | `turn_on()`, `turn_off()`, `set_brightness()`, `set_forced_position()`, `set_color_temperature()` | `state`, `brightness`, `forced_position`, `color_temperature`, `color_temperature_coolest`, `color_temperature_warmest` |
-| CoverActuator | `open()`,`close()`, `stop()`, `set_forced_position()`, `set_position()`, `set_tilt_position()` | `state`, `forced_position`, `position`, `tilt_position` |
+| CoverActuator | `open()`,`close()`, `stop()`, `set_forced_position()`, `set_position()`, `set_tilt_position()` | `state`, `forced_position`, `position`, `target_position`, `tilt_position` |
 | DesDoorOpenerActuator | `lock()`, `unlock()` | `state` |
 | DesDoorRingingSensor | | |
 | DimmingActuator | `turn_on()`, `turn_off()`, `set_brightness()`, `set_forced_position()` | `state`, `brightness`, `forced_position` |
