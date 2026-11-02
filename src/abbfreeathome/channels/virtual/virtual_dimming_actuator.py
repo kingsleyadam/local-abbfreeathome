@@ -143,29 +143,3 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
                 self._requested_dimming_state = DimmingSensorState.unknown
             return ["requested_dimming_state"]
         return super()._refresh_state_from_datapoint(datapoint)
-
-    def _refresh_state_from_datapoints(self):
-        """Initialize feedback and requests from the configuration snapshot."""
-        super()._refresh_state_from_datapoints()
-        for datapoint in self._inputs.values():
-            if datapoint.get("pairingID") in [
-                pairing.value for pairing in self._input_refresh_pairings
-            ]:
-                self._refresh_state_from_datapoint(datapoint)
-
-    async def refresh_state(self):
-        """Refresh feedback and available request inputs from the API."""
-        await super().refresh_state()
-        for datapoint_id, datapoint in self._inputs.items():
-            if datapoint.get("pairingID") in [
-                pairing.value for pairing in self._input_refresh_pairings
-            ]:
-                value = (
-                    await self.device.api.get_datapoint(
-                        device_serial=self.device_serial,
-                        channel_id=self.channel_id,
-                        datapoint=datapoint_id,
-                    )
-                )[0]
-                datapoint["value"] = value
-                self._refresh_state_from_datapoint(datapoint)

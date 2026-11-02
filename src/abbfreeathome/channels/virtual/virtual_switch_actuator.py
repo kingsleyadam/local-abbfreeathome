@@ -20,9 +20,6 @@ class VirtualSwitchActuator(Base):
         Pairing.AL_INFO_ON_OFF,
     ]
 
-    _input_refresh_pairings: list[Pairing] = [
-        Pairing.AL_SWITCH_ON_OFF,
-    ]
     _callback_attributes: list[str] = [
         "state",
         "requested_state",

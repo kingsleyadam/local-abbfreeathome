@@ -1,6 +1,6 @@
 """Test class to test the Base channel."""
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -201,6 +201,46 @@ def test_update_channel(base_instance):
     base_instance._refresh_state_from_datapoint.assert_called_once_with(
         datapoint={"pairingID": 1, "value": "1"}
     )
+
+
+@pytest.mark.asyncio
+async def test_input_refresh_pairings(mock_api, mock_device, monkeypatch):
+    """Test only listed inputs are loaded and refreshed; missing ones are skipped."""
+    monkeypatch.setattr(
+        Base,
+        "_input_refresh_pairings",
+        [Pairing.AL_SWITCH_ON_OFF, Pairing.AL_HSV],
+    )
+    refreshed = []
+    monkeypatch.setattr(
+        Base,
+        "_refresh_state_from_datapoint",
+        lambda self, datapoint: refreshed.append(dict(datapoint)) or [],
+    )
+    mock_device.device_serial = "ABB7F500E17A"
+    mock_device.api = mock_api
+    mock_api.get_datapoint = AsyncMock(return_value=["1"])
+    channel = Base(
+        device=mock_device,
+        channel_id="ch0003",
+        channel_name="Channel Name",
+        inputs={
+            "idp0000": {"pairingID": 1, "value": "0"},
+            "idp0001": {"pairingID": 2, "value": "0"},
+        },
+        outputs={},
+        parameters={},
+    )
+    assert refreshed == [{"pairingID": 1, "value": "0"}]
+
+    refreshed.clear()
+    await channel.refresh_state()
+
+    mock_api.get_datapoint.assert_awaited_once_with(
+        device_serial="ABB7F500E17A", channel_id="ch0003", datapoint="idp0000"
+    )
+    assert refreshed == [{"pairingID": 1, "value": "1"}]
+    assert channel._inputs["idp0000"]["value"] == "1"
 
 
 @pytest.fixture(

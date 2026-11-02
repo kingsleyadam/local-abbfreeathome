@@ -23,12 +23,6 @@ class VirtualRoomTemperatureController(Base):
         Pairing.AL_MEASURED_TEMPERATURE,
     ]
 
-    _input_refresh_pairings: list[Pairing] = [
-        Pairing.AL_ECO_ON_OFF,
-        Pairing.AL_CONTROLLER_ON_OFF_REQUEST,
-        Pairing.AL_INFO_ABSOLUTE_SET_POINT_REQUEST,
-    ]
-
     _callback_attributes: list[str] = [
         "state",
         "requested_state",
