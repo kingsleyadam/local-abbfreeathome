@@ -43,6 +43,7 @@ class SwitchSensor(Base):
         "state",
         "led",
     ]
+    _handle_input_updates: bool = True
 
     def __init__(
         self,
@@ -133,25 +134,6 @@ class SwitchSensor(Base):
             datapoint=_sensor_input_id,
             value=value,
         )
-
-    def update_channel(self, datapoint_key, datapoint_value, is_priming: bool = False):
-        """Update the channel state."""
-        super().update_channel(datapoint_key, datapoint_value, is_priming=is_priming)
-        _callback_attributes: list[str] = []
-        _changed = True
-        _io_key = datapoint_key.split("/")[-1]
-
-        if _io_key in self._inputs:
-            _changed = self._inputs[_io_key].get("value") != datapoint_value
-            self._inputs[_io_key]["value"] = datapoint_value
-            _callback_attributes = self._refresh_state_from_datapoint(
-                datapoint=self._inputs[_io_key]
-            )
-
-        if is_priming and not _changed:
-            return
-
-        self._notify_callbacks(_callback_attributes)
 
     async def refresh_state(self):
         """Refresh the state of the channel from the api."""

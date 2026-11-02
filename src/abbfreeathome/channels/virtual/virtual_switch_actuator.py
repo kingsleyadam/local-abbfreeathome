@@ -27,6 +27,7 @@ class VirtualSwitchActuator(Base):
         "state",
         "requested_state",
     ]
+    _handle_input_updates: bool = True
 
     def __init__(
         self,
@@ -115,39 +116,6 @@ class VirtualSwitchActuator(Base):
             datapoint=_switch_output_id,
             value=value,
         )
-
-    def update_channel(
-        self, datapoint_key: str, datapoint_value: str, is_priming: bool = False
-    ):
-        """Update the device state."""
-        _LOGGER.info(
-            "%s received updated data: %s: %s",
-            self.channel_name,
-            datapoint_key,
-            datapoint_value,
-        )
-        _callback_attributes: list[str] = []
-        _changed = True
-        _io_key = datapoint_key.rsplit("/", maxsplit=1)[-1]
-
-        if _io_key in self._outputs:
-            _changed = self._outputs[_io_key].get("value") != datapoint_value
-            self._outputs[_io_key]["value"] = datapoint_value
-            _callback_attributes = self._refresh_state_from_datapoint(
-                datapoint=self._outputs[_io_key]
-            )
-
-        if _io_key in self._inputs:
-            _changed = self._inputs[_io_key].get("value") != datapoint_value
-            self._inputs[_io_key]["value"] = datapoint_value
-            _callback_attributes = self._refresh_state_from_datapoint(
-                datapoint=self._inputs[_io_key]
-            )
-
-        if is_priming and not _changed:
-            return
-
-        self._notify_callbacks(_callback_attributes)
 
     def update_scene(
         self, datapoint_key: str, datapoint_value: str, is_priming: bool = False
