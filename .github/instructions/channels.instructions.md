@@ -1,8 +1,5 @@
 ---
 applyTo: "src/abbfreeathome/**/*.py,tests/**/*.py"
-paths:
-  - "src/abbfreeathome/**/*.py"
-  - "tests/**/*.py"
 ---
 
 ## Channel and event conventions

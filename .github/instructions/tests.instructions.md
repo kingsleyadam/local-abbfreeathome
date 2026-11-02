@@ -1,7 +1,5 @@
 ---
 applyTo: "tests/**"
-paths:
-  - "tests/**"
 ---
 
 ## Tests

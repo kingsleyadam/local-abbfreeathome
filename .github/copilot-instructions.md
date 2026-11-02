@@ -65,13 +65,13 @@ The Local API must be enabled on the SysAP; protocol reference:
 
 ## Path-specific instructions
 
-Detailed conventions live in `.github/instructions/*.instructions.md` and load
-only when working on matching files (`applyTo` for Copilot, `paths` for Claude
-Code via symlinks in `.claude/rules/`). Edit the files in `.github/instructions/`;
-keep both frontmatter keys in sync.
+Detailed conventions live in `.github/instructions/*.instructions.md`, scoped by
+their `applyTo` globs. Read the matching file before changing code in its scope
+if it is not already loaded.
 
-- `channels.instructions.md`: channel, datapoint, event, and parameter conventions.
-- `tests.instructions.md`: test structure, fixtures, and mocking patterns.
+- `channels.instructions.md` (`src/abbfreeathome/**/*.py`, `tests/**/*.py`):
+  channel, datapoint, event, and parameter conventions.
+- `tests.instructions.md` (`tests/**`): test structure, fixtures, and mocking patterns.
 
 ## Pull request scope
 
