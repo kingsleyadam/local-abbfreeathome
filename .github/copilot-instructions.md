@@ -63,38 +63,15 @@ The Local API must be enabled on the SysAP; protocol reference:
   lookup and change callbacks. Floor and room names are resolved by `Floorplan`,
   with channel locations falling back to device locations.
 
-## Channel and event conventions
+## Path-specific instructions
 
-- Function IDs arrive as hexadecimal strings and are decoded with `Function`.
-  Register new channel support in `FUNCTION_CHANNEL_MAPPING` or
-  `FUNCTION_VIRTUAL_CHANNEL_MAPPING` in `const.py`; use the enums in `bin/` for
-  function, interface, pairing, and parameter IDs. Multiple function IDs may
-  share a class when their behavior is identical. The README's older reference
-  to `FreeAtHome._get_function_to_channel_mapping` is superseded by these mappings.
-- Datapoint dictionaries use `idp...`/`odp...` keys, integer `pairingID` values,
-  and usually string wire values such as `"0"`/`"1"`. Resolve datapoint IDs with
-  `get_input_by_pairing()` / `get_output_by_pairing()` rather than hardcoding
-  indexes. Physical actuator commands generally write inputs; virtual actuator
-  feedback writes outputs.
-- Initialize subclass state fields before `super().__init__()`: `Base` invokes
-  overridden refresh handlers during construction. Declare REST refresh pairings
-  in `_state_refresh_pairings` and subscribable properties in `_callback_attributes`.
-  `_refresh_state_from_datapoint()` updates state and returns affected attribute
-  names, or `[]` when unhandled. Callbacks are synchronous, zero-argument
-  functions; `_notify_callbacks()` deduplicates a subscriber across attributes.
-- Preserve repeated event delivery outside priming, even for identical values.
-  The post-WebSocket-(re)connect priming window updates cached datapoints but
-  suppresses callbacks for unchanged values, while still notifying real changes.
-  Propagate `is_priming` through overridden update handlers.
-- `FreeAtHome.update()` applies parameters before datapoints so interpreters
-  such as sensor LED-mode handling see current configuration. Parameter IDs use
-  `par0002` form; shared lookup accepts string, integer, or `Parameter` enum IDs.
-  Parameter callbacks fire only on value changes.
-- `scenesTriggered` contains nested device/channel outputs, merged with ordinary
-  datapoints and dispatched through `update_scene()`. Virtual switch/dimmer
-  `requested_*` properties represent commands independently of reported state.
-  Ordinary output feedback must not emit request callbacks; virtual-switch scene
-  commands must emit request callbacks even when unchanged or during priming.
+Detailed conventions live in `.github/instructions/*.instructions.md` and load
+only when working on matching files (`applyTo` for Copilot, `paths` for Claude
+Code via symlinks in `.claude/rules/`). Edit the files in `.github/instructions/`;
+keep both frontmatter keys in sync.
+
+- `channels.instructions.md`: channel, datapoint, event, and parameter conventions.
+- `tests.instructions.md`: test structure, fixtures, and mocking patterns.
 
 ## Pull request scope
 
@@ -134,15 +111,7 @@ PR labels categorize generated release notes via `.github/release.yml` and infor
 the required version bump. Keep labels consistent with the actual change, updating
 them if the PR scope changes.
 
-## Tests and releases
-
-Tests import `src.abbfreeathome.*`; `pyproject.toml` puts the repository root on
-pytest's import path. Async tests use `@pytest.mark.asyncio` and async fixtures use
-`pytest_asyncio.fixture`. Channel tests construct realistic input/output mappings
-with `AsyncMock(spec=FreeAtHomeApi)` and a mock `Device`; transport tests use
-`aioresponses` and patched WebSockets. Shared fixtures are in `tests/conftest.py`,
-including an aiohttp/aioresponses compatibility patch. `pytest-env` sets
-`FREEATHOME_MAX_REQUEST_TRIES=1` to avoid retry delays in tests.
+## Releases
 
 The package version is in `pyproject.toml`. Tag pushes publish to PyPI and create
 a GitHub release; TestPyPI publishing is manually dispatched. Optional release
