@@ -40,8 +40,15 @@ explicit confirmation from the user of the exact tag and commit.
 
 1. Branch from up-to-date `main` as `release/X.Y.Z`.
 2. Update `version` in `pyproject.toml`.
-3. Optionally add `.github/release-notes/X.Y.Z.md` with user-facing highlights
-   (only when the user wants them; generated notes are otherwise sufficient).
+3. Review the changes since the last tag (PR descriptions and diffs, not just
+   titles) for anything worth calling out to users: new features or APIs,
+   behavior changes, breaking changes or migration steps, and notable fixes.
+   Present a short list of candidates with the reason each matters, and ask the
+   user which, if any, to include as highlights. If they choose some, write
+   `.github/release-notes/X.Y.Z.md` following the style of existing files there:
+   a `## Highlights` heading, a short summary, a `###` section per item with its
+   PR number, and brief usage examples for new APIs. If nothing stands out or the
+   user declines, rely on the generated notes.
 4. Open a PR to `main` titled `Bump version to X.Y.Z`, or
    `Prepare X.Y.Z release` when it includes highlights. Label it with the
    matching `Semver-Major`/`Semver-Minor`/`Semver-Patch`, plus `documentation`
