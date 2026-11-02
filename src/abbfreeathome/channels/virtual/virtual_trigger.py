@@ -1,6 +1,5 @@
 """Free@Home Virtual Trigger class."""
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 from ...bin.pairing import Pairing
@@ -8,8 +7,6 @@ from ..trigger import Trigger
 
 if TYPE_CHECKING:
     from ...device import Device
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class VirtualTrigger(Trigger):
@@ -21,6 +18,7 @@ class VirtualTrigger(Trigger):
     _callback_attributes: list[str] = [
         "triggered",
     ]
+    _handle_input_updates: bool = True
 
     def __init__(
         self,
@@ -62,36 +60,3 @@ class VirtualTrigger(Trigger):
             self._triggered = datapoint.get("value") == "1"
             return ["triggered"]
         return []
-
-    def update_channel(
-        self, datapoint_key: str, datapoint_value: str, is_priming: bool = False
-    ):
-        """Update the device state."""
-        _LOGGER.info(
-            "%s received updated data: %s: %s",
-            self.channel_name,
-            datapoint_key,
-            datapoint_value,
-        )
-        _callback_attributes: list[str] = []
-        _changed = True
-        _io_key = datapoint_key.rsplit("/", maxsplit=1)[-1]
-
-        if _io_key in self._outputs:
-            _changed = self._outputs[_io_key].get("value") != datapoint_value
-            self._outputs[_io_key]["value"] = datapoint_value
-            _callback_attributes = self._refresh_state_from_datapoint(
-                datapoint=self._outputs[_io_key]
-            )
-
-        if _io_key in self._inputs:
-            _changed = self._inputs[_io_key].get("value") != datapoint_value
-            self._inputs[_io_key]["value"] = datapoint_value
-            _callback_attributes = self._refresh_state_from_datapoint(
-                datapoint=self._inputs[_io_key]
-            )
-
-        if is_priming and not _changed:
-            return
-
-        self._notify_callbacks(_callback_attributes)

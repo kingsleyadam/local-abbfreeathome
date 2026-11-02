@@ -188,9 +188,19 @@ def test_remove_callback_nonexistent_attribute(base_instance):
 
 
 def test_update_channel(base_instance):
-    """Test when input-datapoint is provided."""
+    """Test input updates are ignored unless the channel opts in."""
+    base_instance._refresh_state_from_datapoint = MagicMock(return_value=[])
 
     base_instance.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")
+    assert base_instance._inputs["idp0000"]["value"] == "0"
+    base_instance._refresh_state_from_datapoint.assert_not_called()
+
+    base_instance._handle_input_updates = True
+    base_instance.update_channel("AL_SWITCH_ON_OFF/idp0000", "1")
+    assert base_instance._inputs["idp0000"]["value"] == "1"
+    base_instance._refresh_state_from_datapoint.assert_called_once_with(
+        datapoint={"pairingID": 1, "value": "1"}
+    )
 
 
 @pytest.fixture(

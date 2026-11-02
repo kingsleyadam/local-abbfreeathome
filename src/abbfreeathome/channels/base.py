@@ -24,6 +24,12 @@ class Base(ParametersMixin):
 
     _state_refresh_pairings: list[Pairing] = []
     _callback_attributes: list[str] = []
+    # Also refresh state from input (idp) datapoint updates. Physical channels
+    # report confirmed state on outputs, and inputs carry commands that may
+    # share a pairing ID with an output (e.g. MWire switch actuators), so this
+    # is off by default. Enable it for virtual channels, whose inputs carry
+    # commands from the SysAP, and for channels exposing requested values.
+    _handle_input_updates: bool = False
 
     def __init__(
         self,
@@ -143,6 +149,9 @@ class Base(ParametersMixin):
         datapoints whose value did not change -- preventing the phantom
         callback flood (issue #239) while still surfacing datapoints that
         genuinely changed while the connection was down.
+
+        Output datapoints are always handled; input datapoints only when the
+        channel sets ``_handle_input_updates``.
         """
         _LOGGER.info(
             "%s received updated data: %s: %s",
@@ -154,11 +163,15 @@ class Base(ParametersMixin):
         _changed = True
         _io_key = datapoint_key.rsplit("/", maxsplit=1)[-1]
 
-        if _io_key in self._outputs:
-            _changed = self._outputs[_io_key].get("value") != datapoint_value
-            self._outputs[_io_key]["value"] = datapoint_value
+        _datapoints = self._outputs
+        if _io_key not in _datapoints and self._handle_input_updates:
+            _datapoints = self._inputs
+
+        if _io_key in _datapoints:
+            _changed = _datapoints[_io_key].get("value") != datapoint_value
+            _datapoints[_io_key]["value"] = datapoint_value
             _callback_attributes = self._refresh_state_from_datapoint(
-                datapoint=self._outputs[_io_key]
+                datapoint=_datapoints[_io_key]
             )
 
         if is_priming and not _changed:
