@@ -48,12 +48,12 @@ API_VERSION = "v1"
 # API Requests Configuration
 DEFAULT_FREEATHOME_MAX_REQUEST_TRIES = 5
 
-# Window (in seconds) after a successful websocket (re)connect during which the
-# SysAP may replay a full datapoint snapshot. Datapoints received inside this
-# window update the cache but only fan out callbacks when their value actually
-# changed, preventing the phantom callback flood described in issue #239 while
-# still surfacing state that genuinely changed while the connection was down.
-WS_PRIMING_SECONDS = 3.0
+# Maximum window (in seconds) after a successful websocket (re)connect during
+# which the SysAP may replay its datapoint snapshot. After a SysAP reboot the
+# replay trickles in device by device over tens of seconds (issue #286). Only
+# the first delivery of each datapoint inside this window is treated as replay:
+# it updates the cache but only fans out callbacks when its value changed.
+WS_PRIMING_SECONDS = 60.0
 
 VIRTUAL_DEVICE_ROOT_SCHEMA = vol.Schema(
     {
@@ -293,6 +293,7 @@ class FreeAtHomeApi(SSLContextMixin):
         self._wait_for_result = wait_for_result
         self._is_priming_enabled: bool = enable_priming
         self._priming_until: float = 0.0
+        self._primed_datapoints: set[str] = set()
 
     async def __aenter__(self):
         """Async enter and return self."""
@@ -538,6 +539,20 @@ class FreeAtHomeApi(SSLContextMixin):
         """
         return self._is_priming_enabled and monotonic() < self._priming_until
 
+    def is_priming_datapoint(self, datapoint_key: str) -> bool:
+        """
+        Whether a datapoint is the replayed snapshot value for this connection.
+
+        Inside the priming window, only the first delivery of each datapoint
+        since the last (re)connect counts as replay; later deliveries are real
+        events, even when their value is unchanged (issue #286).
+        """
+        if not self.is_priming or datapoint_key in self._primed_datapoints:
+            return False
+
+        self._primed_datapoints.add(datapoint_key)
+        return True
+
     async def ws_close(self):
         """Close the websocket session."""
         await self.ws_disconnect()
@@ -566,6 +581,7 @@ class FreeAtHomeApi(SSLContextMixin):
         # Begin the priming window: the SysAP may now replay a full datapoint
         # snapshot that should not be treated as real events.
         self._priming_until = monotonic() + WS_PRIMING_SECONDS
+        self._primed_datapoints.clear()
 
     async def ws_disconnect(self):
         """Close the websockets connection."""
