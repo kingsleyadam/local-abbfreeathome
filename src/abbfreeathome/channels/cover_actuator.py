@@ -198,7 +198,7 @@ class CoverActuator(Base):
         ):
             try:
                 self._target_position = int(float(datapoint.get("value")))
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 self._target_position = None
             return ["target_position"]
         return []

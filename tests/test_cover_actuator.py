@@ -547,10 +547,12 @@ async def test_target_position_initial_state(cover_actuator, awning_actuator):
 @pytest.mark.asyncio
 async def test_target_position_invalid_value(cover_actuator):
     """Test an empty or invalid target position input resolves to None."""
-    cover_actuator._refresh_state_from_datapoint(
-        datapoint={"pairingID": 35, "value": ""}
-    )
-    assert cover_actuator.target_position is None
+    for value in ["", "abc", "inf", "1e309"]:
+        cover_actuator._target_position = 50
+        cover_actuator._refresh_state_from_datapoint(
+            datapoint={"pairingID": 35, "value": value}
+        )
+        assert cover_actuator.target_position is None
 
 
 @pytest.mark.asyncio
