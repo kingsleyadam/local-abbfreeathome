@@ -36,7 +36,7 @@ class SwitchSensor(Base):
     _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_SWITCH_ON_OFF,
     ]
-    _input_state_refresh_pairings: list[Pairing] = [
+    _input_refresh_pairings: list[Pairing] = [
         Pairing.AL_INFO_ON_OFF,
     ]
     _callback_attributes: list[str] = [
@@ -134,37 +134,6 @@ class SwitchSensor(Base):
             datapoint=_sensor_input_id,
             value=value,
         )
-
-    async def refresh_state(self):
-        """Refresh the state of the channel from the api."""
-        await super().refresh_state()
-
-        for _pairing in self._input_state_refresh_pairings:
-            _datapoint_id, _datapoint_value = self.get_input_by_pairing(
-                pairing=_pairing
-            )
-
-            _datapoint = (
-                await self.device.api.get_datapoint(
-                    device_serial=self.device_serial,
-                    channel_id=self.channel_id,
-                    datapoint=_datapoint_id,
-                )
-            )[0]
-
-            self._refresh_state_from_datapoint(
-                datapoint={
-                    "pairingID": _pairing.value,
-                    "value": _datapoint,
-                }
-            )
-
-    def _refresh_state_from_datapoints(self):
-        """Refresh the state of the channel from the datapoints."""
-        super()._refresh_state_from_datapoints()
-
-        for _datapoint in self._inputs.values():
-            self._refresh_state_from_datapoint(_datapoint)
 
 
 class DimmingSensor(SwitchSensor):

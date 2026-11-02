@@ -12,9 +12,6 @@ if TYPE_CHECKING:
 class VirtualTrigger(Trigger):
     """Free@Home Virtual Trigger Class."""
 
-    _input_refresh_pairings: list[Pairing] = [
-        Pairing.AL_TIMED_START_STOP,
-    ]
     _callback_attributes: list[str] = [
         "triggered",
     ]

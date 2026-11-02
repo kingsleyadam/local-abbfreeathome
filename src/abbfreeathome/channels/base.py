@@ -23,6 +23,8 @@ class Base(ParametersMixin):
     """Free@Home Base Class."""
 
     _state_refresh_pairings: list[Pairing] = []
+    # Input pairings to load at construction and fetch in refresh_state().
+    _input_refresh_pairings: list[Pairing] = []
     _callback_attributes: list[str] = []
     # Also refresh state from input (idp) datapoint updates. Physical channels
     # report confirmed state on outputs, and inputs carry commands that may
@@ -239,10 +241,32 @@ class Base(ParametersMixin):
                 }
             )
 
+        for _datapoint_id, _datapoint in self._input_refresh_datapoints():
+            _datapoint["value"] = (
+                await self.device.api.get_datapoint(
+                    device_serial=self.device_serial,
+                    channel_id=self.channel_id,
+                    datapoint=_datapoint_id,
+                )
+            )[0]
+            self._refresh_state_from_datapoint(_datapoint)
+
     def _refresh_state_from_datapoints(self):
         """Refresh the state of the channel from the datapoints."""
         for _datapoint in self._outputs.values():
             self._refresh_state_from_datapoint(_datapoint)
+
+        for _datapoint_id, _datapoint in self._input_refresh_datapoints():
+            self._refresh_state_from_datapoint(_datapoint)
+
+    def _input_refresh_datapoints(self) -> list[tuple[str, dict[str, Any]]]:
+        """Return the inputs matching ``_input_refresh_pairings``."""
+        _pairings = {_pairing.value for _pairing in self._input_refresh_pairings}
+        return [
+            (_datapoint_id, _datapoint)
+            for _datapoint_id, _datapoint in self._inputs.items()
+            if _datapoint.get("pairingID") in _pairings
+        ]
 
     def _refresh_state_from_datapoint(self, datapoint: dict[str, Any]) -> list[str]:
         """Refresh state and return affected attribute names, or an empty list."""
