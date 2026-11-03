@@ -33,6 +33,7 @@ class VirtualDimmingRequestState(enum.Enum):
     stop = "stop"
 
 
+_RELATIVE_DIMMING_VALUES = frozenset(str(value) for value in range(16))
 _RELATIVE_DIMMING_REQUESTS = {
     ("longpress", True): VirtualDimmingRequestState.longpress_up,
     ("longpress", False): VirtualDimmingRequestState.longpress_down,
@@ -177,7 +178,7 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
         if value is None or value == "":
             _LOGGER.debug("No requested dimming state for %s", self.channel_name)
             return VirtualDimmingRequestState.unknown
-        if not isinstance(value, str) or not value.isdecimal() or int(value) > 15:
+        if not isinstance(value, str) or value not in _RELATIVE_DIMMING_VALUES:
             _LOGGER.warning(
                 "Invalid requested dimming state %r for %s", value, self.channel_name
             )

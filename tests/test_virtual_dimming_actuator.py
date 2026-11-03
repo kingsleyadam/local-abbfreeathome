@@ -211,7 +211,9 @@ def test_app_steps_and_stops(dimmer):
     ]
 
 
-@pytest.mark.parametrize("value", ["16", "-1", "1.5", " 9", "invalid", 9])
+@pytest.mark.parametrize(
+    "value", ["16", "-1", "1.5", " 9", "015", "1" * 5000, "invalid", 9, ["9"]]
+)
 def test_invalid_dimming_request(dimmer, caplog, value):
     """Expose malformed relative dimming commands as unknown with a warning."""
     dimmer.update_channel("6000F66D1DA7/ch0000/idp0001", value)
