@@ -1,16 +1,46 @@
 """Free@Home virtual DimActuator channel."""
 
+import enum
 import logging
 from typing import TYPE_CHECKING, Any
 
 from ...bin.pairing import Pairing
-from ..switch_sensor import DimmingSensorState
 from .virtual_switch_actuator import VirtualSwitchActuator
 
 if TYPE_CHECKING:
     from ...device import Device
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class VirtualDimmingRequestState(enum.Enum):
+    """
+    Relative dimming requests received by a virtual dimmer.
+
+    Requests are 4-bit relative dimming commands: bit 3 is the direction
+    (1 = up) and bits 0-2 the step size, where 0 means stop. Physical sensors
+    send 9/1 for a long press and 8/0 on release; the free@home app sends 15/7
+    for its +/- buttons, each followed by 0.
+    """
+
+    unknown = None
+    longpress_up = "longpress_up"
+    longpress_up_release = "longpress_up_release"
+    longpress_down = "longpress_down"
+    longpress_down_release = "longpress_down_release"
+    step_up = "step_up"
+    step_down = "step_down"
+    stop = "stop"
+
+
+_RELATIVE_DIMMING_REQUESTS = {
+    ("longpress", True): VirtualDimmingRequestState.longpress_up,
+    ("longpress", False): VirtualDimmingRequestState.longpress_down,
+    ("release", True): VirtualDimmingRequestState.longpress_up_release,
+    ("release", False): VirtualDimmingRequestState.longpress_down_release,
+    ("step", True): VirtualDimmingRequestState.step_up,
+    ("step", False): VirtualDimmingRequestState.step_down,
+}
 
 
 class VirtualDimmingActuator(VirtualSwitchActuator):
@@ -47,7 +77,7 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
     ) -> None:
         """Initialize the virtual dimmer and its requested states."""
         self._brightness: int | None = None
-        self._requested_dimming_state = DimmingSensorState.unknown
+        self._requested_dimming_state = VirtualDimmingRequestState.unknown
         self._requested_brightness: float | None = None
         super().__init__(
             device,
@@ -90,10 +120,11 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
     @property
     def requested_dimming_state(self) -> str:
         """
-        Return the DimmingSensorState name, not an absolute brightness.
+        Return the VirtualDimmingRequestState name, not an absolute brightness.
 
-        Values 9/8 mean longpress_up/longpress_up_release; 1/0 mean
-        longpress_down/longpress_down_release, as on a physical DimmingSensor.
+        9/1 mean longpress_up/longpress_down and 8/0 their releases, as sent by
+        a physical DimmingSensor. Other steps (10-15/2-7, such as the app's
+        +/- buttons) mean step_up/step_down, and a following 8/0 means stop.
         Unrecognized commands are exposed as unknown.
         """
         return self._requested_dimming_state.name
@@ -135,11 +166,36 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
                 self._requested_brightness = brightness
             return ["brightness" if feedback else "requested_brightness"]
         if datapoint.get("pairingID") == Pairing.AL_RELATIVE_SET_VALUE_CONTROL.value:
-            try:
-                self._requested_dimming_state = DimmingSensorState(
-                    datapoint.get("value")
-                )
-            except ValueError:
-                self._requested_dimming_state = DimmingSensorState.unknown
+            self._requested_dimming_state = self._decode_relative_dimming(
+                datapoint.get("value")
+            )
             return ["requested_dimming_state"]
         return super()._refresh_state_from_datapoint(datapoint)
+
+    def _decode_relative_dimming(self, value: Any) -> VirtualDimmingRequestState:
+        """Decode a 4-bit relative dimming command, see VirtualDimmingRequestState."""
+        if value is None or value == "":
+            _LOGGER.debug("No requested dimming state for %s", self.channel_name)
+            return VirtualDimmingRequestState.unknown
+        if not isinstance(value, str) or not value.isdecimal() or int(value) > 15:
+            _LOGGER.warning(
+                "Invalid requested dimming state %r for %s", value, self.channel_name
+            )
+            return VirtualDimmingRequestState.unknown
+        command = int(value)
+        up = bool(command & 0b1000)
+        step = command & 0b0111
+        if step == 0:
+            # A stop after a step (or a repeated stop) ends the step, not a press.
+            if self._requested_dimming_state in (
+                VirtualDimmingRequestState.step_up,
+                VirtualDimmingRequestState.step_down,
+                VirtualDimmingRequestState.stop,
+            ):
+                return VirtualDimmingRequestState.stop
+            kind = "release"
+        elif step == 1:
+            kind = "longpress"
+        else:
+            kind = "step"
+        return _RELATIVE_DIMMING_REQUESTS[kind, up]

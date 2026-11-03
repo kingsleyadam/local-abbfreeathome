@@ -163,7 +163,10 @@ def test_invalid_initial_switch_request(device, value):
         ("8", "longpress_up_release"),
         ("1", "longpress_down"),
         ("0", "longpress_down_release"),
-        ("7", "unknown"),
+        ("15", "step_up"),
+        ("10", "step_up"),
+        ("7", "step_down"),
+        ("2", "step_down"),
         ("invalid", "unknown"),
     ],
 )
@@ -184,6 +187,45 @@ def test_dimming_request(dimmer, value, expected):
     dimmer.remove_callback("requested_dimming_state", callback)
     dimmer.update_channel("6000F66D1DA7/ch0000/idp0001", value)
     assert callback.call_count == 2
+
+
+def test_app_steps_and_stops(dimmer):
+    """Report the app's +/- as steps and their trailing 0 as stop."""
+    observed = []
+    dimmer.register_callback(
+        "requested_dimming_state",
+        lambda: observed.append(dimmer.requested_dimming_state),
+    )
+    for value in ("15", "0", "0", "7", "8", "9", "8", "1", "0"):
+        dimmer.update_channel("6000F66D1DA7/ch0000/idp0001", value)
+    assert observed == [
+        "step_up",
+        "stop",
+        "stop",
+        "step_down",
+        "stop",
+        "longpress_up",
+        "longpress_up_release",
+        "longpress_down",
+        "longpress_down_release",
+    ]
+
+
+@pytest.mark.parametrize("value", ["16", "-1", "1.5", " 9", "invalid", 9])
+def test_invalid_dimming_request(dimmer, caplog, value):
+    """Expose malformed relative dimming commands as unknown with a warning."""
+    dimmer.update_channel("6000F66D1DA7/ch0000/idp0001", value)
+    assert dimmer.requested_dimming_state == "unknown"
+    assert "Invalid requested dimming state" in caplog.text
+
+
+@pytest.mark.parametrize("value", [None, ""])
+def test_missing_dimming_request(dimmer, caplog, value):
+    """Expose missing relative dimming commands as unknown."""
+    caplog.set_level("DEBUG")
+    dimmer.update_channel("6000F66D1DA7/ch0000/idp0001", value)
+    assert dimmer.requested_dimming_state == "unknown"
+    assert "No requested dimming state" in caplog.text
 
 
 def test_updates_without_callbacks(dimmer):
