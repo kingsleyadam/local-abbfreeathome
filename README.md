@@ -53,7 +53,7 @@ The current channels implemented within the library.
 | WindowDoorSensor | | `state`, `position` |
 | **Virtual Devices:** | | |
 | BrightnessSensor | `turn_on()`, `turn_off()`, `set_brightness()` | `brightness`, `alarm` |
-| DimmingActuator | `turn_on()`, `turn_off()`, `set_brightness()` | `state`, `brightness`, `requested_state`, `requested_dimming_state`, `requested_brightness` |
+| DimmingActuator | `turn_on()`, `turn_off()`, `set_brightness()` | `state`, `brightness`, `requested_state`, `requested_dimming_state`\*\*, `requested_brightness` |
 | EnergyBattery | `set_battery_power()`, `set_soc()`, `set_imported_today()`, `set_exported_today()`, `set_imported_total()`, `set_exported_total()` | `battery`, `soc`, `imported_today`, `exported_today`, `imported_total` `exported_total` |
 | EnergyInverter | `set_current_power()`, `set_imported_today()`, `set_imported_total()` | `current_power`, `imported_today`, `imported_total` |
 | EnergyTwoWayMeter | `set_current_power()`, `set_imported_today()`, `set_exported_today()`, `set_imported_total()`, `set_exported_total()` | `current_power`, `imported_today`, `exported_today`, `imported_total` `exported_total` |
@@ -64,6 +64,8 @@ The current channels implemented within the library.
 | WindowDoorSensor | `turn_on()`, `turn_off()` | `state` |
 
 \*DimmingSensor, StaircaseLightSensor, and SwitchSensor: `turn_on_led()` and `turn_off_led()` refer to the LED of the sensor. It only has an effect when the "LED mode" is set to "Status Indication".
+
+\*\*Virtual DimmingActuator `requested_dimming_state`: `longpress_up`/`longpress_down` and their `_release` states come from a long press on a dimming sensor; `step_up`/`step_down` come from single dimming steps, such as the app's +/- buttons, and are followed by `stop`.
 
 ## FreeAtHome Class Structure and API Interaction
 
