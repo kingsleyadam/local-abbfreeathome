@@ -24,7 +24,8 @@ Follow the "Pull request scope" and "Issue and pull request labels" sections of
   | `fix/`      | Bug fixes                                                  |
   | `refactor/` | Behavior-preserving code changes                           |
   | `docs/`     | Documentation, instructions, and skills                    |
-  | `ci/`       | Workflows, tooling, and dependency updates                 |
+  | `ci/`       | GitHub Actions workflows                                   |
+  | `chore/`    | Tooling, dependencies, Dev Container, and repo config      |
   | `release/`  | Version bumps and release preparation (see `release` skill) |
 
 - `beta/*` and `alpha/*` are prerelease base branches that CI also runs on; do
