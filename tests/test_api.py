@@ -790,6 +790,75 @@ async def test_request_success_other_content_type(api):
 
 
 @pytest.mark.asyncio
+async def test_request_retries_with_exponential_backoff(api, monkeypatch):
+    """Test _request retries invalid responses with jittered exponential delays."""
+    monkeypatch.setenv("FREEATHOME_MAX_REQUEST_TRIES", "4")
+    request_once = AsyncMock(
+        side_effect=[
+            InvalidApiResponseException(500),
+            InvalidApiResponseException(500),
+            InvalidApiResponseException(500),
+            {"key": "value"},
+        ]
+    )
+
+    with (
+        patch.object(api, "_request_once", request_once),
+        patch.object(api_module.random, "uniform", side_effect=lambda a, b: b) as rnd,
+        patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+    ):
+        response = await api._request("test", "put", "data")
+
+    assert response == {"key": "value"}
+    assert request_once.await_count == 4
+    request_once.assert_awaited_with("test", "put", "data")
+    assert [c.args for c in rnd.call_args_list] == [(0, 1), (0, 2), (0, 4)]
+    assert [c.args for c in mock_sleep.await_args_list] == [(1,), (2,), (4,)]
+
+
+@pytest.mark.asyncio
+async def test_request_reraises_after_max_tries(api, monkeypatch):
+    """Test _request re-raises the last invalid response after the final try."""
+    monkeypatch.setenv("FREEATHOME_MAX_REQUEST_TRIES", "3")
+    last_error = InvalidApiResponseException(503)
+    request_once = AsyncMock(
+        side_effect=[
+            InvalidApiResponseException(500),
+            InvalidApiResponseException(502),
+            last_error,
+        ]
+    )
+
+    with (
+        patch.object(api, "_request_once", request_once),
+        patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        pytest.raises(InvalidApiResponseException) as exc_info,
+    ):
+        await api._request("test")
+
+    assert exc_info.value is last_error
+    assert request_once.await_count == 3
+    assert mock_sleep.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_request_does_not_retry_other_exceptions(api, monkeypatch):
+    """Test _request does not retry exceptions other than invalid responses."""
+    monkeypatch.setenv("FREEATHOME_MAX_REQUEST_TRIES", "3")
+    request_once = AsyncMock(side_effect=ForbiddenAuthException("test", 403))
+
+    with (
+        patch.object(api, "_request_once", request_once),
+        patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        pytest.raises(ForbiddenAuthException),
+    ):
+        await api._request("test")
+
+    assert request_once.await_count == 1
+    mock_sleep.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_request_invalid_host(api):
     """Test the _request function for invalid host."""
     api._host = "192.168.1.1"

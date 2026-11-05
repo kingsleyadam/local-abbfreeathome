@@ -1,6 +1,5 @@
 aiohttp!=3.11.0
 aioresponses
-backoff
 build
 packaging
 pre-commit

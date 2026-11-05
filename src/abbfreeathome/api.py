@@ -6,6 +6,7 @@ import inspect
 import json
 import logging
 import os
+import random
 import ssl
 from time import monotonic
 from typing import Any
@@ -26,7 +27,6 @@ from aiohttp.client_exceptions import (
     WSServerHandshakeError as AioHttpWSServerHandshakeError,
 )
 from aiohttp.http import WSMsgType
-import backoff
 from packaging.version import Version
 import voluptuous as vol
 
@@ -473,17 +473,38 @@ class FreeAtHomeApi(SSLContextMixin):
             raise ConnectionTimeoutException(self._host) from error
         raise InvalidApiResponseException(error.status) from error
 
-    @backoff.on_exception(
-        backoff.expo,
-        InvalidApiResponseException,
-        max_tries=int(
+    async def _request(self, path: str, method: str = "get", data: Any | None = None):
+        """Make a request to the API, retrying invalid responses with backoff."""
+        max_tries = int(
             os.environ.get(
                 "FREEATHOME_MAX_REQUEST_TRIES", DEFAULT_FREEATHOME_MAX_REQUEST_TRIES
             )
-        ),
-    )
-    async def _request(self, path: str, method: str = "get", data: Any | None = None):
-        """Make a request to the API."""
+        )
+
+        attempt = 1
+        while True:
+            try:
+                return await self._request_once(path, method, data)
+            except InvalidApiResponseException:
+                if attempt >= max_tries:
+                    raise
+
+                # Exponential backoff (1, 2, 4, ... seconds) with full jitter.
+                delay = random.uniform(0, 2 ** (attempt - 1))
+                _LOGGER.info(
+                    "Backing off request to %s %.1fs after try %s of %s",
+                    path,
+                    delay,
+                    attempt,
+                    max_tries,
+                )
+                await asyncio.sleep(delay)
+                attempt += 1
+
+    async def _request_once(
+        self, path: str, method: str = "get", data: Any | None = None
+    ):
+        """Make a single request to the API."""
 
         # Set the full path to be used.
         if path[0] != "/":
