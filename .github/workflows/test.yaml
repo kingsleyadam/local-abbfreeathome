@@ -8,8 +8,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  pytest:
+    name: test (${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13', '3.14']
     permissions:
       checks: write
       pull-requests: write
@@ -20,7 +25,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
@@ -59,5 +64,16 @@ jobs:
         if: success() || failure()
         with:
           report_paths: junit/test-results.xml
+          check_name: JUnit Test Report (${{ matrix.python-version }})
           detailed_summary: true
           comment: false
+
+  # Aggregate the matrix into the single `test` check required by the
+  # default-branch ruleset.
+  test:
+    if: always()
+    needs: pytest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check matrix result
+        run: test "${{ needs.pytest.result }}" = "success"
