@@ -452,6 +452,78 @@ def test_radiator_is_mapped_to_its_function():
     )
 
 
+@pytest.fixture
+def proxy_radiator_thermostat(mock_floorplan):
+    """Load a 6257-WL thermostat, a FID_PROXY_ROOM_TEMPERATURE_CONTROLLER_TYPE0."""
+    device = Device(
+        device_serial="EEDA00000E61",
+        device_id="2039",
+        display_name="Radiator Thermostat",
+        api=AsyncMock(spec=FreeAtHomeApi),
+        channels_data={
+            "che109": {
+                "functionID": "1C00",
+                "displayName": "Radiator Thermostat",
+                "inputs": {
+                    "idp0000": {"pairingID": 335, "value": ""},
+                    "idp0001": {"pairingID": 57, "value": ""},
+                    "idp0002": {"pairingID": 58, "value": "0"},
+                    "idp0003": {"pairingID": 66, "value": "1"},
+                    "idp0004": {"pairingID": 359, "value": "0"},
+                    "idp0005": {"pairingID": 7, "value": ""},
+                    "idp0006": {"pairingID": 4, "value": ""},
+                    "idp0007": {"pairingID": 53, "value": ""},
+                    "idp0008": {"pairingID": 320, "value": "20.5"},
+                },
+                "outputs": {
+                    "odp0000": {"pairingID": 51, "value": "20.5"},
+                    "odp0001": {"pairingID": 52, "value": "-0.5"},
+                    "odp0002": {"pairingID": 56, "value": "1"},
+                    "odp0003": {"pairingID": 54, "value": "97"},
+                    "odp0004": {"pairingID": 273, "value": "0"},
+                    "odp0005": {"pairingID": 360, "value": "0"},
+                    "odp0006": {"pairingID": 304, "value": "21.6"},
+                    "odp0007": {"pairingID": 331, "value": "0"},
+                    "odp0008": {"pairingID": 68, "value": "0"},
+                    "odp0009": {"pairingID": 59, "value": ""},
+                    "odp000a": {"pairingID": 333, "value": ""},
+                },
+                "parameters": {"par0018": "21", "par008d": "25", "par008e": "20"},
+            },
+        },
+    )
+    return device.load_channels(mock_floorplan)["che109"]
+
+
+@pytest.mark.asyncio
+async def test_proxy_radiator_thermostat(proxy_radiator_thermostat):
+    """Test the 6257-WL thermostat loads as a RadiatorActuator and is controllable."""
+    assert type(proxy_radiator_thermostat) is RadiatorActuator
+    assert proxy_radiator_thermostat.state is True
+    assert proxy_radiator_thermostat.current_temperature == 21.6
+    assert proxy_radiator_thermostat.target_temperature == 20.5
+    assert proxy_radiator_thermostat.eco_mode is False
+    assert proxy_radiator_thermostat.heating_mode is True
+    assert proxy_radiator_thermostat.heating == 0
+    assert proxy_radiator_thermostat.heating_active is False
+
+    await proxy_radiator_thermostat.set_temperature(21)
+    proxy_radiator_thermostat.device.api.set_datapoint.assert_awaited_with(
+        device_serial="EEDA00000E61",
+        channel_id="che109",
+        datapoint="idp0008",
+        value="21",
+    )
+
+    await proxy_radiator_thermostat.turn_off()
+    proxy_radiator_thermostat.device.api.set_datapoint.assert_awaited_with(
+        device_serial="EEDA00000E61",
+        channel_id="che109",
+        datapoint="idp0003",
+        value="0",
+    )
+
+
 @pytest.mark.parametrize("channel_class", [RoomTemperatureController, RadiatorActuator])
 @pytest.mark.parametrize(
     ("indication", "heating_mode", "active", "eco_mode"),
