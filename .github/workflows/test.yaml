@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  pytest:
+  test:
     name: test (${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
@@ -71,14 +71,3 @@ jobs:
           check_name: JUnit Test Report (${{ matrix.python-version }})
           detailed_summary: true
           comment: false
-
-  # Aggregate the matrix into the single `test` check required by the
-  # default-branch ruleset.
-  test:
-    if: always()
-    needs: pytest
-    runs-on: ubuntu-latest
-    permissions: {}
-    steps:
-      - name: Check matrix result
-        run: test "${{ needs.pytest.result }}" = "success"
