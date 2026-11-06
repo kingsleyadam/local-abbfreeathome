@@ -257,7 +257,7 @@ The easiest way to develop is in Visual Studio and the use of DevContainers. It'
 You can run a few tests to ensure everything is working as it should.
 
 1. In Visual Studio Code, Navigate to the `Testing` tab on the left and click `Run Tests` (Double Play Icon). This should run all Python Unit Tests. You can also run `Run Tests With Coverage` to get the code coverage results.
-2. In a new terminal window you can run `python3 -m build` to build and package up the python code.
+2. In a new terminal window you can run `uv build` to build and package up the python code.
 
 ## SSL/TLS Support
 
