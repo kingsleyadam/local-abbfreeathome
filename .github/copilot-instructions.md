@@ -16,7 +16,7 @@ uv pip install -r src/abbfreeathome/dev-requirements.txt
 uv pip install -e .
 pre-commit install
 
-python -m build
+uv build
 python -m pytest tests
 python -m pytest tests/test_switch_actuator.py
 python -m pytest tests/test_switch_actuator.py::test_turn_on
