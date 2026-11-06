@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🏠 Home Assistant integration
+    url: https://github.com/kingsleyadam/local-abbfreeathome-hass/issues/new/choose
+    about: Problems, setup help, or missing devices in Home Assistant. Start here if you use the integration.
+  - name: 🙏 Questions
+    url: https://github.com/kingsleyadam/local-abbfreeathome/discussions/new?category=q-a
+    about: Questions about using the library or the Local API, or not sure if it's a bug? Ask here.
+  - name: 💡 Feature ideas
+    url: https://github.com/kingsleyadam/local-abbfreeathome/discussions/new?category=ideas
+    about: Suggest a new feature or improvement.

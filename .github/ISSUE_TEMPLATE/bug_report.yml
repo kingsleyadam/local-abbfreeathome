@@ -1,0 +1,53 @@
+name: 🐛 Bug report
+description: Something in the library is broken or behaves incorrectly.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for reproducible bugs in the library only.
+        Using the **Home Assistant integration**? Please report it in [local-abbfreeathome-hass](https://github.com/kingsleyadam/local-abbfreeathome-hass/issues/new/choose) first. Questions go to [Q&A](https://github.com/kingsleyadam/local-abbfreeathome/discussions/categories/q-a).
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug and what you expected to happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: The smallest code snippet or steps that reproduce the problem.
+      render: python
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Library version
+      placeholder: "e.g. 3.12.0"
+    validations:
+      required: true
+  - type: input
+    id: python_version
+    attributes:
+      label: Python version
+      placeholder: "e.g. 3.14.0"
+    validations:
+      required: true
+  - type: input
+    id: sysap
+    attributes:
+      label: System Access Point model and firmware
+      placeholder: "e.g. SAP 2.0, firmware 3.5.0"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Traceback and debug logs
+      description: |
+        Enable debug logging with `logging.basicConfig(level=logging.DEBUG)` and paste the relevant output.
+        Please remove credentials and other private information before sharing.
+      render: shell

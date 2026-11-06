@@ -1,0 +1,70 @@
+name: 🔌 Channel / function ID support
+description: Add or extend support for a free@home channel or function ID (FID).
+title: "Add support for "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check the [implemented channels](https://github.com/kingsleyadam/local-abbfreeathome#channel-implementation) first.
+        Using the **Home Assistant integration**? Please start in its [Device Support](https://github.com/kingsleyadam/local-abbfreeathome-hass/discussions/new?category=device-support) discussions instead.
+        The maintainers don't own every ABB / Busch-Jaeger device, so the configuration and logs below are what make adding support possible.
+  - type: input
+    id: device
+    attributes:
+      label: Device name and article number
+      description: As printed on the device or shown in the free@home app.
+      placeholder: "e.g. Busch-Jaeger 62721-WL control element, 2-gang"
+    validations:
+      required: true
+  - type: input
+    id: function_id
+    attributes:
+      label: Function ID
+      description: The channel's `functionID` from the SysAP configuration, with its name if known.
+      placeholder: "e.g. 0x0004 FID_STAIRCASE_LIGHT_SENSOR"
+    validations:
+      required: true
+  - type: dropdown
+    id: request
+    attributes:
+      label: What's needed?
+      options:
+        - New channel class
+        - Map the function ID to an existing channel class
+        - Expose additional datapoints or parameters on an existing channel
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Which states should be readable and which actions should be available?
+    validations:
+      required: true
+  - type: input
+    id: sysap
+    attributes:
+      label: System Access Point model and firmware
+      placeholder: "e.g. SAP 2.0, firmware 3.5.0"
+    validations:
+      required: true
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Device configuration
+      description: |
+        The device's JSON from the SysAP configuration (`GET /fhapi/v1/api/rest/configuration`), including its channels, inputs, outputs, and parameters.
+        Please review it for private information before sharing.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Debug logs (optional, but very helpful)
+      description: |
+        With debug logging enabled, operate every function of the device (press, hold, open/close, ...) and paste the WebSocket updates.
+        Filter by the device serial (e.g. `ABB7F59C9F7C`) to keep it short.
+      render: shell
