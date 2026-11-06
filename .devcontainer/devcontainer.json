@@ -46,5 +46,5 @@
       }
     }
   },
-  "postCreateCommand": "uv venv && uv pip install -r src/abbfreeathome/dev-requirements.txt && pre-commit install"
+  "postCreateCommand": "uv venv --clear && uv pip install -r src/abbfreeathome/dev-requirements.txt && pre-commit install"
 }
