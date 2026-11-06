@@ -4,7 +4,8 @@
 
 This is the `local-abbfreeathome` Python package, imported as `abbfreeathome`.
 Python 3.12+ is required; CI tests Python 3.12, 3.13, 3.14, and 3.15, and the
-VS Code Dev Container uses Python 3.12.
+VS Code Dev Container and Copilot cloud agent use Python 3.14, matching Home
+Assistant.
 Use `uv` to manage the virtual environment; it is the Dev Container default.
 Run commands from the repository root with the virtual environment active.
 
