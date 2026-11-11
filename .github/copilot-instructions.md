@@ -27,7 +27,9 @@ ruff format --check .
 
 Packaging uses Hatchling and includes `src/abbfreeathome` in the wheel.
 The Dev Container's `postCreateCommand` already runs `uv venv`, installs the
-development requirements, and runs `pre-commit install`.
+development requirements and the editable package, and runs `pre-commit install`.
+It also installs the Copilot CLI, puts `.venv/bin` on `PATH`, and persists
+`~/.copilot` and `~/.config/gh` in named volumes across rebuilds.
 Pre-commit runs Ruff with `--fix` and the Ruff formatter. Ruff configuration lives
 in `pyproject.toml`, including docstring checks, import sorting, and bans on
 `async_timeout` and `pytz` in favor of `asyncio.timeout` and `zoneinfo`.
