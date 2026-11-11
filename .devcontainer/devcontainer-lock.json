@@ -5,6 +5,11 @@
       "resolved": "ghcr.io/devcontainers-extra/features/pre-commit@sha256:6e0bb2ce80caca1d94f44dab5d0653d88a1c00984e590adb7c6bce012d0ade6e",
       "integrity": "sha256:6e0bb2ce80caca1d94f44dab5d0653d88a1c00984e590adb7c6bce012d0ade6e"
     },
+    "ghcr.io/devcontainers/features/copilot-cli:1": {
+      "version": "1.1.4",
+      "resolved": "ghcr.io/devcontainers/features/copilot-cli@sha256:1e452b4a7a792590a580b0faf067dceb1d2f98c0dd3b71917f812c03c95262b0",
+      "integrity": "sha256:1e452b4a7a792590a580b0faf067dceb1d2f98c0dd3b71917f812c03c95262b0"
+    },
     "ghcr.io/devcontainers/features/github-cli:1": {
       "version": "1.1.0",
       "resolved": "ghcr.io/devcontainers/features/github-cli@sha256:d22f50b70ed75339b4eed1ba9ecde3a1791f90e88d37936517e3bace0bbad671",
