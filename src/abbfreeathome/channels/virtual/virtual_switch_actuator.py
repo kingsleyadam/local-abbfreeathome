@@ -128,5 +128,4 @@ class VirtualSwitchActuator(Base):
         # A triggered scene is a command, even if its value is unchanged or the
         # websocket is priming. Ordinary output feedback must not emit requests.
         self._requested_state = self._state
-        for callback in self._callbacks.get("requested_state", ()):
-            callback()
+        self._notify_callbacks(["requested_state"])

@@ -1813,6 +1813,41 @@ async def test_devices_changed_callback_error_is_isolated(api_mock, caplog):
 
 
 @pytest.mark.asyncio
+async def test_update_mixed_message_isolates_subscriber_errors(api_mock, caplog):
+    """Failing availability/parameter subscribers do not drop the rest."""
+    api_mock.is_priming_datapoint.return_value = False
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    serial = "ABB7F62F6C0B"
+    light = freeathome.get_channels()["ABB7F500E17A/ch0003"]
+    freeathome.get_device_by_serial(serial).register_unresponsive_callback(
+        MagicMock(side_effect=RuntimeError("availability bug"))
+    )
+    light.register_parameter_callback(
+        MagicMock(side_effect=RuntimeError("parameter bug"))
+    )
+    events = []
+    freeathome.register_devices_changed_callback(events.append)
+    data = deepcopy(api_mock.get_configuration.return_value["devices"]["ABB7F500E17A"])
+
+    await freeathome.update(
+        {
+            "devicesAdded": ["ABB_NEW"],
+            "devices": {"ABB_NEW": data, serial: {"unresponsive": True}},
+            "parameters": {"ABB7F500E17A/ch0003/par0002": "1"},
+            "datapoints": {"ABB7F500E17A/ch0003/odp0000": "1"},
+        }
+    )
+
+    assert freeathome.get_device_by_serial(serial).unresponsive is True
+    assert light.get_parameter("par0002") == "1"
+    assert light.state is True
+    assert [device.device_serial for device in events[0].added_devices] == ["ABB_NEW"]
+    assert "availability bug" in caplog.text
+    assert "parameter bug" in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_discovery_event_batches_exact_additions(api_mock):
     """One message reports only added objects, excluding existing devices."""
     freeathome = FreeAtHome(api_mock)
