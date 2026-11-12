@@ -351,6 +351,21 @@ def test_update_channel_without_affected_attributes(
     callback.assert_not_called()
 
 
+def test_notify_callbacks_isolates_failing_callback(base_instance, caplog):
+    """A failing subscriber is logged and does not block other subscribers."""
+    failing_callback = MagicMock(side_effect=RuntimeError("subscriber bug"))
+    callback = MagicMock()
+    base_instance.register_callback("test", failing_callback)
+    base_instance.register_callback("test", callback)
+
+    base_instance._notify_callbacks(["test"])
+
+    failing_callback.assert_called_once_with()
+    callback.assert_called_once_with()
+    assert "Error in callback for ABB7F500E17A/ch0003" in caplog.text
+    assert "subscriber bug" in caplog.text
+
+
 def test_base_refresh_returns_empty_list(base_instance):
     """The base implementation reports no affected attributes."""
     assert base_instance._refresh_state_from_datapoint({}) == []

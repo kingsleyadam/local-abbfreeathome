@@ -1099,6 +1099,34 @@ async def test_ws_receive_no_callback(api):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("callback_type", [Mock, AsyncMock])
+async def test_ws_receive_callback_error(api, caplog, callback_type):
+    """A failing callback is logged instead of ending the listener."""
+    callback = callback_type(side_effect=RuntimeError("callback bug"))
+
+    with patch.object(
+        FreeAtHomeApi, "ws_connected", new_callable=PropertyMock
+    ) as mock_ws_connected:
+        mock_ws_connected.return_value = True
+        with patch.object(
+            FreeAtHomeApi, "_ws_response", new_callable=PropertyMock
+        ) as mock_ws_response:
+            mock_ws_response.return_value = Mock()
+            mock_ws_response.return_value.receive = AsyncMock(
+                return_value=Mock(
+                    type=aiohttp.WSMsgType.TEXT,
+                    json=Mock(return_value={api._sysap_uuid: "test_data"}),
+                )
+            )
+
+            await api.ws_receive(callback)
+
+    callback.assert_called_once_with("test_data")
+    assert "Error handling websocket message" in caplog.text
+    assert "callback bug" in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_ws_receive_closed_message_types(api):
     """Test the ws_receive function for all closed message types."""
     async_callback = AsyncMock()
