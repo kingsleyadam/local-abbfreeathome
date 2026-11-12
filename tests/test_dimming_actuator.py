@@ -306,3 +306,33 @@ def test_color_temperature_defaults_to_none_when_unavailable(mock_api, mock_devi
 
     assert actuator.color_temperature_coolest is None
     assert actuator.color_temperature_warmest is None
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric(
+    dimming_actuator, colortemperature_actuator, value
+):
+    """Test that non-numeric brightness and color temperature values are unknown."""
+    dimming_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 272, "value": value},
+    )
+    assert dimming_actuator.brightness is None
+
+    colortemperature_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 280, "value": value},
+    )
+    assert colortemperature_actuator.color_temperature is None
+
+
+def test_load_with_non_numeric_brightness(mock_api, mock_device):
+    """Test that a non-numeric brightness in the configuration does not raise."""
+    mock_device.api = mock_api
+    dimming_actuator = DimmingActuator(
+        device=mock_device,
+        channel_id="ch0000",
+        channel_name="Channel Name",
+        inputs={},
+        outputs={"odp0001": {"pairingID": 272, "value": "invalid"}},
+        parameters={},
+    )
+    assert dimming_actuator.brightness is None

@@ -64,7 +64,10 @@ class BrightnessSensor(Base):
         Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_BRIGHTNESS_LEVEL.value:
-            self._state = float(datapoint.get("value"))
+            try:
+                self._state = float(datapoint.get("value"))
+            except (ValueError, TypeError):
+                self._state = None
             return ["state"]
         if datapoint.get("pairingID") == Pairing.AL_BRIGHTNESS_ALARM.value:
             self._alarm = datapoint.get("value") == "1"

@@ -148,7 +148,10 @@ class VirtualRoomTemperatureController(Base):
             self._requested_eco_mode = datapoint.get("value") == "1"
             return ["requested_eco_mode"]
         if datapoint.get("pairingID") == Pairing.AL_STATE_INDICATION.value:
-            self._eco_mode = int(datapoint.get("value")) & 0x04 == 0x04
+            try:
+                self._eco_mode = int(datapoint.get("value")) & 0x04 == 0x04
+            except (ValueError, TypeError):
+                self._eco_mode = None
             return ["eco_mode"]
         if datapoint.get("pairingID") == Pairing.AL_CONTROLLER_ON_OFF_REQUEST.value:
             self._requested_state = datapoint.get("value") == "1"
@@ -176,10 +179,16 @@ class VirtualRoomTemperatureController(Base):
             self._requested_target_temperature = _temperature
             return ["requested_target_temperature"]
         if datapoint.get("pairingID") == Pairing.AL_SET_POINT_TEMPERATURE.value:
-            self._target_temperature = float(datapoint.get("value"))
+            try:
+                self._target_temperature = float(datapoint.get("value"))
+            except (ValueError, TypeError):
+                self._target_temperature = None
             return ["target_temperature"]
         if datapoint.get("pairingID") == Pairing.AL_MEASURED_TEMPERATURE.value:
-            self._current_temperature = float(datapoint.get("value"))
+            try:
+                self._current_temperature = float(datapoint.get("value"))
+            except (ValueError, TypeError):
+                self._current_temperature = None
             return ["current_temperature"]
         return []
 

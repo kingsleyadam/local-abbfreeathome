@@ -90,3 +90,12 @@ def test_refresh_state_from_datapoint(brightness_sensor):
         datapoint={"pairingID": 4, "value": "1"},
     )
     assert brightness_sensor.state == 50.7
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric(brightness_sensor, value):
+    """Test that a non-numeric brightness level is unknown."""
+    brightness_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1027, "value": value},
+    )
+    assert brightness_sensor.state is None

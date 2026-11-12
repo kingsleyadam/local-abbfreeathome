@@ -177,8 +177,13 @@ class RoomTemperatureController(Base):
             0x40 - no heating/cooling (set)
             0x80 - frost alarm
             """
-            self._state_indication = int(datapoint.get("value"))
-            self._eco_mode = self._state_indication & 0x04 == 0x04
+            try:
+                self._state_indication = int(datapoint.get("value"))
+            except (ValueError, TypeError):
+                self._state_indication = None
+                self._eco_mode = None
+            else:
+                self._eco_mode = self._state_indication & 0x04 == 0x04
             return [
                 "state_indication",
                 "eco_mode",

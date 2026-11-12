@@ -282,3 +282,17 @@ def test_update_channel_priming_suppresses_noop_callback(
     )
     assert virtual_room_temperature_controller.state is False
     callback.assert_called_once()
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric(
+    virtual_room_temperature_controller, value
+):
+    """Test that non-numeric eco mode and temperature values are unknown."""
+    for pairing_id in (54, 51, 304):
+        virtual_room_temperature_controller._refresh_state_from_datapoint(
+            datapoint={"pairingID": pairing_id, "value": value},
+        )
+    assert virtual_room_temperature_controller.eco_mode is None
+    assert virtual_room_temperature_controller.target_temperature is None
+    assert virtual_room_temperature_controller.current_temperature is None
