@@ -386,6 +386,8 @@ The Free@Home local api also exposes a websocket. With this library you can conn
 
 In addition, the library "channels" can register and run any callbacks when the state changes. Allowing outside code (e.g. Home Assistant) to get notified on changes.
 
+Exceptions raised in callbacks, or while applying a datapoint, are logged with their traceback and don't stop `ws_listen()`: the remaining subscribers and the rest of the message are still processed.
+
 ```python
 from abbfreeathome import FreeAtHome, FreeAtHomeApi
 from abbfreeathome.channels.switch_actuator import SwitchActuator

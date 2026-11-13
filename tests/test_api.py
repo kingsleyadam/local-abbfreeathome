@@ -1098,12 +1098,8 @@ async def test_ws_receive_no_callback(api):
             await api.ws_receive(None)
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize("callback_type", [Mock, AsyncMock])
-async def test_ws_receive_callback_error(api, caplog, callback_type):
-    """A failing callback is logged instead of ending the listener."""
-    callback = callback_type(side_effect=RuntimeError("callback bug"))
-
+async def _ws_receive_text(api, callback, json):
+    """Receive one TEXT frame whose ``json()`` is the given mock."""
     with patch.object(
         FreeAtHomeApi, "ws_connected", new_callable=PropertyMock
     ) as mock_ws_connected:
@@ -1113,17 +1109,47 @@ async def test_ws_receive_callback_error(api, caplog, callback_type):
         ) as mock_ws_response:
             mock_ws_response.return_value = Mock()
             mock_ws_response.return_value.receive = AsyncMock(
-                return_value=Mock(
-                    type=aiohttp.WSMsgType.TEXT,
-                    json=Mock(return_value={api._sysap_uuid: "test_data"}),
-                )
+                return_value=Mock(type=aiohttp.WSMsgType.TEXT, json=json)
             )
-
             await api.ws_receive(callback)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("callback_type", [Mock, AsyncMock])
+async def test_ws_receive_callback_error(api, caplog, callback_type):
+    """A failing callback is logged instead of ending the listener."""
+    callback = callback_type(side_effect=RuntimeError("callback bug"))
+
+    await _ws_receive_text(
+        api, callback, Mock(return_value={api._sysap_uuid: "test_data"})
+    )
 
     callback.assert_called_once_with("test_data")
     assert "Error handling websocket message" in caplog.text
     assert "callback bug" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_ws_receive_malformed_frame(api, caplog):
+    """A text frame that is not valid JSON is logged and skipped."""
+    callback = Mock()
+
+    await _ws_receive_text(api, callback, Mock(side_effect=ValueError("bad json")))
+
+    callback.assert_not_called()
+    assert "Error handling websocket message" in caplog.text
+    assert "bad json" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_ws_receive_callback_cancelled(api):
+    """Cancellation raised by the callback still stops the listener."""
+    callback = AsyncMock(side_effect=asyncio.CancelledError)
+
+    with pytest.raises(asyncio.CancelledError):
+        await _ws_receive_text(
+            api, callback, Mock(return_value={api._sysap_uuid: "test_data"})
+        )
 
 
 @pytest.mark.asyncio
