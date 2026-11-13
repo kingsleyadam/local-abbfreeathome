@@ -29,8 +29,11 @@ applyTo: "src/abbfreeathome/**/*.py,tests/**/*.py"
   Enable it for virtual channels and channels that expose `requested_*` values,
   because physical inputs can share pairing IDs with outputs.
   `_refresh_state_from_datapoint()` updates state and returns affected attribute
-  names, or `[]` when unhandled. Callbacks are synchronous, zero-argument
-  functions; `_notify_callbacks()` deduplicates a subscriber across attributes.
+  names, or `[]` when unhandled. To reject an invalid value, it must raise
+  before changing any state rather than return `[]`, so `update_channel()` and
+  `refresh_state()` keep the previous cached value. Callbacks are synchronous,
+  zero-argument functions; `_notify_callbacks()` deduplicates a subscriber across
+  attributes.
 - Preserve repeated event delivery outside priming, even for identical values.
   The post-WebSocket-(re)connect priming window updates cached datapoints but
   suppresses callbacks for unchanged values, while still notifying real changes.

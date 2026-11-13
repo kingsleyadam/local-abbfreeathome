@@ -155,17 +155,12 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
                 return []
             try:
                 brightness = float(value)
-            except (TypeError, ValueError, OverflowError):
-                _LOGGER.warning("Invalid %s %r for %s", label, value, self.channel_name)
-                return []
+            except (TypeError, ValueError, OverflowError) as err:
+                msg = f"Invalid {label} {value!r} for {self.channel_name}"
+                raise ValueError(msg) from err
             if isinstance(value, bool) or not 0 <= brightness <= 100:
-                _LOGGER.warning(
-                    "%s %r outside 0-100 percent for %s",
-                    label,
-                    value,
-                    self.channel_name,
-                )
-                return []
+                msg = f"{label} {value!r} outside 0-100 percent for {self.channel_name}"
+                raise ValueError(msg)
             if feedback:
                 self._brightness = int(brightness)
             else:
@@ -177,6 +172,17 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
             )
             return ["requested_dimming_state"]
         return super()._refresh_state_from_datapoint(datapoint)
+
+    def _refresh_state_from_datapoints(self):
+        """Initialize state, logging invalid configured brightness values."""
+        for _datapoint in (
+            *self._outputs.values(),
+            *(_datapoint for _, _datapoint in self._input_refresh_datapoints()),
+        ):
+            try:
+                self._refresh_state_from_datapoint(_datapoint)
+            except ValueError as err:
+                _LOGGER.warning("%s", err)
 
     def _decode_relative_dimming(self, value: Any) -> VirtualDimmingRequestState:
         """Decode a 4-bit relative dimming command, see VirtualDimmingRequestState."""

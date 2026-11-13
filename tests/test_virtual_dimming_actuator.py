@@ -294,14 +294,15 @@ def test_brightness_requests(dimmer, device, value, expected):
 @pytest.mark.parametrize(
     "value", ["invalid", "-1", "100.1", "nan", "inf", "-inf", True, [], {}]
 )
-def test_invalid_brightness_ignored(dimmer, caplog, value):
+def test_invalid_brightness_ignored(dimmer, value):
     """Reject invalid requests visibly without emitting the previous valid value."""
     requested = Mock()
     dimmer.register_callback("requested_brightness", requested)
-    dimmer.update_channel("idp0002", value)
+    with pytest.raises(ValueError, match="requested brightness"):
+        dimmer.update_channel("idp0002", value)
     assert dimmer.requested_brightness == 50
+    assert dimmer._inputs["idp0002"]["value"] == "50"
     requested.assert_not_called()
-    assert "brightness" in caplog.text
 
 
 @pytest.mark.parametrize("value", [None, ""])
@@ -360,14 +361,31 @@ def test_reported_brightness(dimmer, device, value, expected):
 @pytest.mark.parametrize(
     "value", ["invalid", "-1", "100.1", "nan", "inf", "-inf", True, [], {}]
 )
-def test_invalid_reported_brightness(dimmer, caplog, value):
+def test_invalid_reported_brightness(dimmer, value):
     """Do not replace good feedback or notify consumers with invalid values."""
     feedback = Mock()
     dimmer.register_callback("brightness", feedback)
-    dimmer.update_channel("odp0001", value)
+    with pytest.raises(ValueError, match="brightness feedback"):
+        dimmer.update_channel("odp0001", value)
     assert dimmer.brightness == 20
+    assert dimmer._outputs["odp0001"]["value"] == "20"
     feedback.assert_not_called()
-    assert "brightness feedback" in caplog.text
+
+
+@pytest.mark.parametrize("value", ["invalid", "101"])
+def test_invalid_configured_brightness(device, caplog, value):
+    """Log invalid configured brightness instead of failing to load."""
+    channel = VirtualDimmingActuator(
+        device,
+        "ch0000",
+        "Dimmer",
+        {"idp0002": {"pairingID": 17, "value": value}},
+        {"odp0001": {"pairingID": 272, "value": "20"}},
+        {},
+    )
+    assert channel.requested_brightness is None
+    assert channel.brightness == 20
+    assert "requested brightness" in caplog.text
 
 
 @pytest.mark.parametrize("value", [None, ""])
@@ -486,6 +504,29 @@ async def test_refresh_state(dimmer, device):
         call(device_serial="6000F66D1DA7", channel_id="ch0000", datapoint=datapoint)
         for datapoint in ("odp0000", "odp0001", "idp0000", "idp0001", "idp0002")
     ]
+
+
+@pytest.mark.asyncio
+async def test_refresh_state_after_rejected_brightness_push(dimmer, device):
+    """Apply the REST response when a push during its request was rejected."""
+    feedback = Mock()
+    dimmer.register_callback("brightness", feedback)
+
+    async def get_datapoint(device_serial, channel_id, datapoint):
+        if datapoint == "odp0001":
+            # FreeAtHome.update() logs the push's error and keeps listening.
+            with pytest.raises(ValueError, match="brightness"):
+                dimmer.update_channel("6000F66D1DA7/ch0000/odp0001", "invalid")
+            return ["42"]
+        return [{**dimmer._inputs, **dimmer._outputs}[datapoint]["value"]]
+
+    device.api.get_datapoint.side_effect = get_datapoint
+
+    await dimmer.refresh_state()
+
+    assert dimmer.brightness == 42
+    assert dimmer._outputs["odp0001"]["value"] == "42"
+    feedback.assert_called_once_with()
 
 
 @pytest.mark.asyncio
