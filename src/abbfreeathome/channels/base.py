@@ -236,10 +236,11 @@ class Base(ParametersMixin):
         """
         Refresh the state of the channel from the api.
 
-        By default every refresh pairing is read. With ``attributes``, only the
-        pairings that ``_attribute_refresh_pairings`` declares for them are
-        read; if any of them has no declaration, every pairing is read. Unknown
-        attribute names raise ``UnknownCallbackAttributeException``.
+        By default, or with an empty ``attributes``, every refresh pairing is
+        read. Otherwise only the pairings that ``_attribute_refresh_pairings``
+        declares for the attributes are read; if any of them has no
+        declaration, every pairing is read. Unknown attribute names raise
+        ``UnknownCallbackAttributeException``.
 
         The values read replace the cached datapoint values. Afterwards, even if
         a request fails, each subscriber of a refreshed attribute is notified
@@ -299,11 +300,12 @@ class Base(ParametersMixin):
         self, attributes: Iterable[str] | None
     ) -> set[Pairing] | None:
         """Return the pairings to refresh for ``attributes``, or None for all."""
-        if attributes is None:
+        _attributes = [] if attributes is None else list(attributes)
+        if not _attributes:
             return None
 
         _pairings: set[Pairing] = set()
-        for _attribute in attributes:
+        for _attribute in _attributes:
             if _attribute not in self._callback_attributes:
                 raise UnknownCallbackAttributeException(
                     unknown_attribute=_attribute,

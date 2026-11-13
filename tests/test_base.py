@@ -132,11 +132,7 @@ def test_register_callback(base_instance):
             callback_attribute="not_there", callback=callback
         )
     assert str(excinfo.value) == (
-        "Tried to register the callback-atrribute: "
-        "not_there"
-        ", but only the callback-attributes '"
-        "test"
-        "' are known."
+        "Unknown callback-attribute 'not_there'; known callback-attributes: 'test'."
     )
 
 
@@ -430,13 +426,15 @@ async def test_refresh_state_attributes(attribute_refresh_channel, mock_api):
 
 
 @pytest.mark.parametrize(
-    "attributes", [None, ["brightness", "unmapped"]], ids=["all", "unmapped"]
+    "attributes",
+    [None, [], ["brightness", "unmapped"]],
+    ids=["all", "empty", "unmapped"],
 )
 @pytest.mark.asyncio
 async def test_refresh_state_attributes_fallback(
     attribute_refresh_channel, mock_api, attributes
 ):
-    """Read every pairing by default or when an attribute has no mapping."""
+    """Read every pairing by default, for no attributes, or for unmapped ones."""
     await attribute_refresh_channel.refresh_state(attributes=attributes)
 
     assert [
