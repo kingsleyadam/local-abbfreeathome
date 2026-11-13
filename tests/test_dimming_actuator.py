@@ -308,7 +308,7 @@ def test_color_temperature_defaults_to_none_when_unavailable(mock_api, mock_devi
     assert actuator.color_temperature_warmest is None
 
 
-@pytest.mark.parametrize("value", ["invalid", "", None])
+@pytest.mark.parametrize("value", ["invalid", "", None, "inf"])
 def test_refresh_state_from_datapoint_non_numeric(
     dimming_actuator, colortemperature_actuator, value
 ):

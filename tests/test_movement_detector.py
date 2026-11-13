@@ -230,3 +230,14 @@ async def test_unblock(blockable_movement_detector):
         datapoint="idp0004",
         value="0",
     )
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric_brightness(
+    indoor_movement_detector, value
+):
+    """Test that a non-numeric brightness value is unknown."""
+    indoor_movement_detector._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1027, "value": value},
+    )
+    assert indoor_movement_detector.brightness is None

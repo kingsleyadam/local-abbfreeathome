@@ -10,6 +10,7 @@ from src.abbfreeathome.api import FreeAtHomeApi
 from src.abbfreeathome.bin.function import Function
 from src.abbfreeathome.bin.interface import Interface
 from src.abbfreeathome.bin.pairing import Pairing
+from src.abbfreeathome.channels.dimming_actuator import DimmingActuator
 from src.abbfreeathome.channels.switch_actuator import SwitchActuator
 from src.abbfreeathome.channels.switch_sensor import SwitchSensor
 from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
@@ -1952,8 +1953,17 @@ async def test_device_unresponsive_updates(freeathome, api_mock):
 
 
 @pytest.mark.asyncio
-async def test_overflowing_addition_does_not_abort_discovery(api_mock, caplog):
+async def test_overflowing_addition_does_not_abort_discovery(
+    api_mock, caplog, monkeypatch
+):
     """Reject an overflowing dimmer while processing subsequent valid devices."""
+
+    def _overflow(self, datapoint):
+        raise OverflowError
+
+    # Dimmer datapoints now parse an overflowing value as unknown, so raise
+    # the OverflowError from the dimmer itself to exercise discovery.
+    monkeypatch.setattr(DimmingActuator, "_refresh_state_from_datapoint", _overflow)
     api_mock.is_priming_datapoint.return_value = False
     freeathome = FreeAtHome(api_mock)
     await freeathome.load()
