@@ -193,7 +193,12 @@ class Base(ParametersMixin):
             for callback in self._callbacks.get(attribute, ())
         }
         for callback in callbacks:
-            callback()
+            try:
+                callback()
+            except Exception:  # noqa: BLE001
+                _LOGGER.exception(
+                    "Error in callback for %s/%s", self.device_serial, self.channel_id
+                )
 
     def update_scene(
         self, datapoint_key: str, datapoint_value: str, is_priming: bool = False

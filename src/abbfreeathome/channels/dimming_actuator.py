@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from ..bin.pairing import Pairing
 from ..bin.parameter import Parameter
+from ..exceptions import InvalidDeviceChannelParameter
 from .base import Base
 
 if TYPE_CHECKING:
@@ -221,23 +222,17 @@ class ColorTemperatureActuator(DimmingActuator):
 
     @property
     def color_temperature_coolest(self) -> int | None:
-        """Get the coolest color temperature of the light."""
-        _, _value = self.get_channel_parameter(
-            parameter=Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_COOLEST
+        """Get the coolest color temperature of the light, or None if unknown."""
+        return self._get_color_temperature_parameter(
+            Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_COOLEST
         )
-        if _value is None:
-            return None
-        return int(_value)
 
     @property
     def color_temperature_warmest(self) -> int | None:
-        """Get the warmest color temperature of the light."""
-        _id, _value = self.get_channel_parameter(
-            parameter=Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_WARMEST
+        """Get the warmest color temperature of the light, or None if unknown."""
+        return self._get_color_temperature_parameter(
+            Parameter.PID_TEMPERATURE_COLOR_PHYSICAL_WARMEST
         )
-        if _value is None:
-            return None
-        return int(_value)
 
     @property
     def color_temperature(self) -> int | None:
@@ -269,6 +264,15 @@ class ColorTemperatureActuator(DimmingActuator):
             self._color_temperature = int(float(datapoint.get("value")))
             return ["color_temperature"]
         return super()._refresh_state_from_datapoint(datapoint)
+
+    def _get_color_temperature_parameter(self, parameter: Parameter) -> int | None:
+        """Return an integer parameter value, or None if it is missing or invalid."""
+        try:
+            _, _value = self.get_channel_parameter(parameter=parameter)
+            _temperature = int(_value)
+        except (InvalidDeviceChannelParameter, TypeError, ValueError):
+            return None
+        return _temperature
 
     async def _set_color_temperature_datapoint(self, value: str):
         """Set the color temperature on the api."""
