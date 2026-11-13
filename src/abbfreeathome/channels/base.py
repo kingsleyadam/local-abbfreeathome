@@ -175,9 +175,8 @@ class Base(ParametersMixin):
 
         if _io_key in _datapoints:
             _changed = _datapoints[_io_key].get("value") != datapoint_value
-            _datapoints[_io_key]["value"] = datapoint_value
-            _callback_attributes = self._refresh_state_from_datapoint(
-                datapoint=_datapoints[_io_key]
+            _callback_attributes = self._apply_datapoint_value(
+                _datapoints[_io_key], datapoint_value
             )
 
         if is_priming and not _changed:
@@ -277,8 +276,25 @@ class Base(ParametersMixin):
         if datapoint.get("value") != _cached_value:
             return []
 
-        datapoint["value"] = _value
-        return self._refresh_state_from_datapoint(datapoint=datapoint)
+        return self._apply_datapoint_value(datapoint, _value)
+
+    def _apply_datapoint_value(
+        self, datapoint: dict[str, Any], value: Any
+    ) -> list[str]:
+        """
+        Cache a datapoint value, refresh the state, and return affected attributes.
+
+        If refreshing the state raises, the previous value is restored, so a
+        value the channel rejected never counts as a newer value for a pending
+        refresh_state() request.
+        """
+        _previous_value = datapoint.get("value")
+        datapoint["value"] = value
+        try:
+            return self._refresh_state_from_datapoint(datapoint=datapoint)
+        except Exception:
+            datapoint["value"] = _previous_value
+            raise
 
     def _refresh_state_from_datapoints(self):
         """Refresh the state of the channel from the datapoints."""
