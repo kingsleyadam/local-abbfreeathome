@@ -232,37 +232,23 @@ class Base(ParametersMixin):
         """
         Refresh the state of the channel from the api.
 
-        The values read replace the cached datapoint values. Afterwards, even if
-        a request fails, each subscriber of a refreshed attribute is notified
-        once, except for ``_command_callback_attributes``.
+        The values read replace the cached datapoint values, except where a
+        WebSocket update changed a datapoint while its request was pending.
+        Afterwards, even if a request fails, each subscriber of a refreshed
+        attribute is notified once, except for ``_command_callback_attributes``.
         """
         _callback_attributes: list[str] = []
         try:
             for _pairing in self._state_refresh_pairings:
                 _datapoint_id, _ = self.get_output_by_pairing(pairing=_pairing)
-
-                _datapoint = self._outputs[_datapoint_id]
-                _datapoint["value"] = (
-                    await self.device.api.get_datapoint(
-                        device_serial=self.device_serial,
-                        channel_id=self.channel_id,
-                        datapoint=_datapoint_id,
-                    )
-                )[0]
-
-                _callback_attributes += self._refresh_state_from_datapoint(
-                    datapoint=_datapoint
+                _callback_attributes += await self._refresh_datapoint(
+                    _datapoint_id, self._outputs[_datapoint_id]
                 )
 
             for _datapoint_id, _datapoint in self._input_refresh_datapoints():
-                _datapoint["value"] = (
-                    await self.device.api.get_datapoint(
-                        device_serial=self.device_serial,
-                        channel_id=self.channel_id,
-                        datapoint=_datapoint_id,
-                    )
-                )[0]
-                _callback_attributes += self._refresh_state_from_datapoint(_datapoint)
+                _callback_attributes += await self._refresh_datapoint(
+                    _datapoint_id, _datapoint
+                )
         finally:
             # Callback errors are logged by _notify_callbacks(), so they cannot
             # replace an exception raised by a request.
@@ -273,6 +259,26 @@ class Base(ParametersMixin):
                     if _attribute not in self._command_callback_attributes
                 ]
             )
+
+    async def _refresh_datapoint(
+        self, datapoint_id: str, datapoint: dict[str, Any]
+    ) -> list[str]:
+        """Read a datapoint into the cache and return the affected attributes."""
+        _cached_value = datapoint.get("value")
+        _value = (
+            await self.device.api.get_datapoint(
+                device_serial=self.device_serial,
+                channel_id=self.channel_id,
+                datapoint=datapoint_id,
+            )
+        )[0]
+
+        # A WebSocket update received during the request is newer; keep it.
+        if datapoint.get("value") != _cached_value:
+            return []
+
+        datapoint["value"] = _value
+        return self._refresh_state_from_datapoint(datapoint=datapoint)
 
     def _refresh_state_from_datapoints(self):
         """Refresh the state of the channel from the datapoints."""
