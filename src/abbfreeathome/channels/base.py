@@ -232,46 +232,47 @@ class Base(ParametersMixin):
         """
         Refresh the state of the channel from the api.
 
-        The values read replace the cached datapoint values. Afterwards each
-        subscriber of a refreshed attribute is notified once, except for
-        ``_command_callback_attributes``.
+        The values read replace the cached datapoint values. Afterwards, even if
+        a request fails, each subscriber of a refreshed attribute is notified
+        once, except for ``_command_callback_attributes``.
         """
         _callback_attributes: list[str] = []
-        for _pairing in self._state_refresh_pairings:
-            _datapoint_id, _datapoint_value = self.get_output_by_pairing(
-                pairing=_pairing
-            )
+        try:
+            for _pairing in self._state_refresh_pairings:
+                _datapoint_id, _ = self.get_output_by_pairing(pairing=_pairing)
 
-            _datapoint = self._outputs[_datapoint_id]
-            _datapoint["value"] = (
-                await self.device.api.get_datapoint(
-                    device_serial=self.device_serial,
-                    channel_id=self.channel_id,
-                    datapoint=_datapoint_id,
+                _datapoint = self._outputs[_datapoint_id]
+                _datapoint["value"] = (
+                    await self.device.api.get_datapoint(
+                        device_serial=self.device_serial,
+                        channel_id=self.channel_id,
+                        datapoint=_datapoint_id,
+                    )
+                )[0]
+
+                _callback_attributes += self._refresh_state_from_datapoint(
+                    datapoint=_datapoint
                 )
-            )[0]
 
-            _callback_attributes += self._refresh_state_from_datapoint(
-                datapoint=_datapoint
+            for _datapoint_id, _datapoint in self._input_refresh_datapoints():
+                _datapoint["value"] = (
+                    await self.device.api.get_datapoint(
+                        device_serial=self.device_serial,
+                        channel_id=self.channel_id,
+                        datapoint=_datapoint_id,
+                    )
+                )[0]
+                _callback_attributes += self._refresh_state_from_datapoint(_datapoint)
+        finally:
+            # Callback errors are logged by _notify_callbacks(), so they cannot
+            # replace an exception raised by a request.
+            self._notify_callbacks(
+                [
+                    _attribute
+                    for _attribute in _callback_attributes
+                    if _attribute not in self._command_callback_attributes
+                ]
             )
-
-        for _datapoint_id, _datapoint in self._input_refresh_datapoints():
-            _datapoint["value"] = (
-                await self.device.api.get_datapoint(
-                    device_serial=self.device_serial,
-                    channel_id=self.channel_id,
-                    datapoint=_datapoint_id,
-                )
-            )[0]
-            _callback_attributes += self._refresh_state_from_datapoint(_datapoint)
-
-        self._notify_callbacks(
-            [
-                _attribute
-                for _attribute in _callback_attributes
-                if _attribute not in self._command_callback_attributes
-            ]
-        )
 
     def _refresh_state_from_datapoints(self):
         """Refresh the state of the channel from the datapoints."""
