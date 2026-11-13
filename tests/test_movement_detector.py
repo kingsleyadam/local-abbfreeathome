@@ -126,6 +126,20 @@ async def test_refresh_state(indoor_movement_detector):
 
 
 @pytest.mark.asyncio
+async def test_refresh_state_outdoor(outdoor_movement_detector):
+    """Refresh the motion state of a detector without a brightness output."""
+    outdoor_movement_detector.device.api.get_datapoint.return_value = ["1"]
+
+    await outdoor_movement_detector.refresh_state()
+
+    assert outdoor_movement_detector.state is True
+    assert outdoor_movement_detector.brightness is None
+    outdoor_movement_detector.device.api.get_datapoint.assert_awaited_once_with(
+        device_serial="ABB7F500E17A", channel_id="ch0003", datapoint="odp0000"
+    )
+
+
+@pytest.mark.asyncio
 async def test_refresh_state_blockable(blockable_movement_detector):
     """Test refreshing the state (blockable)."""
     blockable_movement_detector.device.api.get_datapoint.side_effect = [
