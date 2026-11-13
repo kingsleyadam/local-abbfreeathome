@@ -64,9 +64,9 @@ read-only sensor, `switch_actuator.py` for commands, and
 - Use the standard `__init__` signature, set every state field before
   `super().__init__()`, and model multi-valued states as an `enum.Enum` with
   `unknown = None`, exposing `.name` from the property.
-- Declare `_callback_attributes`, `_state_refresh_pairings`,
-  `_input_refresh_pairings`, and `_handle_input_updates` as described in the
-  channel instructions.
+- Declare `_callback_attributes`, `_command_callback_attributes`,
+  `_state_refresh_pairings`, `_input_refresh_pairings`, and
+  `_handle_input_updates` as described in the channel instructions.
 - In `_refresh_state_from_datapoint()`, match on `pairingID`, update state, and
   return the affected attribute names, or `[]` for unhandled pairings. Treat
   missing values as unknown (log at debug) and invalid values as unknown (log a
@@ -96,7 +96,8 @@ Cover:
 
 - Discovery: the function ID creates the exact class (`type(channel) is ...`).
 - Initial state for each meaningful value, plus missing datapoints.
-- `refresh_state()`: `get_datapoint` is awaited with the expected datapoint IDs.
+- `refresh_state()`: `get_datapoint` is awaited with the expected datapoint IDs,
+  and callbacks fire once, except for command attributes.
 - Updates via `update_channel()`: state changes and callbacks fire once;
   unrelated pairings are ignored without callbacks.
 - Invalid and missing values become unknown with the expected log.

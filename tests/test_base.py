@@ -19,6 +19,10 @@ from src.abbfreeathome.channels.virtual.virtual_switch_actuator import (
     VirtualSwitchActuator,
 )
 from src.abbfreeathome.channels.virtual.virtual_trigger import VirtualTrigger
+from src.abbfreeathome.const import (
+    FUNCTION_CHANNEL_MAPPING,
+    FUNCTION_VIRTUAL_CHANNEL_MAPPING,
+)
 from src.abbfreeathome.device import Device
 from src.abbfreeathome.exceptions import (
     InvalidDeviceChannelPairing,
@@ -241,6 +245,117 @@ async def test_input_refresh_pairings(mock_api, mock_device, monkeypatch):
     )
     assert refreshed == [{"pairingID": 1, "value": "1"}]
     assert channel._inputs["idp0000"]["value"] == "1"
+
+
+@pytest.mark.asyncio
+async def test_refresh_state_notifies_callbacks(mock_api, mock_device, monkeypatch):
+    """Cache refreshed values, then notify once, except for command attributes."""
+    monkeypatch.setattr(Base, "_state_refresh_pairings", [Pairing.AL_INFO_ON_OFF])
+    monkeypatch.setattr(Base, "_input_refresh_pairings", [Pairing.AL_SWITCH_ON_OFF])
+    monkeypatch.setattr(
+        Base,
+        "_refresh_state_from_datapoint",
+        lambda self, datapoint: (
+            ["output", "command"]
+            if datapoint["pairingID"] == Pairing.AL_INFO_ON_OFF.value
+            else ["input", "command"]
+        ),
+    )
+    mock_device.device_serial = "ABB7F500E17A"
+    mock_device.api = mock_api
+    mock_api.get_datapoint = AsyncMock(side_effect=[["1"], ["2"]])
+    channel = Base(
+        device=mock_device,
+        channel_id="ch0003",
+        channel_name="Channel Name",
+        inputs={"idp0000": {"pairingID": 1, "value": "0"}},
+        outputs={"odp0000": {"pairingID": 256, "value": "0"}},
+        parameters={},
+    )
+    channel._callback_attributes = ["output", "input", "command"]
+    channel._command_callback_attributes = ["command"]
+    callbacks = {attribute: MagicMock() for attribute in channel._callback_attributes}
+    for attribute, callback in callbacks.items():
+        channel.register_callback(attribute, callback)
+    observed_values = []
+    shared_callback = MagicMock(
+        side_effect=lambda: observed_values.append(
+            (channel._outputs["odp0000"]["value"], channel._inputs["idp0000"]["value"])
+        )
+    )
+    channel.register_callback("output", shared_callback)
+    channel.register_callback("input", shared_callback)
+
+    await channel.refresh_state()
+
+    assert channel._outputs["odp0000"]["value"] == "1"
+    assert channel._inputs["idp0000"]["value"] == "2"
+    callbacks["output"].assert_called_once_with()
+    callbacks["input"].assert_called_once_with()
+    callbacks["command"].assert_not_called()
+    shared_callback.assert_called_once_with()
+    assert observed_values == [("1", "2")]
+
+
+@pytest.mark.asyncio
+async def test_refresh_state_partial_failure(mock_api, mock_device, monkeypatch):
+    """Notify the values already read when a later request fails."""
+    monkeypatch.setattr(Base, "_state_refresh_pairings", [Pairing.AL_INFO_ON_OFF])
+    monkeypatch.setattr(Base, "_input_refresh_pairings", [Pairing.AL_SWITCH_ON_OFF])
+    monkeypatch.setattr(
+        Base,
+        "_refresh_state_from_datapoint",
+        lambda self, datapoint: (
+            ["output"]
+            if datapoint["pairingID"] == Pairing.AL_INFO_ON_OFF.value
+            else ["input"]
+        ),
+    )
+    mock_device.device_serial = "ABB7F500E17A"
+    mock_device.api = mock_api
+    mock_api.get_datapoint = AsyncMock(side_effect=[["1"], ConnectionError])
+    channel = Base(
+        device=mock_device,
+        channel_id="ch0003",
+        channel_name="Channel Name",
+        inputs={"idp0000": {"pairingID": 1, "value": "0"}},
+        outputs={"odp0000": {"pairingID": 256, "value": "0"}},
+        parameters={},
+    )
+    channel._callback_attributes = ["output", "input"]
+    output_callback = MagicMock()
+    # A failing subscriber must not replace the request's exception.
+    failing_callback = MagicMock(side_effect=RuntimeError("subscriber bug"))
+    input_callback = MagicMock()
+    channel.register_callback("output", output_callback)
+    channel.register_callback("output", failing_callback)
+    channel.register_callback("input", input_callback)
+
+    with pytest.raises(ConnectionError):
+        await channel.refresh_state()
+
+    assert channel._outputs["odp0000"]["value"] == "1"
+    output_callback.assert_called_once_with()
+    failing_callback.assert_called_once_with()
+    input_callback.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "channel_class",
+    sorted(
+        {
+            *FUNCTION_CHANNEL_MAPPING.values(),
+            *FUNCTION_VIRTUAL_CHANNEL_MAPPING.values(),
+        },
+        key=lambda channel_class: channel_class.__name__,
+    ),
+    ids=lambda channel_class: channel_class.__name__,
+)
+def test_command_callback_attributes_are_callback_attributes(channel_class):
+    """Every command attribute must also be a subscribable callback attribute."""
+    assert set(channel_class._command_callback_attributes) <= set(
+        channel_class._callback_attributes
+    )
 
 
 @pytest.fixture(

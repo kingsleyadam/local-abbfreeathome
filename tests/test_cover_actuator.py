@@ -620,3 +620,27 @@ async def test_refresh_state_target_position(cover_actuator):
         datapoint="idp0002",
     )
     assert cover_actuator.target_position == 25
+
+
+@pytest.mark.asyncio
+async def test_refresh_state_callbacks(cover_actuator):
+    """Notify refreshed feedback, but do not report the target as a request."""
+    callbacks = {
+        attribute: MagicMock() for attribute in cover_actuator._callback_attributes
+    }
+    for attribute, callback in callbacks.items():
+        cover_actuator.register_callback(attribute, callback)
+    cover_actuator.device.api.get_datapoint.side_effect = [["3"], ["40"], ["2"], ["25"]]
+
+    await cover_actuator.refresh_state()
+
+    assert cover_actuator.state == CoverActuatorState.closing.name
+    assert cover_actuator.position == 40
+    assert (
+        cover_actuator.forced_position == CoverActuatorForcedPosition.forced_open.name
+    )
+    assert cover_actuator.target_position == 25
+    callbacks["state"].assert_called_once_with()
+    callbacks["position"].assert_called_once_with()
+    callbacks["forced_position"].assert_called_once_with()
+    callbacks["target_position"].assert_not_called()

@@ -41,6 +41,25 @@ def des_door_ringing_sensor(mock_api, mock_device):
     )
 
 
+@pytest.mark.asyncio
+async def test_refresh_state(des_door_ringing_sensor, mock_api, mock_device):
+    """Test refreshing the sensor without reporting it as a ring."""
+    mock_device.device_serial = "0007EE9503A4"
+    mock_device.api = mock_api
+    mock_api.get_datapoint.return_value = ["1"]
+    callback = MagicMock()
+    des_door_ringing_sensor.register_callback("state", callback)
+
+    await des_door_ringing_sensor.refresh_state()
+
+    mock_api.get_datapoint.assert_awaited_once_with(
+        device_serial="0007EE9503A4",
+        channel_id="ch0000",
+        datapoint="odp0000",
+    )
+    callback.assert_not_called()
+
+
 def test_refresh_state_from_datapoint(des_door_ringing_sensor):
     """Test the _refresh_state_from_datapoint function."""
     assert des_door_ringing_sensor._refresh_state_from_datapoint(
