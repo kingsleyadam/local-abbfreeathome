@@ -356,6 +356,101 @@ def test_command_callback_attributes_are_callback_attributes(channel_class):
     assert set(channel_class._command_callback_attributes) <= set(
         channel_class._callback_attributes
     )
+    # The same holds for the attribute refresh mapping, whose pairings must
+    # also be refreshed by refresh_state() without attributes.
+    assert set(channel_class._attribute_refresh_pairings) <= set(
+        channel_class._callback_attributes
+    )
+    for _pairings in channel_class._attribute_refresh_pairings.values():
+        assert set(_pairings) <= {
+            *channel_class._state_refresh_pairings,
+            *channel_class._input_refresh_pairings,
+        }
+
+
+@pytest.fixture
+def attribute_refresh_channel(mock_api, mock_device, monkeypatch):
+    """Return a Base channel with two outputs and one input to refresh."""
+    monkeypatch.setattr(
+        Base,
+        "_state_refresh_pairings",
+        [Pairing.AL_INFO_ON_OFF, Pairing.AL_INFO_ACTUAL_DIMMING_VALUE],
+    )
+    monkeypatch.setattr(Base, "_input_refresh_pairings", [Pairing.AL_SWITCH_ON_OFF])
+    monkeypatch.setattr(
+        Base,
+        "_attribute_refresh_pairings",
+        {
+            "state": [Pairing.AL_INFO_ON_OFF, Pairing.AL_SWITCH_ON_OFF],
+            "brightness": [Pairing.AL_INFO_ACTUAL_DIMMING_VALUE],
+        },
+    )
+    attributes_by_pairing = {
+        Pairing.AL_INFO_ON_OFF.value: ["state"],
+        Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value: ["brightness"],
+        Pairing.AL_SWITCH_ON_OFF.value: ["state"],
+    }
+    monkeypatch.setattr(
+        Base,
+        "_refresh_state_from_datapoint",
+        lambda self, datapoint: attributes_by_pairing.get(datapoint["pairingID"], []),
+    )
+    mock_device.device_serial = "ABB7F500E17A"
+    mock_device.api = mock_api
+    mock_api.get_datapoint = AsyncMock(return_value=["1"])
+    channel = Base(
+        device=mock_device,
+        channel_id="ch0003",
+        channel_name="Channel Name",
+        inputs={"idp0000": {"pairingID": 1, "value": "0"}},
+        outputs={
+            "odp0000": {"pairingID": 256, "value": "0"},
+            "odp0001": {"pairingID": 272, "value": "0"},
+        },
+        parameters={},
+    )
+    channel._callback_attributes = ["state", "brightness", "unmapped"]
+    return channel
+
+
+@pytest.mark.asyncio
+async def test_refresh_state_attributes(attribute_refresh_channel, mock_api):
+    """Read only the pairings of the requested attributes and notify those."""
+    callbacks = {"state": MagicMock(), "brightness": MagicMock()}
+    for attribute, callback in callbacks.items():
+        attribute_refresh_channel.register_callback(attribute, callback)
+
+    await attribute_refresh_channel.refresh_state(attributes=["state"])
+
+    assert [
+        _call.kwargs["datapoint"] for _call in mock_api.get_datapoint.await_args_list
+    ] == ["odp0000", "idp0000"]
+    callbacks["state"].assert_called_once_with()
+    callbacks["brightness"].assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "attributes", [None, ["brightness", "unmapped"]], ids=["all", "unmapped"]
+)
+@pytest.mark.asyncio
+async def test_refresh_state_attributes_fallback(
+    attribute_refresh_channel, mock_api, attributes
+):
+    """Read every pairing by default or when an attribute has no mapping."""
+    await attribute_refresh_channel.refresh_state(attributes=attributes)
+
+    assert [
+        _call.kwargs["datapoint"] for _call in mock_api.get_datapoint.await_args_list
+    ] == ["odp0000", "odp0001", "idp0000"]
+
+
+@pytest.mark.asyncio
+async def test_refresh_state_unknown_attribute(attribute_refresh_channel, mock_api):
+    """Reject an unknown attribute before sending any request."""
+    with pytest.raises(UnknownCallbackAttributeException):
+        await attribute_refresh_channel.refresh_state(attributes=["unknown"])
+
+    mock_api.get_datapoint.assert_not_awaited()
 
 
 @pytest.fixture(

@@ -24,10 +24,13 @@ applyTo: "src/abbfreeathome/**/*.py,tests/**/*.py"
   rather than state, such as sensor button presses, `requested_*` values, or a
   cover's `target_position`, in `_command_callback_attributes`; `refresh_state()`
   does not notify them, so a refresh does not look like a new command; they must
-  also be listed in `_callback_attributes`. `update_channel()` handles output
-  updates and handles input updates only when `_handle_input_updates` is `True`.
-  Enable it for virtual channels and channels that expose `requested_*` values,
-  because physical inputs can share pairing IDs with outputs.
+  also be listed in `_callback_attributes`. Optionally map callback attributes to
+  the refresh pairings that feed them in `_attribute_refresh_pairings`, so that
+  `refresh_state(attributes=...)` reads only those; unmapped attributes refresh
+  every pairing. `update_channel()` handles output updates and handles input
+  updates only when `_handle_input_updates` is `True`. Enable it for virtual
+  channels and channels that expose `requested_*` values, because physical
+  inputs can share pairing IDs with outputs.
   `_refresh_state_from_datapoint()` updates state and returns affected attribute
   names, or `[]` when unhandled. Callbacks are synchronous, zero-argument
   functions; `_notify_callbacks()` deduplicates a subscriber across attributes.
