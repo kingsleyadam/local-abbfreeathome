@@ -1,6 +1,7 @@
 """ABB-Free@Home Device class."""
 
 from collections.abc import Callable
+import logging
 from typing import Any
 
 from .api import FreeAtHomeApi
@@ -10,6 +11,8 @@ from .channels.base import Base
 from .const import FUNCTION_CHANNEL_MAPPING, FUNCTION_VIRTUAL_CHANNEL_MAPPING
 from .floorplan import Floorplan
 from .parameters import ParametersMixin
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def copy_locations(target: dict, update: dict) -> None:
@@ -99,7 +102,12 @@ class Device(ParametersMixin):
             return False
         self._unresponsive = unresponsive
         for _callback in tuple(self._unresponsive_callbacks):
-            _callback()
+            try:
+                _callback()
+            except Exception:  # noqa: BLE001
+                _LOGGER.exception(
+                    "Error in unresponsive callback for %s", self.device_serial
+                )
         return True
 
     def register_unresponsive_callback(self, callback: Callable[[], None]) -> None:
