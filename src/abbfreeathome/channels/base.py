@@ -26,6 +26,10 @@ class Base(ParametersMixin):
     # Input pairings to load at construction and fetch in refresh_state().
     _input_refresh_pairings: list[Pairing] = []
     _callback_attributes: list[str] = []
+    # Callback attributes that report commands rather than state, such as a
+    # sensor's button press or a request sent to an actuator. refresh_state()
+    # updates them without notifying, so a refresh does not look like a command.
+    _command_callback_attributes: list[str] = []
     # Also refresh state from input (idp) datapoint updates. Physical channels
     # report confirmed state on outputs, and inputs carry commands that may
     # share a pairing ID with an output (e.g. MWire switch actuators), so this
@@ -220,13 +224,21 @@ class Base(ParametersMixin):
             self._callbacks[callback_attribute].discard(callback)
 
     async def refresh_state(self):
-        """Refresh the state of the channel from the api."""
+        """
+        Refresh the state of the channel from the api.
+
+        The values read replace the cached datapoint values. Afterwards each
+        subscriber of a refreshed attribute is notified once, except for
+        ``_command_callback_attributes``.
+        """
+        _callback_attributes: list[str] = []
         for _pairing in self._state_refresh_pairings:
             _datapoint_id, _datapoint_value = self.get_output_by_pairing(
                 pairing=_pairing
             )
 
-            _datapoint = (
+            _datapoint = self._outputs[_datapoint_id]
+            _datapoint["value"] = (
                 await self.device.api.get_datapoint(
                     device_serial=self.device_serial,
                     channel_id=self.channel_id,
@@ -234,11 +246,8 @@ class Base(ParametersMixin):
                 )
             )[0]
 
-            self._refresh_state_from_datapoint(
-                datapoint={
-                    "pairingID": _pairing.value,
-                    "value": _datapoint,
-                }
+            _callback_attributes += self._refresh_state_from_datapoint(
+                datapoint=_datapoint
             )
 
         for _datapoint_id, _datapoint in self._input_refresh_datapoints():
@@ -249,7 +258,15 @@ class Base(ParametersMixin):
                     datapoint=_datapoint_id,
                 )
             )[0]
-            self._refresh_state_from_datapoint(_datapoint)
+            _callback_attributes += self._refresh_state_from_datapoint(_datapoint)
+
+        self._notify_callbacks(
+            [
+                _attribute
+                for _attribute in _callback_attributes
+                if _attribute not in self._command_callback_attributes
+            ]
+        )
 
     def _refresh_state_from_datapoints(self):
         """Refresh the state of the channel from the datapoints."""

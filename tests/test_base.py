@@ -243,6 +243,56 @@ async def test_input_refresh_pairings(mock_api, mock_device, monkeypatch):
     assert channel._inputs["idp0000"]["value"] == "1"
 
 
+@pytest.mark.asyncio
+async def test_refresh_state_notifies_callbacks(mock_api, mock_device, monkeypatch):
+    """Cache refreshed values, then notify once, except for command attributes."""
+    monkeypatch.setattr(Base, "_state_refresh_pairings", [Pairing.AL_INFO_ON_OFF])
+    monkeypatch.setattr(Base, "_input_refresh_pairings", [Pairing.AL_SWITCH_ON_OFF])
+    monkeypatch.setattr(
+        Base,
+        "_refresh_state_from_datapoint",
+        lambda self, datapoint: (
+            ["output", "command"]
+            if datapoint["pairingID"] == Pairing.AL_INFO_ON_OFF.value
+            else ["input", "command"]
+        ),
+    )
+    mock_device.device_serial = "ABB7F500E17A"
+    mock_device.api = mock_api
+    mock_api.get_datapoint = AsyncMock(side_effect=[["1"], ["2"]])
+    channel = Base(
+        device=mock_device,
+        channel_id="ch0003",
+        channel_name="Channel Name",
+        inputs={"idp0000": {"pairingID": 1, "value": "0"}},
+        outputs={"odp0000": {"pairingID": 256, "value": "0"}},
+        parameters={},
+    )
+    channel._callback_attributes = ["output", "input", "command"]
+    channel._command_callback_attributes = ["command"]
+    callbacks = {attribute: MagicMock() for attribute in channel._callback_attributes}
+    for attribute, callback in callbacks.items():
+        channel.register_callback(attribute, callback)
+    observed_values = []
+    shared_callback = MagicMock(
+        side_effect=lambda: observed_values.append(
+            (channel._outputs["odp0000"]["value"], channel._inputs["idp0000"]["value"])
+        )
+    )
+    channel.register_callback("output", shared_callback)
+    channel.register_callback("input", shared_callback)
+
+    await channel.refresh_state()
+
+    assert channel._outputs["odp0000"]["value"] == "1"
+    assert channel._inputs["idp0000"]["value"] == "2"
+    callbacks["output"].assert_called_once_with()
+    callbacks["input"].assert_called_once_with()
+    callbacks["command"].assert_not_called()
+    shared_callback.assert_called_once_with()
+    assert observed_values == [("1", "2")]
+
+
 @pytest.fixture(
     params=[
         (Base, "outputs"),

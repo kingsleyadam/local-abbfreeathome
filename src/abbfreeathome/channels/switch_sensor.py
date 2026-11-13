@@ -43,6 +43,9 @@ class SwitchSensor(Base):
         "state",
         "led",
     ]
+    _command_callback_attributes: list[str] = [
+        "state",
+    ]
     _handle_input_updates: bool = True
 
     def __init__(

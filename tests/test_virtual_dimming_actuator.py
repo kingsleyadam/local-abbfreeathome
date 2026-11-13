@@ -466,11 +466,10 @@ def test_feedback_callback(dimmer):
 
 @pytest.mark.asyncio
 async def test_refresh_state(dimmer, device):
-    """Refresh feedback and all supported input pairings without callbacks."""
-    requested = Mock()
-    dimmer.register_callback("requested_brightness", requested)
-    feedback = Mock()
-    dimmer.register_callback("brightness", feedback)
+    """Refresh feedback and requests, but only notify feedback subscribers."""
+    callbacks = {attribute: Mock() for attribute in dimmer._callback_attributes}
+    for attribute, callback in callbacks.items():
+        dimmer.register_callback(attribute, callback)
     device.api.get_datapoint.side_effect = [["1"], ["42.5"], ["0"], ["8"], ["65.5"]]
     await dimmer.refresh_state()
     assert dimmer.state is True
@@ -478,8 +477,11 @@ async def test_refresh_state(dimmer, device):
     assert dimmer.requested_dimming_state == "longpress_up_release"
     assert dimmer.requested_brightness == 65.5
     assert dimmer.brightness == 42
-    requested.assert_not_called()
-    feedback.assert_not_called()
+    callbacks["state"].assert_called_once_with()
+    callbacks["brightness"].assert_called_once_with()
+    callbacks["requested_state"].assert_not_called()
+    callbacks["requested_dimming_state"].assert_not_called()
+    callbacks["requested_brightness"].assert_not_called()
     assert device.api.get_datapoint.await_args_list == [
         call(device_serial="6000F66D1DA7", channel_id="ch0000", datapoint=datapoint)
         for datapoint in ("odp0000", "odp0001", "idp0000", "idp0001", "idp0002")
@@ -525,7 +527,8 @@ async def test_unsupported_inputs_are_not_refreshed(device, pairing):
         call(device_serial="6000F66D1DA7", channel_id="ch0000", datapoint=datapoint)
         for datapoint in ("odp0000", "odp0001", "idp0000", "idp0001", "idp0002")
     ]
-    callback.assert_not_called()
+    # Called once for the refreshed feedback; requests are not notified.
+    callback.assert_called_once_with()
     device.api.set_datapoint.assert_not_called()
 
 

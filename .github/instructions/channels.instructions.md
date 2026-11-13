@@ -19,7 +19,12 @@ applyTo: "src/abbfreeathome/**/*.py,tests/**/*.py"
   overridden refresh handlers during construction. Declare output refresh pairings
   in `_state_refresh_pairings` and subscribable properties in `_callback_attributes`.
   Input pairings listed in `_input_refresh_pairings` are loaded at construction
-  and fetched by `refresh_state()`. `update_channel()` handles output updates and
+  and fetched by `refresh_state()`, which caches the values it reads and notifies
+  each refreshed attribute once. Declare refreshed attributes that report commands
+  rather than state, such as sensor button presses, `requested_*` values, or a
+  cover's `target_position`, in `_command_callback_attributes`; `refresh_state()`
+  does not notify them, so a refresh does not look like a new command.
+  `update_channel()` handles output updates and
   handles input updates only when `_handle_input_updates` is `True`. Enable it
   for virtual channels and channels that expose `requested_*` values, because
   physical inputs can share pairing IDs with outputs.

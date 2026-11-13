@@ -180,6 +180,23 @@ async def test_refresh_state_with_led(switch_sensor_with_led):
 
 
 @pytest.mark.asyncio
+async def test_refresh_state_callbacks(switch_sensor_with_led):
+    """Notify the refreshed LED, but do not report the state as a button press."""
+    state_callback = MagicMock()
+    led_callback = MagicMock()
+    switch_sensor_with_led.register_callback("state", state_callback)
+    switch_sensor_with_led.register_callback("led", led_callback)
+    switch_sensor_with_led.device.api.get_datapoint.return_value = ["1"]
+
+    await switch_sensor_with_led.refresh_state()
+
+    assert switch_sensor_with_led.state == SwitchSensorState.on.name
+    assert switch_sensor_with_led._outputs["odp0000"]["value"] == "1"
+    led_callback.assert_called_once_with()
+    state_callback.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_refresh_state_without_led(switch_sensor_without_led):
     """Test refreshing the state of the switch-sensor."""
     switch_sensor_without_led.device.api.get_datapoint.return_value = ["1"]
