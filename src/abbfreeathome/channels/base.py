@@ -301,20 +301,24 @@ class Base(ParametersMixin):
     ) -> set[Pairing] | None:
         """Return the pairings to refresh for ``attributes``, or None for all."""
         _attributes = [] if attributes is None else list(attributes)
-        if not _attributes:
-            return None
-
-        _pairings: set[Pairing] = set()
         for _attribute in _attributes:
             if _attribute not in self._callback_attributes:
                 raise UnknownCallbackAttributeException(
                     unknown_attribute=_attribute,
                     known_attributes=",".join(self._callback_attributes),
                 )
-            if _attribute not in self._attribute_refresh_pairings:
-                return None
-            _pairings.update(self._attribute_refresh_pairings[_attribute])
-        return _pairings
+
+        if not _attributes or any(
+            _attribute not in self._attribute_refresh_pairings
+            for _attribute in _attributes
+        ):
+            return None
+
+        return {
+            _pairing
+            for _attribute in _attributes
+            for _pairing in self._attribute_refresh_pairings[_attribute]
+        }
 
     def _input_refresh_datapoints(
         self, pairings: set[Pairing] | None = None

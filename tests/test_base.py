@@ -442,11 +442,18 @@ async def test_refresh_state_attributes_fallback(
     ] == ["odp0000", "odp0001", "idp0000"]
 
 
+@pytest.mark.parametrize(
+    "attributes",
+    [["unknown"], ["unmapped", "unknown"], ["unknown", "unmapped"]],
+    ids=["unknown", "unmapped-first", "unknown-first"],
+)
 @pytest.mark.asyncio
-async def test_refresh_state_unknown_attribute(attribute_refresh_channel, mock_api):
-    """Reject an unknown attribute before sending any request."""
+async def test_refresh_state_unknown_attribute(
+    attribute_refresh_channel, mock_api, attributes
+):
+    """Reject an unknown attribute before sending any request, in any order."""
     with pytest.raises(UnknownCallbackAttributeException):
-        await attribute_refresh_channel.refresh_state(attributes=["unknown"])
+        await attribute_refresh_channel.refresh_state(attributes=attributes)
 
     mock_api.get_datapoint.assert_not_awaited()
 
