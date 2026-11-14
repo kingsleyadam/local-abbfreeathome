@@ -55,10 +55,13 @@ async def test_initial_state(force_on_off_sensor):
 
 @pytest.mark.asyncio
 async def test_refresh_state(force_on_off_sensor):
-    """Test refreshing the state of the force-on-off-sensor."""
+    """Test refreshing the state without reporting it as a button press."""
+    callback = MagicMock()
+    force_on_off_sensor.register_callback("state", callback)
     force_on_off_sensor.device.api.get_datapoint.return_value = ["1"]
     await force_on_off_sensor.refresh_state()
     assert force_on_off_sensor.state == ForceOnOffSensorState.off.name
+    callback.assert_not_called()
     force_on_off_sensor.device.api.get_datapoint.assert_called_with(
         device_serial="ABB7F5923D74",
         channel_id="ch0000",

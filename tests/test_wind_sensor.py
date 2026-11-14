@@ -74,6 +74,41 @@ async def test_refresh_state(wind_sensor):
     )
 
 
+@pytest.mark.asyncio
+async def test_refresh_state_notifies_callbacks(wind_sensor):
+    """Cache the values read and notify the callbacks of every attribute."""
+    callbacks = {attribute: MagicMock() for attribute in ("state", "alarm", "force")}
+    for attribute, callback in callbacks.items():
+        wind_sensor.register_callback(callback_attribute=attribute, callback=callback)
+    wind_sensor.device.api.get_datapoint.side_effect = [["12.5"], ["1"], ["6"]]
+
+    await wind_sensor.refresh_state()
+
+    assert wind_sensor.state == 12.5
+    assert wind_sensor.alarm is True
+    assert wind_sensor.force == 6
+    assert wind_sensor._outputs["odp0003"]["value"] == "12.5"
+    assert wind_sensor._outputs["odp0000"]["value"] == "1"
+    assert wind_sensor._outputs["odp0001"]["value"] == "6"
+    for callback in callbacks.values():
+        callback.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_priming_after_refresh_state(wind_sensor):
+    """Compare a reconnect snapshot against the refreshed value, not the old one."""
+    callback = MagicMock()
+    wind_sensor.register_callback(callback_attribute="force", callback=callback)
+    wind_sensor.device.api.get_datapoint.return_value = ["6"]
+    await wind_sensor.refresh_state()
+    callback.reset_mock()
+
+    wind_sensor.update_channel("7EB1000021C5/ch0003/odp0001", "3", is_priming=True)
+
+    assert wind_sensor.force == 3
+    callback.assert_called_once_with()
+
+
 def test_refresh_state_from_datapoint(wind_sensor):
     """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.

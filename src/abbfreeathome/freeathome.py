@@ -185,23 +185,38 @@ class FreeAtHome:
             # snapshot, not a real event: update caches but skip no-op callbacks.
             _is_priming = self.api.is_priming_datapoint(_datapoint_key)
 
-            if _datapoint_key in _scene_datapoints:
-                _channel.update_scene(
-                    _datapoint_key, _datapoint_value, is_priming=_is_priming
-                )
-            else:
-                _channel.update_channel(
-                    _datapoint_key, _datapoint_value, is_priming=_is_priming
+            try:
+                if _datapoint_key in _scene_datapoints:
+                    _channel.update_scene(
+                        _datapoint_key, _datapoint_value, is_priming=_is_priming
+                    )
+                else:
+                    _channel.update_channel(
+                        _datapoint_key, _datapoint_value, is_priming=_is_priming
+                    )
+            except Exception:  # noqa: BLE001
+                _LOGGER.exception(
+                    "Cannot update datapoint %s with value %r",
+                    _datapoint_key,
+                    _datapoint_value,
                 )
 
         if _added_devices or _added_channels or _removed_serials:
-            _event = DevicesChangedEvent(
-                added_devices=_added_devices,
-                added_channels=_added_channels,
-                removed_device_serials=_removed_serials,
+            self._notify_devices_changed(
+                DevicesChangedEvent(
+                    added_devices=_added_devices,
+                    added_channels=_added_channels,
+                    removed_device_serials=_removed_serials,
+                )
             )
-            for _callback in tuple(self._devices_changed_callbacks):
-                _callback(_event)
+
+    def _notify_devices_changed(self, event: DevicesChangedEvent) -> None:
+        """Notify each devices-changed subscriber, isolating failures."""
+        for _callback in tuple(self._devices_changed_callbacks):
+            try:
+                _callback(event)
+            except Exception:  # noqa: BLE001
+                _LOGGER.exception("Error in devices changed callback")
 
     def _remove_devices(self, data: dict) -> tuple[str, ...]:
         _removed = data.get("devicesRemoved") or []

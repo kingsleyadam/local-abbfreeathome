@@ -642,13 +642,16 @@ class FreeAtHomeApi(SSLContextMixin):
 
         data = await self._ws_response.receive()
         if data.type == WSMsgType.TEXT:
-            _ws_data = data.json().get(self._sysap_uuid)
+            try:
+                _ws_data = data.json().get(self._sysap_uuid)
 
-            _LOGGER.debug("Websocket Response: %s", _ws_data)
-            if callback and inspect.iscoroutinefunction(callback):
-                await callback(_ws_data)
-            elif callback:
-                callback(_ws_data)
+                _LOGGER.debug("Websocket Response: %s", _ws_data)
+                if callback and inspect.iscoroutinefunction(callback):
+                    await callback(_ws_data)
+                elif callback:
+                    callback(_ws_data)
+            except Exception:  # noqa: BLE001
+                _LOGGER.exception("Error handling websocket message")
         elif data.type == WSMsgType.ERROR:
             _LOGGER.error("Websocket Response Error. Data: %s", data)
             await asyncio.sleep(retry_interval)

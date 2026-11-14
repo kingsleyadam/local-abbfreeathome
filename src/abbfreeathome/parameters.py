@@ -49,7 +49,12 @@ class ParametersMixin:
 
         for _filter_id, _callback in list(self._get_parameter_callbacks()):
             if _filter_id is None or _filter_id == _parameter_id:
-                _callback()
+                try:
+                    _callback()
+                except Exception:  # noqa: BLE001
+                    _LOGGER.exception(
+                        "Error in %s parameter callback for %s", self, _parameter_id
+                    )
         return True
 
     def register_parameter_callback(

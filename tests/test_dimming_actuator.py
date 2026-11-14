@@ -273,6 +273,34 @@ def test_color_temperature_warmest(colortemperature_actuator):
     assert _temp == 2700
 
 
+@pytest.mark.parametrize(
+    ("parameters", "coolest", "warmest"),
+    [
+        ({}, None, None),
+        ({"par00f5": "6500"}, 6500, None),
+        ({"par00f5": "", "par00f6": "2700"}, None, 2700),
+        ({"par00f5": "invalid", "par00f6": "invalid"}, None, None),
+    ],
+)
+def test_color_temperature_range_missing_or_invalid(
+    mock_device, parameters, coolest, warmest
+):
+    """Test missing or non-integer color temperature parameters are unknown."""
+    mock_device.device_serial = "ABB70139AF8A"
+    actuator = ColorTemperatureActuator(
+        device=mock_device,
+        channel_id="ch0000",
+        channel_name="Channel Name",
+        inputs={},
+        outputs={"odp0004": {"pairingID": 280, "value": "50"}},
+        parameters=parameters,
+    )
+
+    assert actuator.color_temperature == 50
+    assert actuator.color_temperature_coolest == coolest
+    assert actuator.color_temperature_warmest == warmest
+
+
 def test_color_temperature_defaults_to_none_when_unavailable(mock_api, mock_device):
     """Test color-temperature parameters remain nullable when missing."""
     inputs = {

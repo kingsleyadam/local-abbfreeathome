@@ -46,6 +46,9 @@ class CoverActuator(Base):
         "position",
         "target_position",
     ]
+    _command_callback_attributes: list[str] = [
+        "target_position",
+    ]
     _handle_input_updates: bool = True
 
     def __init__(

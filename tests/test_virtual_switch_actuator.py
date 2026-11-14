@@ -217,6 +217,26 @@ def test_update_scene_repeated_request(virtual_switch_actuator, is_priming):
     virtual_switch_actuator.device.api.set_datapoint.assert_not_called()
 
 
+@pytest.mark.parametrize("is_priming", [False, True])
+def test_update_scene_isolates_failing_callback(
+    virtual_switch_actuator, is_priming, caplog
+):
+    """A failing request subscriber does not block others, even on repeats."""
+    failing_callback = MagicMock(side_effect=RuntimeError("subscriber bug"))
+    callback = MagicMock()
+    virtual_switch_actuator.register_callback("requested_state", failing_callback)
+    virtual_switch_actuator.register_callback("requested_state", callback)
+
+    for _ in range(2):
+        virtual_switch_actuator.update_scene(
+            "60004F56EA24/ch0000/odp0000", "1", is_priming=is_priming
+        )
+
+    assert failing_callback.call_count == 2
+    assert callback.call_count == 2
+    assert "subscriber bug" in caplog.text
+
+
 def test_update_scene_without_callbacks(virtual_switch_actuator):
     """Test scene state is updated when no subscribers are registered."""
     virtual_switch_actuator.update_scene("60004F56EA24/ch0000/odp0000", "1")

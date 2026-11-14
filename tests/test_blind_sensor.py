@@ -53,10 +53,13 @@ async def test_initial_state(blind_sensor):
 
 @pytest.mark.asyncio
 async def test_refresh_state(blind_sensor):
-    """Test refreshing the state of the blind-sensor."""
+    """Test refreshing the state without reporting it as a button press."""
+    callback = MagicMock()
+    blind_sensor.register_callback("state", callback)
     blind_sensor.device.api.get_datapoint.return_value = ["1"]
     await blind_sensor.refresh_state()
     assert blind_sensor.state == BlindSensorState.step_down.name
+    callback.assert_not_called()
     blind_sensor.device.api.get_datapoint.assert_called_with(
         device_serial="ABB700DAD681",
         channel_id="ch0003",

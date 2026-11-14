@@ -64,6 +64,11 @@ class VirtualDimmingActuator(VirtualSwitchActuator):
         "requested_dimming_state",
         "requested_brightness",
     ]
+    _command_callback_attributes: list[str] = [
+        "requested_state",
+        "requested_dimming_state",
+        "requested_brightness",
+    ]
 
     def __init__(
         self,

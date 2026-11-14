@@ -27,6 +27,9 @@ class ForceOnOffSensor(Base):
     _callback_attributes: list[str] = [
         "state",
     ]
+    _command_callback_attributes: list[str] = [
+        "state",
+    ]
 
     def __init__(
         self,

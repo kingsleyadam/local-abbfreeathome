@@ -591,6 +591,39 @@ async def test_update(freeathome):
 
 
 @pytest.mark.asyncio
+async def test_update_isolates_failing_datapoint(freeathome, caplog):
+    """A failing datapoint is logged and the rest of the message is applied."""
+    await freeathome.load()
+    light_a = freeathome.get_channels()["ABB7F500E17A/ch0003"]
+    light_b = freeathome.get_channels()["ABB7F62F6C0B/ch0003"]
+    light_a.register_callback(
+        "state", MagicMock(side_effect=RuntimeError("subscriber bug"))
+    )
+    failing_channel = MagicMock()
+    failing_channel.update_channel.side_effect = ValueError("unparsable value")
+    freeathome.get_device_by_serial("ABB7F500E17A")._channels["ch0099"] = (
+        failing_channel
+    )
+    freeathome.api.is_priming_datapoint.return_value = False
+
+    await freeathome.update(
+        {
+            "datapoints": {
+                "ABB7F500E17A/ch0099/odp0000": "x",
+                "ABB7F500E17A/ch0003/odp0000": "1",
+                "ABB7F62F6C0B/ch0003/odp0000": "1",
+            }
+        }
+    )
+
+    assert light_a.state is True
+    assert light_b.state is True
+    assert "Cannot update datapoint ABB7F500E17A/ch0099/odp0000" in caplog.text
+    assert "unparsable value" in caplog.text
+    assert "subscriber bug" in caplog.text
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("is_priming", [False, True])
 @pytest.mark.parametrize(("initial_value", "value"), [("0", "1"), ("1", "0")])
 async def test_update_scene_virtual_switch(
@@ -1759,6 +1792,60 @@ async def test_addition_before_initial_load(api_mock):
     assert freeathome.get_device_by_serial("ABB_NEW").room_name == "Living Room"
     assert freeathome.get_channels()["ABB_NEW/ch0003"].state is False
     api_mock.get_configuration.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_devices_changed_callback_error_is_isolated(api_mock, caplog):
+    """A failing devices-changed callback does not block the others."""
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    events = []
+    freeathome.register_devices_changed_callback(
+        MagicMock(side_effect=RuntimeError("discovery bug"))
+    )
+    freeathome.register_devices_changed_callback(events.append)
+    data = deepcopy(api_mock.get_configuration.return_value["devices"]["ABB7F500E17A"])
+
+    await freeathome.update({"devicesAdded": ["ABB_NEW"], "devices": {"ABB_NEW": data}})
+
+    assert len(events) == 1
+    assert "Error in devices changed callback" in caplog.text
+    assert "discovery bug" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_update_mixed_message_isolates_subscriber_errors(api_mock, caplog):
+    """Failing availability/parameter subscribers do not drop the rest."""
+    api_mock.is_priming_datapoint.return_value = False
+    freeathome = FreeAtHome(api_mock)
+    await freeathome.load()
+    serial = "ABB7F62F6C0B"
+    light = freeathome.get_channels()["ABB7F500E17A/ch0003"]
+    freeathome.get_device_by_serial(serial).register_unresponsive_callback(
+        MagicMock(side_effect=RuntimeError("availability bug"))
+    )
+    light.register_parameter_callback(
+        MagicMock(side_effect=RuntimeError("parameter bug"))
+    )
+    events = []
+    freeathome.register_devices_changed_callback(events.append)
+    data = deepcopy(api_mock.get_configuration.return_value["devices"]["ABB7F500E17A"])
+
+    await freeathome.update(
+        {
+            "devicesAdded": ["ABB_NEW"],
+            "devices": {"ABB_NEW": data, serial: {"unresponsive": True}},
+            "parameters": {"ABB7F500E17A/ch0003/par0002": "1"},
+            "datapoints": {"ABB7F500E17A/ch0003/odp0000": "1"},
+        }
+    )
+
+    assert freeathome.get_device_by_serial(serial).unresponsive is True
+    assert light.get_parameter("par0002") == "1"
+    assert light.state is True
+    assert [device.device_serial for device in events[0].added_devices] == ["ABB_NEW"]
+    assert "availability bug" in caplog.text
+    assert "parameter bug" in caplog.text
 
 
 @pytest.mark.asyncio
