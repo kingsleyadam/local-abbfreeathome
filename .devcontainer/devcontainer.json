@@ -6,8 +6,7 @@
       "shellautocompletion": true
     },
     "ghcr.io/devcontainers-extra/features/pre-commit:2": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/copilot-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "mounts": [
     "source=${localWorkspaceFolderBasename}-copilot,target=/home/vscode/.copilot,type=volume",
@@ -17,7 +16,7 @@
     "UV_LINK_MODE": "copy"
   },
   "remoteEnv": {
-    "PATH": "${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}"
+    "PATH": "${containerWorkspaceFolder}/.venv/bin:/home/vscode/.local/bin:${containerEnv:PATH}"
   },
   "customizations": {
     "vscode": {
@@ -55,5 +54,14 @@
     }
   },
   "onCreateCommand": "sudo chown vscode:vscode /home/vscode/.copilot /home/vscode/.config/gh",
-  "postCreateCommand": "uv venv --clear && uv pip install -r src/abbfreeathome/dev-requirements.txt && uv pip install -e . && pre-commit install"
+  "postCreateCommand": {
+    "python": "uv venv --clear && uv pip install -r src/abbfreeathome/dev-requirements.txt && uv pip install -e . && pre-commit install",
+    "copilot": [
+      "bash",
+      "-o",
+      "pipefail",
+      "-c",
+      "curl -fsSL https://gh.io/copilot-install | PREFIX=\"$HOME/.local\" bash"
+    ]
+  }
 }
