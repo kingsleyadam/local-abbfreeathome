@@ -147,6 +147,19 @@ async def test_refresh_state_without_voc(air_quality_sensor):
     ] == ["odp0000", "odp0001", "odp0004"]
 
 
+@pytest.mark.asyncio
+async def test_refresh_attribute_without_voc(air_quality_sensor):
+    """Refresh nothing for an attribute whose output the sensor lacks."""
+    del air_quality_sensor._outputs["odp0002"]  # AL_INFO_VOC_INDEX
+    callback = MagicMock()
+    air_quality_sensor.register_callback("voc_index", callback)
+
+    await air_quality_sensor.refresh_state(attributes=["voc_index"])
+
+    air_quality_sensor.device.api.get_datapoint.assert_not_awaited()
+    callback.assert_not_called()
+
+
 def test_refresh_state_from_datapoint_co2(air_quality_sensor):
     """Test the _refresh_state_from_datapoint function for CO2."""
     # Test CO2 concentration

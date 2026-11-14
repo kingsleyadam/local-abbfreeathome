@@ -440,6 +440,49 @@ async def test_refresh_state_skips_missing_pairings(mock_api, mock_device, monke
     callback.assert_called_once_with()
 
 
+@pytest.mark.asyncio
+async def test_refresh_state_reads_outputs_sharing_a_pairing(
+    mock_api, mock_device, monkeypatch
+):
+    """Read every output that shares a refresh pairing, in output order."""
+    monkeypatch.setattr(Base, "_state_refresh_pairings", [Pairing.AL_INFO_ON_OFF])
+
+    def _refresh_state_from_datapoint(self, datapoint):
+        self._state = datapoint["value"]
+        return ["state"]
+
+    monkeypatch.setattr(
+        Base, "_refresh_state_from_datapoint", _refresh_state_from_datapoint
+    )
+    mock_device.device_serial = "ABB7F500E17A"
+    mock_device.api = mock_api
+    mock_api.get_datapoint = AsyncMock(side_effect=[["1"], ["0"]])
+    channel = Base(
+        device=mock_device,
+        channel_id="ch0003",
+        channel_name="Channel Name",
+        inputs={},
+        outputs={
+            "odp0000": {"pairingID": 256, "value": "0"},
+            "odp0001": {"pairingID": 256, "value": "1"},
+        },
+        parameters={},
+    )
+    channel._callback_attributes = ["state"]
+    callback = MagicMock()
+    channel.register_callback("state", callback)
+
+    await channel.refresh_state()
+
+    assert [
+        _call.kwargs["datapoint"] for _call in mock_api.get_datapoint.await_args_list
+    ] == ["odp0000", "odp0001"]
+    assert channel._outputs["odp0000"]["value"] == "1"
+    assert channel._outputs["odp0001"]["value"] == "0"
+    assert channel._state == "0"
+    callback.assert_called_once_with()
+
+
 @pytest.mark.parametrize(
     "channel_class",
     sorted(
