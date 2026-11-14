@@ -105,11 +105,7 @@ def test_unknown_callback_attribute_exception():
             unknown_attribute="not_there", known_attributes="there"
         )
     assert str(excinfo.value) == (
-        "Tried to register the callback-atrribute: "
-        "not_there"
-        ", but only the callback-attributes '"
-        "there"
-        "' are known."
+        "Unknown callback-attribute 'not_there'; known callback-attributes: 'there'."
     )
 
 

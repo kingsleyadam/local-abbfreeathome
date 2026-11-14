@@ -1,6 +1,6 @@
 """Free@Home Base Class."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -30,6 +30,10 @@ class Base(ParametersMixin):
     # sensor's button press or a request sent to an actuator. refresh_state()
     # updates them without notifying, so a refresh does not look like a command.
     _command_callback_attributes: list[str] = []
+    # Refresh pairings that feed each callback attribute, so that
+    # refresh_state(attributes=...) reads only those. Attributes without an
+    # entry fall back to refreshing every pairing.
+    _attribute_refresh_pairings: dict[str, list[Pairing]] = {}
     # Also refresh state from input (idp) datapoint updates. Physical channels
     # report confirmed state on outputs, and inputs carry commands that may
     # share a pairing ID with an output (e.g. MWire switch actuators), so this
@@ -227,24 +231,35 @@ class Base(ParametersMixin):
         if self._callbacks[callback_attribute]:
             self._callbacks[callback_attribute].discard(callback)
 
-    async def refresh_state(self):
+    async def refresh_state(self, attributes: Iterable[str] | None = None):
         """
         Refresh the state of the channel from the api.
+
+        By default, or with an empty ``attributes``, every refresh pairing is
+        read. Otherwise only the pairings that ``_attribute_refresh_pairings``
+        declares for the attributes are read; if any of them has no
+        declaration, every pairing is read. A single string is treated as one
+        attribute name. Unknown attribute names raise
+        ``UnknownCallbackAttributeException``.
 
         The values read replace the cached datapoint values, except where a
         WebSocket update changed a datapoint while its request was pending.
         Afterwards, even if a request fails, each subscriber of a refreshed
         attribute is notified once, except for ``_command_callback_attributes``.
         """
+        _pairings = self._refresh_pairings_for(attributes)
         _callback_attributes: list[str] = []
         try:
             for _pairing in self._state_refresh_pairings:
+                if _pairings is not None and _pairing not in _pairings:
+                    continue
+
                 _datapoint_id, _ = self.get_output_by_pairing(pairing=_pairing)
                 _callback_attributes += await self._refresh_datapoint(
                     _datapoint_id, self._outputs[_datapoint_id]
                 )
 
-            for _datapoint_id, _datapoint in self._input_refresh_datapoints():
+            for _datapoint_id, _datapoint in self._input_refresh_datapoints(_pairings):
                 _callback_attributes += await self._refresh_datapoint(
                     _datapoint_id, _datapoint
                 )
@@ -304,9 +319,45 @@ class Base(ParametersMixin):
         for _datapoint_id, _datapoint in self._input_refresh_datapoints():
             self._refresh_state_from_datapoint(_datapoint)
 
-    def _input_refresh_datapoints(self) -> list[tuple[str, dict[str, Any]]]:
-        """Return the inputs matching ``_input_refresh_pairings``."""
-        _pairings = {_pairing.value for _pairing in self._input_refresh_pairings}
+    def _refresh_pairings_for(
+        self, attributes: Iterable[str] | None
+    ) -> set[Pairing] | None:
+        """Return the pairings to refresh for ``attributes``, or None for all."""
+        if attributes is None:
+            _attributes = []
+        elif isinstance(attributes, str):
+            _attributes = [attributes]
+        else:
+            _attributes = list(attributes)
+
+        for _attribute in _attributes:
+            if _attribute not in self._callback_attributes:
+                raise UnknownCallbackAttributeException(
+                    unknown_attribute=_attribute,
+                    known_attributes=",".join(self._callback_attributes),
+                )
+
+        if not _attributes or any(
+            _attribute not in self._attribute_refresh_pairings
+            for _attribute in _attributes
+        ):
+            return None
+
+        return {
+            _pairing
+            for _attribute in _attributes
+            for _pairing in self._attribute_refresh_pairings[_attribute]
+        }
+
+    def _input_refresh_datapoints(
+        self, pairings: set[Pairing] | None = None
+    ) -> list[tuple[str, dict[str, Any]]]:
+        """Return the inputs matching ``_input_refresh_pairings`` and ``pairings``."""
+        _pairings = {
+            _pairing.value
+            for _pairing in self._input_refresh_pairings
+            if pairings is None or _pairing in pairings
+        }
         return [
             (_datapoint_id, _datapoint)
             for _datapoint_id, _datapoint in self._inputs.items()

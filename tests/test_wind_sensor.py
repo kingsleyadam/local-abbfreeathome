@@ -75,6 +75,21 @@ async def test_refresh_state(wind_sensor):
 
 
 @pytest.mark.asyncio
+async def test_refresh_state_attributes(wind_sensor):
+    """Refreshing the force reads only the wind force datapoint."""
+    wind_sensor.device.api.get_datapoint.return_value = ["6"]
+
+    await wind_sensor.refresh_state(attributes=["force"])
+
+    assert wind_sensor.force == 6
+    wind_sensor.device.api.get_datapoint.assert_awaited_once_with(
+        device_serial="7EB1000021C5",
+        channel_id="ch0003",
+        datapoint="odp0001",
+    )
+
+
+@pytest.mark.asyncio
 async def test_refresh_state_notifies_callbacks(wind_sensor):
     """Cache the values read and notify the callbacks of every attribute."""
     callbacks = {attribute: MagicMock() for attribute in ("state", "alarm", "force")}

@@ -26,6 +26,13 @@ class AirQualitySensor(Base):
         "voc_alert",
         "humidity",
     ]
+    _attribute_refresh_pairings: dict[str, list[Pairing]] = {
+        "co2": [Pairing.AL_INFO_CO_2],
+        "co2_alert": [Pairing.AL_CO2_ALERT],
+        "voc_index": [Pairing.AL_INFO_VOC_INDEX],
+        "voc_alert": [Pairing.AL_VOC_ALERT],
+        "humidity": [Pairing.AL_HUMIDITY],
+    }
 
     def __init__(
         self,

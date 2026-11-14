@@ -22,6 +22,11 @@ class WindSensor(Base):
         "alarm",
         "force",
     ]
+    _attribute_refresh_pairings: dict[str, list[Pairing]] = {
+        "state": [Pairing.AL_WIND_SPEED],
+        "alarm": [Pairing.AL_WIND_ALARM],
+        "force": [Pairing.AL_WIND_FORCE],
+    }
 
     def __init__(
         self,
