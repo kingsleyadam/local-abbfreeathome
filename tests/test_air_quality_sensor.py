@@ -125,6 +125,41 @@ async def test_refresh_state(air_quality_sensor):
     assert air_quality_sensor.humidity == 65
 
 
+@pytest.mark.asyncio
+async def test_refresh_state_without_voc(air_quality_sensor):
+    """Refresh CO2 and humidity on a sensor without the VOC outputs."""
+    del air_quality_sensor._outputs["odp0002"]  # AL_INFO_VOC_INDEX
+    del air_quality_sensor._outputs["odp0003"]  # AL_VOC_ALERT
+    air_quality_sensor.device.api.get_datapoint.side_effect = [
+        ["850.5"],  # CO2
+        ["0"],  # CO2 Alert
+        ["65"],  # Humidity
+    ]
+
+    await air_quality_sensor.refresh_state()
+
+    assert air_quality_sensor.co2 == 850.5
+    assert air_quality_sensor.co2_alert is False
+    assert air_quality_sensor.humidity == 65
+    assert [
+        _call.kwargs["datapoint"]
+        for _call in air_quality_sensor.device.api.get_datapoint.await_args_list
+    ] == ["odp0000", "odp0001", "odp0004"]
+
+
+@pytest.mark.asyncio
+async def test_refresh_attribute_without_voc(air_quality_sensor):
+    """Refresh nothing for an attribute whose output the sensor lacks."""
+    del air_quality_sensor._outputs["odp0002"]  # AL_INFO_VOC_INDEX
+    callback = MagicMock()
+    air_quality_sensor.register_callback("voc_index", callback)
+
+    await air_quality_sensor.refresh_state(attributes=["voc_index"])
+
+    air_quality_sensor.device.api.get_datapoint.assert_not_awaited()
+    callback.assert_not_called()
+
+
 def test_refresh_state_from_datapoint_co2(air_quality_sensor):
     """Test the _refresh_state_from_datapoint function for CO2."""
     # Test CO2 concentration

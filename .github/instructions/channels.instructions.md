@@ -18,8 +18,10 @@ applyTo: "src/abbfreeathome/**/*.py,tests/**/*.py"
 - Initialize subclass state fields before `super().__init__()`: `Base` invokes
   overridden refresh handlers during construction. Declare output refresh pairings
   in `_state_refresh_pairings` and subscribable properties in `_callback_attributes`.
-  Input pairings listed in `_input_refresh_pairings` are loaded at construction
-  and fetched by `refresh_state()`, which caches the values it reads and notifies
+  `refresh_state()` skips refresh pairings the channel does not have, so a class
+  may list pairings that only some of its devices provide. Input pairings listed
+  in `_input_refresh_pairings` are loaded at construction and fetched by
+  `refresh_state()`, which caches the values it reads and notifies
   each refreshed attribute once. Declare refreshed attributes that report commands
   rather than state, such as sensor button presses, `requested_*` values, or a
   cover's `target_position`, in `_command_callback_attributes`; `refresh_state()`
