@@ -130,7 +130,10 @@ class DimmingActuator(Base):
             self._state = datapoint.get("value") == "1"
             return ["state"]
         if datapoint.get("pairingID") == Pairing.AL_INFO_ACTUAL_DIMMING_VALUE.value:
-            self._brightness = int(float(datapoint.get("value")))
+            try:
+                self._brightness = int(float(datapoint.get("value")))
+            except (ValueError, TypeError, OverflowError):
+                self._brightness = None
             return ["brightness"]
         if datapoint.get("pairingID") == Pairing.AL_INFO_FORCE.value:
             try:
@@ -261,7 +264,10 @@ class ColorTemperatureActuator(DimmingActuator):
         Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_INFO_COLOR_TEMPERATURE.value:
-            self._color_temperature = int(float(datapoint.get("value")))
+            try:
+                self._color_temperature = int(float(datapoint.get("value")))
+            except (ValueError, TypeError, OverflowError):
+                self._color_temperature = None
             return ["color_temperature"]
         return super()._refresh_state_from_datapoint(datapoint)
 

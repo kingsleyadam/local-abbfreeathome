@@ -91,18 +91,27 @@ class AirQualitySensor(Base):
         value = datapoint.get("value")
 
         if pairing_id == Pairing.AL_INFO_CO_2.value:
-            self._co2 = float(value)
+            try:
+                self._co2 = float(value)
+            except (ValueError, TypeError):
+                self._co2 = None
             return ["co2"]
         if pairing_id == Pairing.AL_CO2_ALERT.value:
             self._co2_alert = value == "1"
             return ["co2_alert"]
         if pairing_id == Pairing.AL_INFO_VOC_INDEX.value:
-            self._voc_index = int(value)
+            try:
+                self._voc_index = int(value)
+            except (ValueError, TypeError):
+                self._voc_index = None
             return ["voc_index"]
         if pairing_id == Pairing.AL_VOC_ALERT.value:
             self._voc_alert = value == "1"
             return ["voc_alert"]
         if pairing_id == Pairing.AL_HUMIDITY.value:
-            self._humidity = int(value)
+            try:
+                self._humidity = int(value)
+            except (ValueError, TypeError):
+                self._humidity = None
             return ["humidity"]
         return []

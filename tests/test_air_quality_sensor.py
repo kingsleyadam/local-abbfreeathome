@@ -206,3 +206,15 @@ def test_state_refresh_pairings(air_quality_sensor):
     assert Pairing.AL_INFO_VOC_INDEX in air_quality_sensor._state_refresh_pairings
     assert Pairing.AL_VOC_ALERT in air_quality_sensor._state_refresh_pairings
     assert Pairing.AL_HUMIDITY in air_quality_sensor._state_refresh_pairings
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric(air_quality_sensor, value):
+    """Test that non-numeric CO2, VOC index and humidity values are unknown."""
+    for pairing_id in (1563, 1570, 337):
+        air_quality_sensor._refresh_state_from_datapoint(
+            datapoint={"pairingID": pairing_id, "value": value},
+        )
+    assert air_quality_sensor.co2 is None
+    assert air_quality_sensor.voc_index is None
+    assert air_quality_sensor.humidity is None

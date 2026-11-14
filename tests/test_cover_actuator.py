@@ -644,3 +644,17 @@ async def test_refresh_state_callbacks(cover_actuator):
     callbacks["position"].assert_called_once_with()
     callbacks["forced_position"].assert_called_once_with()
     callbacks["target_position"].assert_not_called()
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None, "inf"])
+def test_refresh_state_from_datapoint_non_numeric_position(shutter_actuator, value):
+    """Test that non-numeric position and tilt position values are unknown."""
+    shutter_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 289, "value": value},
+    )
+    assert shutter_actuator.position is None
+
+    shutter_actuator._refresh_state_from_datapoint(
+        datapoint={"pairingID": 290, "value": value},
+    )
+    assert shutter_actuator.tilt_position is None

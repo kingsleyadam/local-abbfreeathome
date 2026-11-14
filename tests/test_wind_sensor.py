@@ -163,3 +163,17 @@ def test_refresh_state_from_datapoint(wind_sensor):
         datapoint={"pairingID": 4, "value": "1"},
     )
     assert wind_sensor.state == 20.1
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric(wind_sensor, value):
+    """Test that non-numeric speed and force values are unknown."""
+    wind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1028, "value": value},
+    )
+    assert wind_sensor.state is None
+
+    wind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1025, "value": value},
+    )
+    assert wind_sensor.force is None
