@@ -1,6 +1,6 @@
 """Test class to test the WindowDoorSensor channel."""
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 
@@ -55,13 +55,36 @@ async def test_initial_state(window_door_sensor):
 @pytest.mark.asyncio
 async def test_refresh_state(window_door_sensor):
     """Test refreshing the state of the window-door-sensor."""
-    window_door_sensor.device.api.get_datapoint.return_value = ["1"]
+    window_door_sensor.device.api.get_datapoint.side_effect = [["0"], ["100"]]
     await window_door_sensor.refresh_state()
-    assert window_door_sensor.state is True
-    window_door_sensor.device.api.get_datapoint.assert_called_with(
-        device_serial="ABB28CBC3651",
+    assert window_door_sensor.state is False
+    assert window_door_sensor.position == "open"
+    assert window_door_sensor.device.api.get_datapoint.call_args_list == [
+        call(device_serial="ABB28CBC3651", channel_id="ch0000", datapoint="odp0000"),
+        call(device_serial="ABB28CBC3651", channel_id="ch0000", datapoint="odp0003"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_refresh_state_without_position(mock_api, mock_device):
+    """Test refreshing a window-door-sensor that has no position output."""
+    mock_device.device_serial = "ABB28CBC3651"
+    mock_device.api = mock_api
+    sensor = WindowDoorSensor(
+        device=mock_device,
         channel_id="ch0000",
-        datapoint="odp0000",
+        channel_name="Channel Name",
+        inputs={},
+        outputs={"odp0000": {"pairingID": 53, "value": "1"}},
+        parameters={},
+    )
+
+    mock_api.get_datapoint.return_value = ["0"]
+    await sensor.refresh_state()
+    assert sensor.state is False
+    assert sensor.position == "unknown"
+    mock_api.get_datapoint.assert_called_once_with(
+        device_serial="ABB28CBC3651", channel_id="ch0000", datapoint="odp0000"
     )
 
 

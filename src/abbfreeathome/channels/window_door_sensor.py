@@ -28,6 +28,7 @@ class WindowDoorSensor(Base):
 
     _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_WINDOW_DOOR,
+        Pairing.AL_WINDOW_DOOR_POSITION,
     ]
     _callback_attributes: list[str] = [
         "state",
