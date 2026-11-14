@@ -242,6 +242,8 @@ class Base(ParametersMixin):
         attribute name. Unknown attribute names raise
         ``UnknownCallbackAttributeException``.
 
+        Refresh pairings that the channel does not have are skipped.
+
         The values read replace the cached datapoint values, except where a
         WebSocket update changed a datapoint while its request was pending.
         Afterwards, even if a request fails, each subscriber of a refreshed
@@ -250,13 +252,9 @@ class Base(ParametersMixin):
         _pairings = self._refresh_pairings_for(attributes)
         _callback_attributes: list[str] = []
         try:
-            for _pairing in self._state_refresh_pairings:
-                if _pairings is not None and _pairing not in _pairings:
-                    continue
-
-                _datapoint_id, _ = self.get_output_by_pairing(pairing=_pairing)
+            for _datapoint_id, _datapoint in self._output_refresh_datapoints(_pairings):
                 _callback_attributes += await self._refresh_datapoint(
-                    _datapoint_id, self._outputs[_datapoint_id]
+                    _datapoint_id, _datapoint
                 )
 
             for _datapoint_id, _datapoint in self._input_refresh_datapoints(_pairings):
@@ -318,6 +316,18 @@ class Base(ParametersMixin):
 
         for _datapoint_id, _datapoint in self._input_refresh_datapoints():
             self._refresh_state_from_datapoint(_datapoint)
+
+    def _output_refresh_datapoints(
+        self, pairings: set[Pairing] | None = None
+    ) -> list[tuple[str, dict[str, Any]]]:
+        """Return the outputs matching ``_state_refresh_pairings`` and ``pairings``."""
+        return [
+            (_datapoint_id, _datapoint)
+            for _pairing in self._state_refresh_pairings
+            if pairings is None or _pairing in pairings
+            for _datapoint_id, _datapoint in self._outputs.items()
+            if _datapoint.get("pairingID") == _pairing.value
+        ]
 
     def _refresh_pairings_for(
         self, attributes: Iterable[str] | None
