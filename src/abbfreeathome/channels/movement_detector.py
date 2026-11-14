@@ -68,7 +68,10 @@ class MovementDetector(Base):
                 self._state = datapoint.get("value") == "1"
                 return ["state"]
             case Pairing.AL_BRIGHTNESS_LEVEL.value:
-                self._brightness = float(datapoint.get("value"))
+                try:
+                    self._brightness = float(datapoint.get("value"))
+                except (TypeError, ValueError):
+                    self._brightness = None
                 return ["brightness"]
             case _:
                 return []

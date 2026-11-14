@@ -124,6 +124,35 @@ async def test_priming_after_refresh_state(wind_sensor):
     callback.assert_called_once_with()
 
 
+@pytest.mark.asyncio
+async def test_refresh_state_keeps_newer_websocket_value(wind_sensor):
+    """Keep a value pushed over the WebSocket while its request is pending."""
+    forces = []
+    wind_sensor.register_callback(
+        callback_attribute="force", callback=lambda: forces.append(wind_sensor.force)
+    )
+    alarm_callback = MagicMock()
+    wind_sensor.register_callback(callback_attribute="alarm", callback=alarm_callback)
+
+    async def get_datapoint(device_serial, channel_id, datapoint):
+        if datapoint == "odp0001":
+            # The SysAP read force 4 for this request, then pushed force 5,
+            # which arrived before the response.
+            wind_sensor.update_channel("7EB1000021C5/ch0003/odp0001", "5")
+            return ["4"]
+        return ["1"]
+
+    wind_sensor.device.api.get_datapoint.side_effect = get_datapoint
+
+    await wind_sensor.refresh_state()
+
+    assert wind_sensor.force == 5
+    assert wind_sensor._outputs["odp0001"]["value"] == "5"
+    assert forces == [5]
+    assert wind_sensor.alarm is True
+    alarm_callback.assert_called_once_with()
+
+
 def test_refresh_state_from_datapoint(wind_sensor):
     """Test the _refresh_state_from_datapoint function."""
     # Check output that affects the state.
@@ -149,3 +178,17 @@ def test_refresh_state_from_datapoint(wind_sensor):
         datapoint={"pairingID": 4, "value": "1"},
     )
     assert wind_sensor.state == 20.1
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric(wind_sensor, value):
+    """Test that non-numeric speed and force values are unknown."""
+    wind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1028, "value": value},
+    )
+    assert wind_sensor.state is None
+
+    wind_sensor._refresh_state_from_datapoint(
+        datapoint={"pairingID": 1025, "value": value},
+    )
+    assert wind_sensor.force is None

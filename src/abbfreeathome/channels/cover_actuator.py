@@ -193,7 +193,10 @@ class CoverActuator(Base):
             datapoint.get("pairingID")
             == Pairing.AL_CURRENT_ABSOLUTE_POSITION_BLINDS_PERCENTAGE.value
         ):
-            self._position = int(float(datapoint.get("value")))
+            try:
+                self._position = int(float(datapoint.get("value")))
+            except (TypeError, ValueError, OverflowError):
+                self._position = None
             return ["position"]
         if (
             datapoint.get("pairingID")
@@ -385,7 +388,10 @@ class ShutterActuator(CoverActuator):
             datapoint.get("pairingID")
             == Pairing.AL_CURRENT_ABSOLUTE_POSITION_SLATS_PERCENTAGE.value
         ):
-            self._tilt_position = int(float(datapoint.get("value")))
+            try:
+                self._tilt_position = int(float(datapoint.get("value")))
+            except (TypeError, ValueError, OverflowError):
+                self._tilt_position = None
             return ["tilt_position"]
         return super()._refresh_state_from_datapoint(datapoint)
 

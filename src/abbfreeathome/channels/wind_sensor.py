@@ -77,12 +77,18 @@ class WindSensor(Base):
         Return the names of the attributes refreshed by this datapoint.
         """
         if datapoint.get("pairingID") == Pairing.AL_WIND_SPEED.value:
-            self._state = float(datapoint.get("value"))
+            try:
+                self._state = float(datapoint.get("value"))
+            except (ValueError, TypeError):
+                self._state = None
             return ["state"]
         if datapoint.get("pairingID") == Pairing.AL_WIND_ALARM.value:
             self._alarm = datapoint.get("value") == "1"
             return ["alarm"]
         if datapoint.get("pairingID") == Pairing.AL_WIND_FORCE.value:
-            self._force = int(datapoint.get("value"))
+            try:
+                self._force = int(datapoint.get("value"))
+            except (ValueError, TypeError):
+                self._force = None
             return ["force"]
         return []

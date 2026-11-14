@@ -637,3 +637,15 @@ def test_cooling_demand_does_not_override_inactive_indication(
     assert room_temperature_controller.cooling == 100
     assert room_temperature_controller.state_indication == 65
     assert room_temperature_controller.heating_cooling_active is False
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric_state_indication(
+    room_temperature_controller, value
+):
+    """Test that a non-numeric state indication is unknown."""
+    room_temperature_controller._refresh_state_from_datapoint(
+        datapoint={"pairingID": 54, "value": value},
+    )
+    assert room_temperature_controller.state_indication is None
+    assert room_temperature_controller.eco_mode is None
