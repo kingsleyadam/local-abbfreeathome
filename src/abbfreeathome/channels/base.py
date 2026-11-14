@@ -238,7 +238,8 @@ class Base(ParametersMixin):
         By default, or with an empty ``attributes``, every refresh pairing is
         read. Otherwise only the pairings that ``_attribute_refresh_pairings``
         declares for the attributes are read; if any of them has no
-        declaration, every pairing is read. Unknown attribute names raise
+        declaration, every pairing is read. A single string is treated as one
+        attribute name. Unknown attribute names raise
         ``UnknownCallbackAttributeException``.
 
         The values read replace the cached datapoint values, except where a
@@ -322,7 +323,12 @@ class Base(ParametersMixin):
         self, attributes: Iterable[str] | None
     ) -> set[Pairing] | None:
         """Return the pairings to refresh for ``attributes``, or None for all."""
-        _attributes = [] if attributes is None else list(attributes)
+        if attributes is None:
+            _attributes = []
+        elif isinstance(attributes, str):
+            _attributes = [attributes]
+        else:
+            _attributes = list(attributes)
 
         for _attribute in _attributes:
             if _attribute not in self._callback_attributes:

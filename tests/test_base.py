@@ -417,16 +417,44 @@ def test_command_callback_attributes_are_callback_attributes(channel_class):
     assert set(channel_class._command_callback_attributes) <= set(
         channel_class._callback_attributes
     )
-    # The same holds for the attribute refresh mapping, whose pairings must
-    # also be refreshed by refresh_state() without attributes.
+
+
+@pytest.mark.parametrize(
+    "channel_class",
+    sorted(
+        {
+            *FUNCTION_CHANNEL_MAPPING.values(),
+            *FUNCTION_VIRTUAL_CHANNEL_MAPPING.values(),
+        },
+        key=lambda channel_class: channel_class.__name__,
+    ),
+    ids=lambda channel_class: channel_class.__name__,
+)
+def test_attribute_refresh_pairings_match_handlers(channel_class, mock_device):
+    """Map each attribute to exactly the refresh pairings that update it."""
+    channel = channel_class(
+        device=mock_device,
+        channel_id="ch0000",
+        channel_name="Channel Name",
+        inputs={},
+        outputs={},
+        parameters={},
+    )
+    updated_by: dict[str, set[Pairing]] = {}
+    for pairing in (
+        *channel_class._state_refresh_pairings,
+        *channel_class._input_refresh_pairings,
+    ):
+        for attribute in channel._refresh_state_from_datapoint(
+            {"pairingID": pairing.value, "value": "1"}
+        ):
+            updated_by.setdefault(attribute, set()).add(pairing)
+
     assert set(channel_class._attribute_refresh_pairings) <= set(
         channel_class._callback_attributes
     )
-    for _pairings in channel_class._attribute_refresh_pairings.values():
-        assert set(_pairings) <= {
-            *channel_class._state_refresh_pairings,
-            *channel_class._input_refresh_pairings,
-        }
+    for attribute, pairings in channel_class._attribute_refresh_pairings.items():
+        assert set(pairings) == updated_by.get(attribute, set()), attribute
 
 
 @pytest.fixture
@@ -474,14 +502,17 @@ def attribute_refresh_channel(mock_api, mock_device, monkeypatch):
     return channel
 
 
+@pytest.mark.parametrize("attributes", [["state"], "state"], ids=["list", "string"])
 @pytest.mark.asyncio
-async def test_refresh_state_attributes(attribute_refresh_channel, mock_api):
+async def test_refresh_state_attributes(
+    attribute_refresh_channel, mock_api, attributes
+):
     """Read only the pairings of the requested attributes and notify those."""
     callbacks = {"state": MagicMock(), "brightness": MagicMock()}
     for attribute, callback in callbacks.items():
         attribute_refresh_channel.register_callback(attribute, callback)
 
-    await attribute_refresh_channel.refresh_state(attributes=["state"])
+    await attribute_refresh_channel.refresh_state(attributes=attributes)
 
     assert [
         _call.kwargs["datapoint"] for _call in mock_api.get_datapoint.await_args_list

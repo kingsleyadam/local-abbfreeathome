@@ -27,7 +27,10 @@ applyTo: "src/abbfreeathome/**/*.py,tests/**/*.py"
   also be listed in `_callback_attributes`. Optionally map callback attributes to
   the refresh pairings that feed them in `_attribute_refresh_pairings`, so that
   `refresh_state(attributes=...)` reads only those; unmapped attributes or an
-  empty list refresh every pairing. `update_channel()` handles output updates
+  empty list refresh every pairing. Each entry must list exactly the refresh
+  pairings whose `_refresh_state_from_datapoint()` result includes the
+  attribute; `test_attribute_refresh_pairings_match_handlers` checks this for
+  every mapped channel class. `update_channel()` handles output updates
   and handles input updates only when `_handle_input_updates` is `True`. Enable
   it for virtual channels and channels that expose `requested_*` values, because
   physical inputs can share pairing IDs with outputs.
