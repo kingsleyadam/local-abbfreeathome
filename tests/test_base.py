@@ -297,6 +297,71 @@ async def test_refresh_state_notifies_callbacks(mock_api, mock_device, monkeypat
     assert observed_values == [("1", "2")]
 
 
+@pytest.fixture
+def rejecting_channel(mock_api, mock_device, monkeypatch):
+    """Return a Base channel whose state handler rejects the value "invalid"."""
+
+    def refresh_state_from_datapoint(self, datapoint):
+        if datapoint["value"] == "invalid":
+            raise ValueError("rejected")
+        return ["state"]
+
+    monkeypatch.setattr(Base, "_state_refresh_pairings", [Pairing.AL_INFO_ON_OFF])
+    monkeypatch.setattr(
+        Base, "_refresh_state_from_datapoint", refresh_state_from_datapoint
+    )
+    mock_device.device_serial = "ABB7F500E17A"
+    mock_device.api = mock_api
+    mock_api.get_datapoint = AsyncMock()
+    channel = Base(
+        device=mock_device,
+        channel_id="ch0003",
+        channel_name="Channel Name",
+        inputs={},
+        outputs={"odp0000": {"pairingID": 256, "value": "0"}},
+        parameters={},
+    )
+    channel._callback_attributes = ["state"]
+    return channel
+
+
+@pytest.mark.asyncio
+async def test_rejected_value_is_not_cached(rejecting_channel, mock_api):
+    """Keep the cached value when the state handler rejects a new one."""
+    callback = MagicMock()
+    rejecting_channel.register_callback("state", callback)
+
+    with pytest.raises(ValueError, match="rejected"):
+        rejecting_channel.update_channel("ABB7F500E17A/ch0003/odp0000", "invalid")
+    assert rejecting_channel._outputs["odp0000"]["value"] == "0"
+
+    mock_api.get_datapoint.return_value = ["invalid"]
+    with pytest.raises(ValueError, match="rejected"):
+        await rejecting_channel.refresh_state()
+    assert rejecting_channel._outputs["odp0000"]["value"] == "0"
+    callback.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_refresh_state_after_rejected_push(rejecting_channel, mock_api):
+    """Apply the response when a push during its request was rejected."""
+    callback = MagicMock()
+    rejecting_channel.register_callback("state", callback)
+
+    async def get_datapoint(device_serial, channel_id, datapoint):
+        # FreeAtHome.update() logs the push's error and keeps listening.
+        with pytest.raises(ValueError, match="rejected"):
+            rejecting_channel.update_channel("ABB7F500E17A/ch0003/odp0000", "invalid")
+        return ["1"]
+
+    mock_api.get_datapoint.side_effect = get_datapoint
+
+    await rejecting_channel.refresh_state()
+
+    assert rejecting_channel._outputs["odp0000"]["value"] == "1"
+    callback.assert_called_once_with()
+
+
 @pytest.mark.asyncio
 async def test_refresh_state_partial_failure(mock_api, mock_device, monkeypatch):
     """Notify the values already read when a later request fails."""
