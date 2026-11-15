@@ -42,7 +42,7 @@ The current channels implemented within the library.
 | MovementDetector | | `state`, `brightness` |
 | RadiatorActuator | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `heating`, `cooling`, `target_temperature`, `state_indication`, `eco_mode`, `heating_mode`, `heating_cooling_active`, `heating_active` |
 | RainSensor | | `state` |
-| RoomTemperatureController | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `valve`, `target_temperature`, `state_indication`, `eco_mode`, `heating_mode`, `heating_cooling_active` |
+| RoomTemperatureController | `turn_on()`, `turn_off()`, `eco_on()`, `eco_off()`, `set_temperature()` | `state`, `current_temperature`, `heating`, `cooling`, `target_temperature`, `state_indication`, `eco_mode`, `heating_mode`, `heating_cooling_active` |
 | SmokeDetector | | `state` |
 | StaircaseLightSensor\* | `turn_on_led()`, `turn_off_led()` | `state` |
 | SwitchActuator | `turn_on()`, `turn_off()`, `set_forced_position()` | `state`, `forced_position` |
@@ -85,7 +85,7 @@ FreeAtHomeApi
 
 The `FreeAtHome` class (in general) would NOT update the state of any individual channel (with the exception of the websocket callbacks). The channel class would have access to the FreeAtHome api object to update or fetch it's own state if needed. The `FreeAtHome` class's only interaction with the `FreeAtHomeApi` would be to fetch the SysAP configuration, which it will use to "load" the list of Python `channel` classes required for device interaction, and to listen for events on the websocket.
 
-To make things simple and easy to test each channel should map to a single Free@Home [function](https://developer.eu.mybuildings.abb.com/fah_local/reference/functionids). This is because each function would likely have a unique set up inputs/outputs to interact with the Free@Home device, requiring unique methods within the class to properly expose and update the device. But, it is possible that a channel could have multiple functions if the functions operated identically to each other. This mapping can be applied in the `FreeAtHome._get_function_to_channel_mapping` method.
+To make things simple and easy to test each channel should map to a single Free@Home [function](https://developer.eu.mybuildings.abb.com/fah_local/reference/functionids). This is because each function would likely have a unique set up inputs/outputs to interact with the Free@Home device, requiring unique methods within the class to properly expose and update the device. But, it is possible that a channel could have multiple functions if the functions operated identically to each other. This mapping is defined in `FUNCTION_CHANNEL_MAPPING` in `const.py`, and in `FUNCTION_VIRTUAL_CHANNEL_MAPPING` for virtual devices.
 
 | Channel Class  | Function(s)         |
 | -------------- | ------------------- |
@@ -158,43 +158,46 @@ This is called when the channel class is initiated to know the current state of 
 
 #### Refresh Channel State
 
-There may be instances where the state of the channel would need to be refreshed directly from the api. In general, it's unlikely this will need to be called often, the updated state of a channel should come from the websocket and directed by the FreeAtHome with callbacks. But it's good practice to implement an api refresh.
+There may be instances where the state of the channel would need to be refreshed directly from the api. In general, it's unlikely this will need to be called often, the updated state of a channel should come from the websocket and directed by the FreeAtHome with callbacks.
 
-To do this we can invoke the `FreeAtHomeApi.get_datapoint` function to fetch the state of the channel. We can use the `get_output_by_pairing_id` function to fetch the correct output id based on what is needed from the api.
+Channels don't implement `refresh_state()` themselves. They list the outputs to read in `_state_refresh_pairings`, and `Base.refresh_state()` fetches each of them with `FreeAtHomeApi.get_datapoint`, passes the value to `_refresh_state_from_datapoint()`, caches it, and notifies the callbacks of each refreshed attribute once. Pairings that a channel does not have are skipped, so a class may list pairings that only some of its devices provide.
 
 ```python
-async def refresh_state(self):
-    """Refresh the state of the channel from the api."""
-    _state_refresh_pairings = [
+class SimpleSwitchActuator(Base):
+    """Free@Home SimpleSwitchActuator Class."""
+
+    _state_refresh_pairings: list[Pairing] = [
         Pairing.AL_INFO_ON_OFF,
     ]
-
-    for _pairing in _state_refresh_pairings:
-        _switch_output_id, _switch_output_value = self.get_output_by_pairing(
-            pairing=_pairing
-        )
-
-        _datapoint = (
-            await self._api.get_datapoint(
-                device_serial=self.device_serial,
-                channel_id=self.channel_id,
-                datapoint=_switch_output_id,
-            )
-        )[0]
-
-        self._refresh_state_from_datapoint(
-            datapoint={
-                "pairingID": _pairing.value,
-                "value": _datapoint,
-            }
-        )
-
-
-@property
-def state(self) -> bool | None:
-    """Get the state of the switch."""
-    return self._state
+    _callback_attributes: list[str] = [
+        "state",
+    ]
 ```
+
+Callers can refresh single attributes with `refresh_state(attributes=[...])`. For this to read fewer datapoints, map each callback attribute to the pairings that feed it in `_attribute_refresh_pairings`; attributes without an entry refresh every pairing.
+
+```python
+class WindSensor(Base):
+    """Free@Home WindSensor Class."""
+
+    _state_refresh_pairings: list[Pairing] = [
+        Pairing.AL_WIND_SPEED,
+        Pairing.AL_WIND_ALARM,
+        Pairing.AL_WIND_FORCE,
+    ]
+    _callback_attributes: list[str] = [
+        "state",
+        "alarm",
+        "force",
+    ]
+    _attribute_refresh_pairings: dict[str, list[Pairing]] = {
+        "state": [Pairing.AL_WIND_SPEED],
+        "alarm": [Pairing.AL_WIND_ALARM],
+        "force": [Pairing.AL_WIND_FORCE],
+    }
+```
+
+Inputs listed in `_input_refresh_pairings` are refreshed as well. Attributes in `_command_callback_attributes`, such as a button press or a `requested_*` value, are refreshed without notifying their callbacks, so a refresh does not look like a new command.
 
 #### Update Channel State
 
@@ -207,7 +210,7 @@ async def _set_switching_datapoint(self, value: str):
     _switch_input_id, _switch_input_value = self.get_input_by_pairing(
         pairing=Pairing.AL_SWITCH_ON_OFF
     )
-    return await self._api.set_datapoint(
+    return await self.device.api.set_datapoint(
         device_serial=self.device_serial,
         channel_id=self.channel_id,
         datapoint=_switch_input_id,
