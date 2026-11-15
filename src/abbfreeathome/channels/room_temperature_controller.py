@@ -196,14 +196,14 @@ class RoomTemperatureController(Base):
         if datapoint.get("pairingID") == Pairing.AL_ACTUATING_VALUE_HEATING.value:
             try:
                 self._heating = int(float(datapoint.get("value")))
-            except ValueError:
-                self._heating = 0
+            except (TypeError, ValueError, OverflowError):
+                self._heating = None
             return ["heating"]
         if datapoint.get("pairingID") == Pairing.AL_ACTUATING_VALUE_COOLING.value:
             try:
                 self._cooling = int(float(datapoint.get("value")))
-            except ValueError:
-                self._cooling = 0
+            except (TypeError, ValueError, OverflowError):
+                self._cooling = None
             return ["cooling"]
         return []
 
@@ -323,8 +323,8 @@ class RadiatorActuator(RoomTemperatureController):
             was_heating_active = self.heating_active
             try:
                 self._heating = int(float(datapoint.get("value")))
-            except (TypeError, ValueError):
-                self._heating = 0
+            except (TypeError, ValueError, OverflowError):
+                self._heating = None
             attributes = ["heating"]
             if self.heating_active != was_heating_active:
                 attributes.append("heating_active")

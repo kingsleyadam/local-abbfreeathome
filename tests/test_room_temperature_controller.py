@@ -195,7 +195,7 @@ async def test_refresh_state_from_datapoint(
     room_temperature_controller._refresh_state_from_datapoint(
         datapoint={"pairingID": 48, "value": ""}
     )
-    assert room_temperature_controller.heating == 0
+    assert room_temperature_controller.heating is None
 
     # Check output that affects the heating
     room_temperature_controller._refresh_state_from_datapoint(
@@ -213,7 +213,7 @@ async def test_refresh_state_from_datapoint(
     room_temperature_controller._refresh_state_from_datapoint(
         datapoint={"pairingID": 50, "value": ""}
     )
-    assert room_temperature_controller.cooling == 0
+    assert room_temperature_controller.cooling is None
 
     # Check output that affects the cooling
     room_temperature_controller._refresh_state_from_datapoint(
@@ -402,11 +402,16 @@ def test_radiator_active_flag_notifies_subscribers(radiator_actuator):
     heating_callback.assert_not_called()
 
 
-@pytest.mark.asyncio
-async def test_radiator_unparsable_heating_demand(radiator_actuator):
-    """Test an empty heating demand does not raise."""
-    radiator_actuator._refresh_state_from_datapoint({"pairingID": 333, "value": ""})
-    assert radiator_actuator.heating == 0
+@pytest.mark.parametrize("value", ["invalid", "", None, "inf"])
+def test_radiator_unparsable_heating_demand(radiator_actuator, value):
+    """Test an unparsable heating demand is unknown and no longer active."""
+    radiator_actuator._refresh_state_from_datapoint({"pairingID": 333, "value": "57"})
+    assert radiator_actuator.heating_active is True
+    assert radiator_actuator._refresh_state_from_datapoint(
+        {"pairingID": 333, "value": value}
+    ) == ["heating", "heating_active"]
+    assert radiator_actuator.heating is None
+    assert radiator_actuator.heating_active is False
 
 
 @pytest.mark.asyncio
@@ -504,7 +509,7 @@ async def test_proxy_radiator_thermostat(proxy_radiator_thermostat):
     assert proxy_radiator_thermostat.target_temperature == 20.5
     assert proxy_radiator_thermostat.eco_mode is False
     assert proxy_radiator_thermostat.heating_mode is True
-    assert proxy_radiator_thermostat.heating == 0
+    assert proxy_radiator_thermostat.heating is None
     assert proxy_radiator_thermostat.heating_active is False
 
     await proxy_radiator_thermostat.set_temperature(21)
@@ -649,3 +654,19 @@ def test_refresh_state_from_datapoint_non_numeric_state_indication(
     )
     assert room_temperature_controller.state_indication is None
     assert room_temperature_controller.eco_mode is None
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None, "inf"])
+def test_refresh_state_from_datapoint_non_numeric_actuating_values(
+    room_temperature_controller, value
+):
+    """Test that 0 is idle and a non-numeric actuating value is unknown."""
+    for pairing_id, attribute in ((48, "heating"), (50, "cooling")):
+        room_temperature_controller._refresh_state_from_datapoint(
+            datapoint={"pairingID": pairing_id, "value": "0"},
+        )
+        assert getattr(room_temperature_controller, attribute) == 0
+        assert room_temperature_controller._refresh_state_from_datapoint(
+            datapoint={"pairingID": pairing_id, "value": value},
+        ) == [attribute]
+        assert getattr(room_temperature_controller, attribute) is None
