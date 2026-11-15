@@ -8,8 +8,7 @@ applyTo: "src/abbfreeathome/**/*.py,tests/**/*.py"
   Register new channel support in `FUNCTION_CHANNEL_MAPPING` or
   `FUNCTION_VIRTUAL_CHANNEL_MAPPING` in `const.py`; use the enums in `bin/` for
   function, interface, pairing, and parameter IDs. Multiple function IDs may
-  share a class when their behavior is identical. The README's older reference
-  to `FreeAtHome._get_function_to_channel_mapping` is superseded by these mappings.
+  share a class when their behavior is identical.
 - Datapoint dictionaries use `idp...`/`odp...` keys, integer `pairingID` values,
   and usually string wire values such as `"0"`/`"1"`. Resolve datapoint IDs with
   `get_input_by_pairing()` / `get_output_by_pairing()` rather than hardcoding
