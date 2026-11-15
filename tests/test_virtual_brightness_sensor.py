@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.channels.virtual.virtual_brightness_sensor import (
     VirtualBrightnessSensor,
 )
@@ -105,3 +106,14 @@ async def test_set_brightness(virtual_brightness_sensor):
         value="0",
     )
     assert virtual_brightness_sensor.brightness == 0
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None, "inf"])
+def test_refresh_state_from_datapoint_non_numeric(virtual_brightness_sensor, value):
+    """Test that a non-numeric or overflowing brightness is unknown."""
+    datapoint = {"pairingID": Pairing.AL_BRIGHTNESS_LEVEL.value}
+    virtual_brightness_sensor._refresh_state_from_datapoint({**datapoint, "value": "1"})
+    assert virtual_brightness_sensor._refresh_state_from_datapoint(
+        {**datapoint, "value": value}
+    ) == ["brightness"]
+    assert virtual_brightness_sensor.brightness is None

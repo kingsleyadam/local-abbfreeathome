@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.channels.virtual.virtual_energy_battery import (
     VirtualEnergyBattery,
 )
@@ -257,4 +258,25 @@ def test_update_channel(virtual_energy_battery):
 
     # Test scenario where websocket sends update not relevant to the state.
     virtual_energy_battery.update_channel("AL_SWITCH_ON_OFF/odp0006", "1")
-    assert virtual_energy_battery.soc == 0
+    assert virtual_energy_battery.soc is None
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric(virtual_energy_battery, value):
+    """Test that non-numeric power, charge and energy values are unknown."""
+    for pairing, attribute in (
+        (Pairing.AL_BATTERY_POWER, "battery_power"),
+        (Pairing.AL_SOC, "soc"),
+        (Pairing.AL_MEASURED_IMPORTED_ENERGY_TODAY, "imported_today"),
+        (Pairing.AL_MEASURED_EXPORTED_ENERGY_TODAY, "exported_today"),
+        (Pairing.AL_MEASURED_TOTAL_ENERGY_IMPORTED, "imported_total"),
+        (Pairing.AL_MEASURED_TOTAL_ENERGY_EXPORTED, "exported_total"),
+    ):
+        datapoint = {"pairingID": pairing.value}
+        virtual_energy_battery._refresh_state_from_datapoint(
+            {**datapoint, "value": "1"}
+        )
+        assert virtual_energy_battery._refresh_state_from_datapoint(
+            {**datapoint, "value": value}
+        ) == [attribute]
+        assert getattr(virtual_energy_battery, attribute) is None

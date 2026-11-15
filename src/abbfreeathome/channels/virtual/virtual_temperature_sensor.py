@@ -81,8 +81,8 @@ class VirtualTemperatureSensor(Base):
         if datapoint.get("pairingID") == Pairing.AL_OUTDOOR_TEMPERATURE.value:
             try:
                 self._temperature = float(datapoint.get("value"))
-            except ValueError:
-                self._temperature = 0.0
+            except (TypeError, ValueError):
+                self._temperature = None
             return ["temperature"]
         if datapoint.get("pairingID") == Pairing.AL_FROST_ALARM.value:
             self._alarm = datapoint.get("value") == "1"

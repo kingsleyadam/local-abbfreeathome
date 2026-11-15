@@ -87,8 +87,8 @@ class VirtualBrightnessSensor(Base):
         if datapoint.get("pairingID") == Pairing.AL_BRIGHTNESS_LEVEL.value:
             try:
                 self._brightness = int(float(datapoint.get("value")))
-            except ValueError:
-                self._brightness = 0
+            except (TypeError, ValueError, OverflowError):
+                self._brightness = None
             return ["brightness"]
         if datapoint.get("pairingID") == Pairing.AL_BRIGHTNESS_ALARM.value:
             self._alarm = datapoint.get("value") == "1"

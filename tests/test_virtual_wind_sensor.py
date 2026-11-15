@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.channels.virtual.virtual_wind_sensor import VirtualWindSensor
 from src.abbfreeathome.device import Device
 
@@ -138,3 +139,18 @@ async def test_set_force(virtual_wind_sensor):
         value="12",
     )
     assert virtual_wind_sensor.force == 12
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric(virtual_wind_sensor, value):
+    """Test that non-numeric speed and force values are unknown."""
+    for pairing, attribute in (
+        (Pairing.AL_WIND_SPEED, "speed"),
+        (Pairing.AL_WIND_FORCE, "force"),
+    ):
+        datapoint = {"pairingID": pairing.value}
+        virtual_wind_sensor._refresh_state_from_datapoint({**datapoint, "value": "1"})
+        assert virtual_wind_sensor._refresh_state_from_datapoint(
+            {**datapoint, "value": value}
+        ) == [attribute]
+        assert getattr(virtual_wind_sensor, attribute) is None

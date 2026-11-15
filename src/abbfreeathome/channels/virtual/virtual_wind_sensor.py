@@ -108,8 +108,8 @@ class VirtualWindSensor(Base):
         if datapoint.get("pairingID") == Pairing.AL_WIND_SPEED.value:
             try:
                 self._speed = float(datapoint.get("value"))
-            except ValueError:
-                self._speed = 0.0
+            except (TypeError, ValueError):
+                self._speed = None
             return ["speed"]
         if datapoint.get("pairingID") == Pairing.AL_WIND_ALARM.value:
             self._alarm = datapoint.get("value") == "1"
@@ -117,8 +117,8 @@ class VirtualWindSensor(Base):
         if datapoint.get("pairingID") == Pairing.AL_WIND_FORCE.value:
             try:
                 self._force = int(datapoint.get("value"))
-            except ValueError:
-                self._force = 0
+            except (TypeError, ValueError):
+                self._force = None
             return ["force"]
 
         return []

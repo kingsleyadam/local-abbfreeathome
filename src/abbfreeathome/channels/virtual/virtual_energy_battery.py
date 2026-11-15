@@ -155,14 +155,14 @@ class VirtualEnergyBattery(Base):
         if datapoint.get("pairingID") == Pairing.AL_BATTERY_POWER.value:
             try:
                 self._battery_power = float(datapoint.get("value"))
-            except ValueError:
-                self._battery_power = 0.0
+            except (TypeError, ValueError):
+                self._battery_power = None
             return ["battery_power"]
         if datapoint.get("pairingID") == Pairing.AL_SOC.value:
             try:
                 self._soc = int(datapoint.get("value"))
-            except ValueError:
-                self._soc = 0
+            except (TypeError, ValueError):
+                self._soc = None
             return ["soc"]
         if (
             datapoint.get("pairingID")
@@ -170,8 +170,8 @@ class VirtualEnergyBattery(Base):
         ):
             try:
                 self._imported_today = int(datapoint.get("value"))
-            except ValueError:
-                self._imported_today = 0
+            except (TypeError, ValueError):
+                self._imported_today = None
             return ["imported_today"]
         if (
             datapoint.get("pairingID")
@@ -179,8 +179,8 @@ class VirtualEnergyBattery(Base):
         ):
             try:
                 self._exported_today = int(datapoint.get("value"))
-            except ValueError:
-                self._exported_today = 0
+            except (TypeError, ValueError):
+                self._exported_today = None
             return ["exported_today"]
         if (
             datapoint.get("pairingID")
@@ -188,8 +188,8 @@ class VirtualEnergyBattery(Base):
         ):
             try:
                 self._imported_total = int(datapoint.get("value"))
-            except ValueError:
-                self._imported_total = 0
+            except (TypeError, ValueError):
+                self._imported_total = None
             return ["imported_total"]
         if (
             datapoint.get("pairingID")
@@ -197,8 +197,8 @@ class VirtualEnergyBattery(Base):
         ):
             try:
                 self._exported_total = int(datapoint.get("value"))
-            except ValueError:
-                self._exported_total = 0
+            except (TypeError, ValueError):
+                self._exported_total = None
             return ["exported_total"]
 
         return []

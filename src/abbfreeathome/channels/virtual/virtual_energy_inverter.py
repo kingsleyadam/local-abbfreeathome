@@ -102,8 +102,8 @@ class VirtualEnergyInverter(Base):
         ):
             try:
                 self._current_power = float(datapoint.get("value"))
-            except ValueError:
-                self._current_power = 0.0
+            except (TypeError, ValueError):
+                self._current_power = None
             return ["current_power"]
         if (
             datapoint.get("pairingID")
@@ -111,8 +111,8 @@ class VirtualEnergyInverter(Base):
         ):
             try:
                 self._imported_today = int(datapoint.get("value"))
-            except ValueError:
-                self._imported_today = 0
+            except (TypeError, ValueError):
+                self._imported_today = None
             return ["imported_today"]
         if (
             datapoint.get("pairingID")
@@ -120,8 +120,8 @@ class VirtualEnergyInverter(Base):
         ):
             try:
                 self._imported_total = int(datapoint.get("value"))
-            except ValueError:
-                self._imported_total = 0
+            except (TypeError, ValueError):
+                self._imported_total = None
             return ["imported_total"]
 
         return []
