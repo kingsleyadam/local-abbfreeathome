@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.channels.virtual.virtual_temperature_sensor import (
     VirtualTemperatureSensor,
 )
@@ -84,3 +85,16 @@ async def test_set_temperature(virtual_temperature_sensor):
         value="-15.6",
     )
     assert virtual_temperature_sensor.temperature == -15.6
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric(virtual_temperature_sensor, value):
+    """Test that a non-numeric temperature is unknown."""
+    datapoint = {"pairingID": Pairing.AL_OUTDOOR_TEMPERATURE.value}
+    virtual_temperature_sensor._refresh_state_from_datapoint(
+        {**datapoint, "value": "1"}
+    )
+    assert virtual_temperature_sensor._refresh_state_from_datapoint(
+        {**datapoint, "value": value}
+    ) == ["temperature"]
+    assert virtual_temperature_sensor.temperature is None

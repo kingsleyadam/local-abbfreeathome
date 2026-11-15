@@ -1678,12 +1678,8 @@ async def test_device_discovery_respects_filters(
             "channels": {
                 "bad": {
                     "functionID": "43",
-                    "outputs": {
-                        "odp0000": {
-                            "pairingID": Pairing.AL_OUTDOOR_TEMPERATURE.value,
-                            "value": None,
-                        }
-                    },
+                    # A malformed datapoint makes the channel constructor raise.
+                    "outputs": {"odp0000": None},
                 }
             }
         },

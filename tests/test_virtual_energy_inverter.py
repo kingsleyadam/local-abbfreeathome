@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.abbfreeathome.api import FreeAtHomeApi
+from src.abbfreeathome.bin.pairing import Pairing
 from src.abbfreeathome.channels.virtual.virtual_energy_inverter import (
     VirtualEnergyInverter,
 )
@@ -128,3 +129,21 @@ async def test_set_imported_total(virtual_energy_inverter):
         value="0",
     )
     assert virtual_energy_inverter.imported_total == 0
+
+
+@pytest.mark.parametrize("value", ["invalid", "", None])
+def test_refresh_state_from_datapoint_non_numeric(virtual_energy_inverter, value):
+    """Test that non-numeric power and energy values are unknown."""
+    for pairing, attribute in (
+        (Pairing.AL_MEASURED_CURRENT_POWER_CONSUMED, "current_power"),
+        (Pairing.AL_MEASURED_IMPORTED_ENERGY_TODAY, "imported_today"),
+        (Pairing.AL_MEASURED_TOTAL_ENERGY_IMPORTED, "imported_total"),
+    ):
+        datapoint = {"pairingID": pairing.value}
+        virtual_energy_inverter._refresh_state_from_datapoint(
+            {**datapoint, "value": "1"}
+        )
+        assert virtual_energy_inverter._refresh_state_from_datapoint(
+            {**datapoint, "value": value}
+        ) == [attribute]
+        assert getattr(virtual_energy_inverter, attribute) is None
