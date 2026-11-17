@@ -17,13 +17,15 @@ class HeatingCoolingSensorState(enum.Enum):
     """
     Heating/cooling changeover states defined by AL_HEATING_COOLING.
 
-    ABB SDK defines heating = 0 / cooling = 1:
+    The ABB SDK comments heating = 0 / cooling = 1, but room temperature
+    controllers on real systems heat at 1 and cool at 0, so follow the hardware:
     https://github.com/Busch-Jaeger/node-free-at-home/blob/master/src/pairingIds.ts
+    https://github.com/kingsleyadam/local-abbfreeathome-hass/issues/397
     """
 
     unknown = None
-    heating = "0"
-    cooling = "1"
+    heating = "1"
+    cooling = "0"
 
 
 class HeatingCoolingSensor(Base):
@@ -70,10 +72,8 @@ class HeatingCoolingSensor(Base):
         """Refresh state and return the affected attribute names."""
         if datapoint.get("pairingID") == Pairing.AL_HEATING_COOLING.value:
             value = datapoint.get("value")
-            if value == "0":
-                self._state = HeatingCoolingSensorState.heating
-            elif value == "1":
-                self._state = HeatingCoolingSensorState.cooling
+            if value in ("0", "1"):
+                self._state = HeatingCoolingSensorState(value)
             else:
                 self._state = HeatingCoolingSensorState.unknown
                 _LOGGER.warning(
