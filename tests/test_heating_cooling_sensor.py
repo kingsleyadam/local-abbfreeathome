@@ -45,12 +45,12 @@ def heating_cooling_sensor(mock_floorplan):
 def test_discovery_and_initial_state(heating_cooling_sensor):
     """Discover FID 0x2A and initialize state from AL_HEATING_COOLING."""
     assert isinstance(heating_cooling_sensor, HeatingCoolingSensor)
-    assert heating_cooling_sensor.state == HeatingCoolingSensorState.cooling.name
+    assert heating_cooling_sensor.state == HeatingCoolingSensorState.heating.name
 
 
-@pytest.mark.parametrize(("value", "expected"), [("0", "heating"), ("1", "cooling")])
+@pytest.mark.parametrize(("value", "expected"), [("0", "cooling"), ("1", "heating")])
 def test_initial_state(value, expected):
-    """Decode ABB's mode values without reinterpreting the contact type."""
+    """Decode mode values as controllers apply them, ignoring the contact type."""
     sensor = HeatingCoolingSensor(
         device=MagicMock(spec=Device),
         channel_id="ch0000",
@@ -82,7 +82,7 @@ async def test_refresh_state(heating_cooling_sensor):
 
     await heating_cooling_sensor.refresh_state()
 
-    assert heating_cooling_sensor.state == HeatingCoolingSensorState.heating.name
+    assert heating_cooling_sensor.state == HeatingCoolingSensorState.cooling.name
     heating_cooling_sensor.device.api.get_datapoint.assert_awaited_once_with(
         device_serial="ABB204E73951",
         channel_id="ch0000",
@@ -95,7 +95,7 @@ def test_updates_notify_state_subscribers(heating_cooling_sensor):
     callback = MagicMock()
     heating_cooling_sensor.register_callback("state", callback)
 
-    for value, expected in [("0", "heating"), ("1", "cooling")]:
+    for value, expected in [("0", "cooling"), ("1", "heating")]:
         callback.reset_mock()
         heating_cooling_sensor.update_channel("ABB204E73951/ch0000/odp0007", value)
         assert heating_cooling_sensor.state == expected
@@ -109,7 +109,7 @@ def test_unrelated_update_ignored(heating_cooling_sensor):
 
     heating_cooling_sensor.update_channel("ABB204E73951/ch0000/odp0008", "1")
 
-    assert heating_cooling_sensor.state == HeatingCoolingSensorState.cooling.name
+    assert heating_cooling_sensor.state == HeatingCoolingSensorState.heating.name
     callback.assert_not_called()
 
 
@@ -127,7 +127,7 @@ def test_invalid_value_sets_unknown(heating_cooling_sensor, caplog, value):
     assert "Invalid heating/cooling value" in caplog.text
     assert heating_cooling_sensor.channel_name in caplog.text
 
-    heating_cooling_sensor.update_channel("ABB204E73951/ch0000/odp0007", "0")
+    heating_cooling_sensor.update_channel("ABB204E73951/ch0000/odp0007", "1")
 
     assert heating_cooling_sensor.state == HeatingCoolingSensorState.heating.name
     callback.assert_called_once_with()
