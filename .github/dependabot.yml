@@ -1,15 +1,20 @@
 version: 2
-updates:
-  - package-ecosystem: github-actions
-    directory: /
+multi-ecosystem-groups:
+  tooling:
     schedule:
-      interval: weekly
+      interval: monthly
     labels:
       - chore
 
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    patterns:
+      - "*"
+    multi-ecosystem-group: tooling
+
   - package-ecosystem: pre-commit
     directory: /
-    schedule:
-      interval: weekly
-    labels:
-      - chore
+    patterns:
+      - "*"
+    multi-ecosystem-group: tooling
